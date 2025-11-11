@@ -8,7 +8,7 @@ import { Select } from '../components/Select';
 import { UserRole } from '../types';
 
 export function Landing() {
-  const { isConnected, user, connectWallet, requestRole, refreshUser } = useWeb3();
+  const { isConnected, isAdmin, user, connectWallet, requestRole, refreshUser } = useWeb3();
   const [selectedRole, setSelectedRole] = useState<UserRole>('Producer');
   const [isRegistering, setIsRegistering] = useState(false);
 
@@ -33,6 +33,11 @@ export function Landing() {
       setIsRegistering(false);
     }
   };
+
+  // If admin, go directly to admin panel
+  if (isConnected && isAdmin) {
+    return <Navigate to="/admin" />;
+  }
 
   // Approved user: approved == true and role != 0
   if (isConnected && user && user.approved && user.role !== 0) {

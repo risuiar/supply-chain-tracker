@@ -13,7 +13,7 @@ type AdminUser = {
 };
 
 export function Admin() {
-  const { isAdmin, contract } = useWeb3();
+  const { isAdmin, roleManager } = useWeb3();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -23,11 +23,11 @@ export function Admin() {
   };
 
   const loadUsers = async () => {
-    if (!contract) return;
+    if (!roleManager) return;
 
     try {
   const addresses = new Set<string>();
-  const events = await contract.queryFilter(contract.filters.RoleRequested());
+  const events = await roleManager.queryFilter(roleManager.filters.RoleRequested());
       for (const ev of events) {
         const args = (ev as unknown as { args?: unknown[] }).args as unknown[] | undefined;
         const addr = (args && typeof args[0] === 'string') ? (args[0] as string) : undefined;
@@ -37,7 +37,7 @@ export function Admin() {
       const list: AdminUser[] = [];
       for (const addr of addresses) {
         try {
-          const info = await contract.getUser(addr);
+          const info = await roleManager.getUser(addr);
           list.push({
             address: addr,
             approved: info.approved,
@@ -60,17 +60,17 @@ export function Admin() {
   useEffect(() => {
     loadUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contract]);
+  }, [roleManager]);
 
   if (!isAdmin) {
     return <Navigate to="/" />;
   }
 
   const handleApprove = async (address: string) => {
-    if (!contract) return;
+    if (!roleManager) return;
     setProcessing(address);
     try {
-      const tx = await contract.approveRole(address);
+      const tx = await roleManager.approveRole(address);
       await tx.wait();
       await loadUsers();
     } catch (error) {
@@ -82,10 +82,10 @@ export function Admin() {
   };
 
   const handleReject = async (address: string) => {
-    if (!contract) return;
+    if (!roleManager) return;
     setProcessing(address);
     try {
-      const tx = await contract.rejectRole(address);
+      const tx = await roleManager.rejectRole(address);
       await tx.wait();
       await loadUsers();
     } catch (error) {
@@ -97,13 +97,13 @@ export function Admin() {
   };
 
   const handleRevoke = async (address: string) => {
-    if (!contract) return;
+    if (!roleManager) return;
     if (!confirm(`Are you sure you want to revoke access for ${address.slice(0,10)}...?`)) {
       return;
     }
     setProcessing(address);
     try {
-      const tx = await contract.revokeRole(address);
+      const tx = await roleManager.revokeRole(address);
       await tx.wait();
       await loadUsers();
     } catch (error) {

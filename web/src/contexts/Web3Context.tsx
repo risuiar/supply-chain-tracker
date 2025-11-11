@@ -1,6 +1,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { BrowserProvider, Contract, Eip1193Provider } from 'ethers';
-import { CONTRACT_ADDRESS, CONTRACT_ABI, ADMIN_ADDRESS } from '../contracts/config';
+import { 
+  ROLE_MANAGER_ADDRESS, 
+  ROLE_MANAGER_ABI,
+  TOKEN_FACTORY_ADDRESS,
+  TOKEN_FACTORY_ABI,
+  TRANSFER_MANAGER_ADDRESS,
+  TRANSFER_MANAGER_ABI,
+  ADMIN_ADDRESS 
+} from '../contracts/config';
 
 // Internal UI user shape adapted to on-chain struct
 interface ChainUser {
@@ -21,7 +29,9 @@ interface Web3ContextType {
   isAdmin: boolean;
   user: UiUser | null;
   provider: BrowserProvider | null;
-  contract: Contract | null;
+  roleManager: Contract | null;
+  tokenFactory: Contract | null;
+  transferManager: Contract | null;
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   refreshUser: () => Promise<void>;
@@ -36,22 +46,29 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState<UiUser | null>(null);
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
-  const [contract, setContract] = useState<Contract | null>(null);
+  const [roleManager, setRoleManager] = useState<Contract | null>(null);
+  const [tokenFactory, setTokenFactory] = useState<Contract | null>(null);
+  const [transferManager, setTransferManager] = useState<Contract | null>(null);
 
   const setupProvider = async (ethereum: Eip1193Provider) => {
     const browserProvider = new BrowserProvider(ethereum);
     const signer = await browserProvider.getSigner();
-    const supplyChainContract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+    
+    const roleManagerContract = new Contract(ROLE_MANAGER_ADDRESS, ROLE_MANAGER_ABI, signer);
+    const tokenFactoryContract = new Contract(TOKEN_FACTORY_ADDRESS, TOKEN_FACTORY_ABI, signer);
+    const transferManagerContract = new Contract(TRANSFER_MANAGER_ADDRESS, TRANSFER_MANAGER_ABI, signer);
 
     setProvider(browserProvider);
-    setContract(supplyChainContract);
+    setRoleManager(roleManagerContract);
+    setTokenFactory(tokenFactoryContract);
+    setTransferManager(transferManagerContract);
 
-    return { browserProvider, supplyChainContract };
+    return { browserProvider, roleManagerContract, tokenFactoryContract, transferManagerContract };
   };
 
-  const loadUserInfo = async (address: string, supplyChainContract: Contract) => {
+  const loadUserInfo = async (address: string, roleManagerContract: Contract) => {
     try {
-      const rawStruct = await supplyChainContract.getUser(address) as unknown as {
+      const rawStruct = await roleManagerContract.getUser(address) as unknown as {
         role: bigint;
         approved: boolean;
         requestedRole: bigint;
@@ -63,7 +80,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         requestedRole: Number(rawStruct.requestedRole),
       };
       
-      const adminAddress: string = await supplyChainContract.admin();
+      const adminAddress: string = await roleManagerContract.admin();
       
       const addrLower = address.toLowerCase();
       const chainAdminLower = adminAddress?.toLowerCase?.() ?? '';
@@ -103,8 +120,8 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       setAccount(address);
       setIsConnected(true);
 
-      const { supplyChainContract } = await setupProvider(window.ethereum);
-      await loadUserInfo(address, supplyChainContract);
+      const { roleManagerContract } = await setupProvider(window.ethereum);
+      await loadUserInfo(address, roleManagerContract);
     } catch (error) {
       console.error('Error connecting wallet:', error);
     }
@@ -116,19 +133,21 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     setIsAdmin(false);
     setUser(null);
     setProvider(null);
-    setContract(null);
+    setRoleManager(null);
+    setTokenFactory(null);
+    setTransferManager(null);
     localStorage.removeItem('connectedAccount');
   };
 
   const refreshUser = async () => {
-    if (!account || !contract) return;
-    await loadUserInfo(account, contract);
+    if (!account || !roleManager) return;
+    await loadUserInfo(account, roleManager);
   };
 
   const requestRole = async (desiredRole: number) => {
-    if (!contract || !account) return;
+    if (!roleManager || !account) return;
     try {
-      const tx = await contract.requestRole(desiredRole);
+      const tx = await roleManager.requestRole(desiredRole);
       await tx.wait();
       await refreshUser();
     } catch (e) {
@@ -147,8 +166,8 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         } else if (account && accounts[0] !== account) {
           setAccount(accounts[0]);
           if (window.ethereum) {
-            setupProvider(window.ethereum as Eip1193Provider).then(({ supplyChainContract }) => {
-              loadUserInfo(accounts[0], supplyChainContract);
+            setupProvider(window.ethereum as Eip1193Provider).then(({ roleManagerContract }) => {
+              loadUserInfo(accounts[0], roleManagerContract);
             });
           }
         }
@@ -181,8 +200,8 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           
           if (current && currentLower !== accountLower) {
             setAccount(current);
-            const { supplyChainContract } = await setupProvider(eth);
-            await loadUserInfo(current, supplyChainContract);
+            const { roleManagerContract } = await setupProvider(eth);
+            await loadUserInfo(current, roleManagerContract);
           }
           if (!current && account) {
             disconnectWallet();
@@ -206,7 +225,9 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         isAdmin,
         user,
         provider,
-        contract,
+        roleManager,
+        tokenFactory,
+        transferManager,
         connectWallet,
         disconnectWallet,
         refreshUser,
