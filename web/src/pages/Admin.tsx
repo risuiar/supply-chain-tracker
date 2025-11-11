@@ -96,13 +96,36 @@ export function Admin() {
     }
   };
 
+  const handleRevoke = async (address: string) => {
+    if (!contract) return;
+    if (!confirm(`Are you sure you want to revoke access for ${address.slice(0,10)}...?`)) {
+      return;
+    }
+    setProcessing(address);
+    try {
+      const tx = await contract.revokeRole(address);
+      await tx.wait();
+      await loadUsers();
+    } catch (error) {
+      console.error('revokeRole failed:', error);
+      alert('Failed to revoke role');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
   // const formatAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`;
 
   const stats = [
-    { label: 'Total Requests', value: users.length, icon: Users, color: 'blue' },
-    { label: 'Pending', value: users.filter(u => !u.approved && u.requestedRole !== 0).length, icon: Clock, color: 'yellow' },
+    { label: 'Total Users', value: users.length, icon: Users, color: 'blue' },
+    { label: 'Pending Approval', value: users.filter(u => !u.approved && u.requestedRole !== 0).length, icon: Clock, color: 'yellow' },
     { label: 'Approved', value: users.filter(u => u.approved).length, icon: CheckCircle, color: 'green' },
+    { label: 'Rejected', value: users.filter(u => !u.approved && u.requestedRole === 0 && u.role === 0).length, icon: XCircle, color: 'red' },
   ];
+
+  const pendingUsers = users.filter(u => !u.approved && u.requestedRole !== 0);
+  const approvedUsers = users.filter(u => u.approved);
+  const rejectedUsers = users.filter(u => !u.approved && u.requestedRole === 0 && u.role === 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -139,7 +162,7 @@ export function Admin() {
               User Management
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Manage user registrations and status changes
+              Approve or reject role requests from users
             </p>
           </CardHeader>
           <CardContent>
@@ -157,65 +180,142 @@ export function Admin() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {users.map((user) => {
-                  const isProcessing = processing === user.address;
-
-                  return (
-                    <div
-                      key={user.address}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-full ${user.approved ? 'bg-green-100' : user.requestedRole !== 0 ? 'bg-yellow-100' : 'bg-gray-100'}`}>
-                          {user.approved ? (
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                          ) : (
-                            <Clock className="w-5 h-5 text-yellow-600" />
-                          )}
-                        </div>
-
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">{user.address}</span>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                              {user.approved ? 'Approved' : 'Pending'}
-                            </span>
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {user.approved ? roleLabel(user.role) : `Requested: ${roleLabel(user.requestedRole)}`}
-                            </span>
+              <div className="space-y-6">
+                {/* Pending Approvals Section */}
+                {pendingUsers.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-yellow-600" />
+                      Pending Approval ({pendingUsers.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {pendingUsers.map((user) => {
+                        const isProcessing = processing === user.address;
+                        return (
+                          <div
+                            key={user.address}
+                            className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="p-3 rounded-full bg-yellow-100">
+                                <Clock className="w-5 h-5 text-yellow-600" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-gray-900">{user.address.slice(0,10)}...{user.address.slice(-8)}</span>
+                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Requested: {roleLabel(user.requestedRole)}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-600 font-mono">{user.address}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="success"
+                                onClick={() => handleApprove(user.address)}
+                                disabled={isProcessing}
+                                className="text-sm"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                variant="danger"
+                                onClick={() => handleReject(user.address)}
+                                disabled={isProcessing}
+                                className="text-sm"
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Reject
+                              </Button>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600 font-mono">{user.address}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2">
-                        {!user.approved && user.requestedRole !== 0 && (
-                          <>
-                            <Button
-                              variant="success"
-                              onClick={() => handleApprove(user.address)}
-                              disabled={isProcessing}
-                              className="text-sm"
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              variant="danger"
-                              onClick={() => handleReject(user.address)}
-                              disabled={isProcessing}
-                              className="text-sm"
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+
+                {/* Approved Users Section */}
+                {approvedUsers.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      Approved Users ({approvedUsers.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {approvedUsers.map((user) => {
+                        const isProcessing = processing === user.address;
+                        return (
+                          <div
+                            key={user.address}
+                            className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="p-3 rounded-full bg-green-100">
+                                <CheckCircle className="w-5 h-5 text-green-600" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-gray-900">{user.address.slice(0,10)}...{user.address.slice(-8)}</span>
+                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    {roleLabel(user.role)}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-600 font-mono">{user.address}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="danger"
+                                onClick={() => handleRevoke(user.address)}
+                                disabled={isProcessing}
+                                className="text-sm"
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Revoke
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rejected Users Section */}
+                {rejectedUsers.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <XCircle className="w-4 h-4 text-red-600" />
+                      Rejected ({rejectedUsers.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {rejectedUsers.map((user) => (
+                        <div
+                          key={user.address}
+                          className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-full bg-red-100">
+                              <XCircle className="w-5 h-5 text-red-600" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-gray-900">{user.address.slice(0,10)}...{user.address.slice(-8)}</span>
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  Rejected
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600 font-mono">{user.address}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

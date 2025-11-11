@@ -70,6 +70,7 @@ contract SupplyChainTracker {
     event RoleRequested(address indexed account, Role indexed requestedRole);
     event RoleApproved(address indexed account, Role indexed role);
     event RoleRejected(address indexed account, Role indexed requestedRole);
+    event RoleRevoked(address indexed account, Role indexed previousRole);
 
     event AssetCreated(
         uint256 indexed assetId,
@@ -185,6 +186,19 @@ contract SupplyChainTracker {
         user.requestedRole = Role.None;
 
         emit RoleRejected(account, requested);
+    }
+
+    function revokeRole(address account) external onlyAdmin {
+        User storage user = _users[account];
+        if (!user.approved || user.role == Role.None) {
+            revert NotApproved();
+        }
+        Role previousRole = user.role;
+        user.role = Role.None;
+        user.approved = false;
+        user.requestedRole = Role.None;
+
+        emit RoleRevoked(account, previousRole);
     }
 
     function createRawAsset(
