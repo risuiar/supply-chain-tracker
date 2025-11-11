@@ -6,7 +6,12 @@ import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 
 export function Dashboard() {
-  const { user } = useWeb3();
+  const { user, isAdmin } = useWeb3();
+
+  // If admin, redirect to admin panel
+  if (isAdmin) {
+    return <Navigate to="/admin" />;
+  }
 
   if (!user || !user.approved) {
     return <Navigate to="/" />;
