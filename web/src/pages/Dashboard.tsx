@@ -1,17 +1,12 @@
-import { useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Package, Send, Clock } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 
 export function Dashboard() {
-  const { user, account } = useWeb3();
-
-  useEffect(() => {
-    console.log('[Dashboard] Current account:', account);
-    console.log('[Dashboard] Current user state:', user);
-  }, [user, account]);
+  const { user } = useWeb3();
 
   if (!user || !user.approved) {
     return <Navigate to="/" />;
