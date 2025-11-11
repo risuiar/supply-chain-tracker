@@ -1,88 +1,61 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Package, ArrowLeft } from 'lucide-react';
+import { Package, CheckCircle } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Textarea } from '../components/Textarea';
-import { Select } from '../components/Select';
-import { UserStatus, Token } from '../types';
 
 export function CreateToken() {
-  const { account, user, contract } = useWeb3();
+  const { user, tokenFactory } = useWeb3();
   const navigate = useNavigate();
-  const [name, setName] = useState('');
+  const [productName, setProductName] = useState('');
   const [totalSupply, setTotalSupply] = useState('');
-  const [features, setFeatures] = useState('');
-  const [parentId, setParentId] = useState('0');
-  const [availableTokens, setAvailableTokens] = useState<Token[]>([]);
+  const [metadataURI, setMetadataURI] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
-  useEffect(() => {
-    if (!contract || !account || user?.role === 'Producer') return;
-
-    const loadAvailableTokens = async () => {
-      try {
-        const tokenIds = await contract.getUserTokens(account);
-        const tokenPromises = tokenIds.map(async (id: bigint) => {
-          const token = await contract.getToken(id);
-          const balance = await contract.getTokenBalance(id, account);
-          return { token, balance };
-        });
-
-        const results = await Promise.all(tokenPromises);
-        const tokensWithBalance = results
-          .filter(r => r.balance > 0n)
-          .map(r => r.token);
-
-        setAvailableTokens(tokensWithBalance);
-      } catch (error) {
-        console.error('Error loading available tokens:', error);
-      }
-    };
-
-    loadAvailableTokens();
-  }, [contract, account, user]);
-
-  if (!user || user.status !== UserStatus.Approved) {
+  if (!user || !user.approved) {
     return <Navigate to="/" />;
   }
 
-  if (user.role !== 'Producer' && user.role !== 'Factory') {
+  // Only Producer (1) and Factory (2) can create tokens
+  if (user.role !== 1 && user.role !== 2) {
     return <Navigate to="/tokens" />;
   }
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!contract || !name || !totalSupply) {
-      alert('Please fill in all required fields');
+    if (!tokenFactory || !productName.trim() || !totalSupply) {
+      alert('Please enter product name and total supply');
       return;
     }
 
-    if (user.role === 'Factory' && parentId === '0') {
-      alert('Factory must select a parent token');
+    const supply = parseInt(totalSupply);
+    if (isNaN(supply) || supply <= 0) {
+      alert('Total supply must be a positive number');
       return;
     }
 
     setIsCreating(true);
     try {
-      const featuresObj = features.trim() ? JSON.parse(features) : {};
-      const featuresJson = JSON.stringify(featuresObj);
-
-      const tx = await contract.createToken(
-        name,
-        totalSupply,
-        featuresJson,
-        parentId
-      );
+      let tx;
+      
+      if (user.role === 1) {
+        // Producer creates raw material token
+        tx = await tokenFactory.createRawToken(productName, metadataURI || '', supply);
+      } else {
+        // Factory creates processed token (for now without parents - we'll add parent selection later)
+        tx = await tokenFactory.createProcessedToken(productName, metadataURI || '', supply, []);
+      }
+      
       await tx.wait();
-
+      alert('Token created successfully!');
       navigate('/tokens');
     } catch (error) {
       console.error('Error creating token:', error);
-      alert('Failed to create token. Please check your input and try again.');
+      alert('Failed to create token. Please try again.');
     } finally {
       setIsCreating(false);
     }
@@ -90,93 +63,77 @@ export function CreateToken() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <button
-          onClick={() => navigate('/tokens')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Tokens
-        </button>
-
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <Package className="w-6 h-6 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Create New Token</h1>
+              <div className="p-3 rounded-full bg-blue-100">
+                <Package className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Create Token</h1>
+                <p className="text-sm text-gray-600">Create a new token for your role as {user.role === 1 ? 'Producer' : 'Factory'}</p>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreate} className="space-y-6">
               <Input
-                label="Token Name"
-                placeholder="e.g., Organic Wheat Batch #123"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                label="Token Name *"
+                placeholder="Enter token name (e.g., Premium Coffee Beans)"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
                 required
               />
 
               <Input
-                label="Total Supply"
+                label="Total Supply *"
                 type="number"
-                placeholder="e.g., 1000"
+                placeholder="Enter total supply (e.g., 1000)"
                 value={totalSupply}
                 onChange={(e) => setTotalSupply(e.target.value)}
                 min="1"
                 required
               />
 
-              {user.role === 'Factory' && (
-                <div>
-                  <Select
-                    label="Parent Token (Raw Material)"
-                    value={parentId}
-                    onChange={(e) => setParentId(e.target.value)}
-                    options={[
-                      { value: '0', label: 'Select a parent token' },
-                      ...availableTokens.map(token => ({
-                        value: token.id.toString(),
-                        label: `#${token.id.toString()} - ${token.name}`
-                      }))
-                    ]}
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Select the raw material token this product is derived from
-                  </p>
-                </div>
-              )}
-
               <div>
                 <Textarea
                   label="Features (JSON)"
-                  placeholder='{"origin": "California", "organic": true, "harvestDate": "2025-01-15"}'
-                  value={features}
-                  onChange={(e) => setFeatures(e.target.value)}
-                  rows={6}
+                  placeholder={`Enter features as JSON, e.g.:
+{
+  "origin": "Colombia",
+  "quality": "Premium",
+  "certification": "Organic",
+  "harvest_date": "2024-03-15"
+}`}
+                  value={metadataURI}
+                  onChange={(e) => setMetadataURI(e.target.value)}
+                  rows={8}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Enter product features as JSON. Example: {`{"color": "brown", "weight": "50kg"}`}
+                  Optional: Add product characteristics in JSON format
                 </p>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-medium text-blue-900 mb-2">Token Information</h3>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Role: <strong>{user.role}</strong></li>
-                  {user.role === 'Producer' && (
-                    <li>• You are creating a raw material token</li>
-                  )}
-                  {user.role === 'Factory' && (
-                    <li>• You are creating a manufactured product from raw materials</li>
-                  )}
-                </ul>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <h3 className="font-medium text-blue-900 mb-1">Creating as {user.role === 1 ? 'Producer' : 'Factory'}</h3>
+                    <p className="text-sm text-blue-800">
+                      {user.role === 1 
+                        ? 'You can create raw material tokens and transfer them to factories.'
+                        : 'You can transform raw materials into processed goods and transfer to retailers.'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-3">
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => navigate('/tokens')}
+                  onClick={() => navigate('/dashboard')}
                   className="flex-1"
                 >
                   Cancel
@@ -186,6 +143,7 @@ export function CreateToken() {
                   disabled={isCreating}
                   className="flex-1"
                 >
+                  <Package className="w-4 h-4 mr-2" />
                   {isCreating ? 'Creating...' : 'Create Token'}
                 </Button>
               </div>

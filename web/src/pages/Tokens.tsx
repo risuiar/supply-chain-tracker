@@ -4,23 +4,36 @@ import { Package, Plus, ArrowRight } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
-import { Token, UserStatus } from '../types';
+
+type TokenData = {
+  id: bigint;
+  productName: string;
+  assetType: number;
+  metadataURI: string;
+  totalSupply: bigint;
+  creator: string;
+  currentHolder: string;
+  currentRole: number;
+  createdAt: bigint;
+  parentIds: bigint[];
+  exists: boolean;
+};
 
 export function Tokens() {
-  const { account, user, contract } = useWeb3();
-  const [tokens, setTokens] = useState<Token[]>([]);
+  const { account, user, tokenFactory } = useWeb3();
+  const [tokens, setTokens] = useState<TokenData[]>([]);
   const [balances, setBalances] = useState<Record<string, bigint>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!contract || !account) return;
+    if (!tokenFactory || !account) return;
 
     const loadTokens = async () => {
       try {
-        const tokenIds = await contract.getUserTokens(account);
+        const tokenIds = await tokenFactory.getUserTokens(account);
         const tokenPromises = tokenIds.map(async (id: bigint) => {
-          const token = await contract.getToken(id);
-          const balance = await contract.getTokenBalance(id, account);
+          const token = await tokenFactory.getToken(id);
+          const balance = await tokenFactory.balanceOf(id, account);
           return { token, balance };
         });
 
@@ -41,18 +54,22 @@ export function Tokens() {
     };
 
     loadTokens();
-  }, [contract, account]);
+  }, [tokenFactory, account]);
 
-  if (!user || user.status !== UserStatus.Approved) {
+  if (!user || !user.approved) {
     return <Navigate to="/" />;
   }
 
-  const parseFeatures = (features: string) => {
+  const parseMetadata = (uri: string) => {
     try {
-      return JSON.parse(features);
+      return uri ? JSON.parse(uri) : {};
     } catch {
       return {};
     }
+  };
+
+  const assetTypeLabel = (type: number) => {
+    return type === 0 ? 'Raw Material' : 'Processed Good';
   };
 
   return (
@@ -65,7 +82,7 @@ export function Tokens() {
               Manage your supply chain tokens
             </p>
           </div>
-          {(user.role === 'Producer' || user.role === 'Factory') && (
+          {(user.role === 1 || user.role === 2) && (
             <Link to="/tokens/create">
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
@@ -86,11 +103,11 @@ export function Tokens() {
               <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No tokens yet</h3>
               <p className="text-gray-600 mb-6">
-                {user.role === 'Producer' || user.role === 'Factory'
+                {user.role === 1 || user.role === 2
                   ? 'Create your first token to get started'
                   : 'You will receive tokens through transfers'}
               </p>
-              {(user.role === 'Producer' || user.role === 'Factory') && (
+              {(user.role === 1 || user.role === 2) && (
                 <Link to="/tokens/create">
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
@@ -103,7 +120,7 @@ export function Tokens() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tokens.map((token) => {
-              const features = parseFeatures(token.features);
+              const metadata = parseMetadata(token.metadataURI);
               const balance = balances[token.id.toString()] || 0n;
 
               return (
@@ -111,8 +128,9 @@ export function Tokens() {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-1">{token.name}</h3>
+                        <h3 className="font-semibold text-gray-900 mb-1">{token.productName}</h3>
                         <p className="text-xs text-gray-500">ID: #{token.id.toString()}</p>
+                        <p className="text-xs text-blue-600">{assetTypeLabel(token.assetType)}</p>
                       </div>
                       <Package className="w-5 h-5 text-blue-600" />
                     </div>
@@ -126,17 +144,17 @@ export function Tokens() {
                         </p>
                       </div>
 
-                      {token.parentId > 0n && (
+                      {token.parentIds.length > 0 && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span>Derived from Token #{token.parentId.toString()}</span>
+                          <span>Derived from {token.parentIds.length} parent token(s)</span>
                         </div>
                       )}
 
-                      {Object.keys(features).length > 0 && (
+                      {Object.keys(metadata).length > 0 && (
                         <div className="pt-3 border-t border-gray-200">
                           <p className="text-xs font-medium text-gray-700 mb-2">Features:</p>
                           <div className="space-y-1">
-                            {Object.entries(features).slice(0, 3).map(([key, value]) => (
+                            {Object.entries(metadata).slice(0, 3).map(([key, value]) => (
                               <p key={key} className="text-xs text-gray-600">
                                 <span className="font-medium">{key}:</span> {String(value)}
                               </p>
@@ -151,7 +169,7 @@ export function Tokens() {
                             View Details
                           </Button>
                         </Link>
-                        {balance > 0n && user.role !== 'Consumer' && (
+                        {balance > 0n && user.role !== 4 && (
                           <Link to={`/tokens/${token.id.toString()}/transfer`}>
                             <Button className="text-sm">
                               <ArrowRight className="w-4 h-4" />

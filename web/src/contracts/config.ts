@@ -1,7 +1,7 @@
 // Contract addresses
-export const ROLE_MANAGER_ADDRESS = import.meta.env.VITE_ROLE_MANAGER_ADDRESS || '0x610178dA211FEF7D417bC0e6FeD39F05609AD788';
-export const TOKEN_FACTORY_ADDRESS = import.meta.env.VITE_TOKEN_FACTORY_ADDRESS || '0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e';
-export const TRANSFER_MANAGER_ADDRESS = import.meta.env.VITE_TRANSFER_MANAGER_ADDRESS || '0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0';
+export const ROLE_MANAGER_ADDRESS = import.meta.env.VITE_ROLE_MANAGER_ADDRESS || '0x9A676e781A523b5d0C0e43731313A708CB607508';
+export const TOKEN_FACTORY_ADDRESS = import.meta.env.VITE_TOKEN_FACTORY_ADDRESS || '0x0B306BF915C4d645ff596e518fAf3F9669b97016';
+export const TRANSFER_MANAGER_ADDRESS = import.meta.env.VITE_TRANSFER_MANAGER_ADDRESS || '0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1';
 export const ADMIN_ADDRESS = import.meta.env.VITE_ADMIN_ADDRESS || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 // RoleManager ABI
@@ -24,12 +24,13 @@ export const ROLE_MANAGER_ABI = [
 // TokenFactory ABI
 export const TOKEN_FACTORY_ABI = [
   "function roleManager() view returns (address)",
-  "function createRawToken(string productName, string metadataURI) returns (uint256)",
-  "function createProcessedToken(string productName, string metadataURI, uint256[] parentIds) returns (uint256)",
-  "function getToken(uint256 tokenId) view returns (tuple(uint256 id, string productName, uint8 assetType, string metadataURI, address creator, address currentHolder, uint8 currentRole, uint64 createdAt, uint256[] parentIds, bool exists))",
+  "function createRawToken(string productName, string metadataURI, uint256 totalSupply) returns (uint256)",
+  "function createProcessedToken(string productName, string metadataURI, uint256 totalSupply, uint256[] parentIds) returns (uint256)",
+  "function getToken(uint256 tokenId) view returns (tuple(uint256 id, string productName, uint8 assetType, string metadataURI, uint256 totalSupply, address creator, address currentHolder, uint8 currentRole, uint64 createdAt, uint256[] parentIds, bool exists))",
   "function getUserTokens(address account) view returns (uint256[])",
   "function getTokenHolder(uint256 tokenId) view returns (address)",
-  "function transferToken(uint256 tokenId, address to)",
+  "function balanceOf(uint256 tokenId, address account) view returns (uint256)",
+  "function transferToken(uint256 tokenId, address from, address to, uint256 amount)",
   "event TokenCreated(uint256 indexed tokenId, string productName, uint8 assetType, address indexed creator, string metadataURI)",
   "event TokenTransferred(uint256 indexed tokenId, address indexed from, address indexed to)"
 ];
@@ -39,11 +40,11 @@ export const TRANSFER_MANAGER_ABI = [
   "function roleManager() view returns (address)",
   "function tokenFactory() view returns (address)",
   "function admin() view returns (address)",
-  "function requestTransfer(uint256 tokenId, address to) returns (uint256)",
+  "function requestTransfer(uint256 tokenId, address to, uint256 amount) returns (uint256)",
   "function approveTransfer(uint256 transferId)",
   "function rejectTransfer(uint256 transferId)",
-  "function getTransfer(uint256 transferId) view returns (tuple(uint256 id, uint256 tokenId, address from, address to, uint8 fromRole, uint8 toRole, uint8 status, uint64 requestedAt, uint64 resolvedAt))",
-  "function getTokenTransfers(uint256 tokenId) view returns (tuple(uint256 id, uint256 tokenId, address from, address to, uint8 fromRole, uint8 toRole, uint8 status, uint64 requestedAt, uint64 resolvedAt)[])",
+  "function getTransfer(uint256 transferId) view returns (tuple(uint256 id, uint256 tokenId, address from, address to, uint256 amount, uint8 fromRole, uint8 toRole, uint8 status, uint64 requestedAt, uint64 resolvedAt))",
+  "function getTokenTransfers(uint256 tokenId) view returns (tuple(uint256 id, uint256 tokenId, address from, address to, uint256 amount, uint8 fromRole, uint8 toRole, uint8 status, uint64 requestedAt, uint64 resolvedAt)[])",
   "function getPendingTransfer(uint256 tokenId) view returns (uint256)",
   "event TransferRequested(uint256 indexed tokenId, uint256 indexed transferId, address indexed to)",
   "event TransferResolved(uint256 indexed transferId, uint8 status)"

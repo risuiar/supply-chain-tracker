@@ -19,6 +19,7 @@ contract TransferManager {
         uint256 tokenId;
         address from;
         address to;
+        uint256 amount;
         RoleManager.Role fromRole;
         RoleManager.Role toRole;
         TransferStatus status;
@@ -67,18 +68,24 @@ contract TransferManager {
     /// @notice Request a token transfer to the next role in the supply chain
     /// @param tokenId ID of the token to transfer
     /// @param to Address of the recipient
+    /// @param amount Amount of tokens to transfer
     /// @return transferId The ID of the created transfer request
     function requestTransfer(
         uint256 tokenId,
-        address to
+        address to,
+        uint256 amount
     ) external returns (uint256 transferId) {
         if (to == address(0)) {
             revert InvalidAddress();
         }
 
-        // Check if token exists and sender is the holder
-        address currentHolder = tokenFactory.getTokenHolder(tokenId);
-        if (currentHolder != msg.sender) {
+        if (amount == 0) {
+            revert InvalidAddress(); // Reusing error for simplicity
+        }
+
+        // Check if sender has enough balance
+        uint256 balance = tokenFactory.balanceOf(tokenId, msg.sender);
+        if (balance < amount) {
             revert Unauthorized();
         }
 
@@ -113,6 +120,7 @@ contract TransferManager {
         transfer.tokenId = tokenId;
         transfer.from = msg.sender;
         transfer.to = to;
+        transfer.amount = amount;
         transfer.fromRole = senderRole;
         transfer.toRole = expectedNext;
         transfer.status = TransferStatus.Pending;
@@ -133,7 +141,7 @@ contract TransferManager {
         }
 
         // Execute the transfer in TokenFactory
-        tokenFactory.transferToken(transfer.tokenId, transfer.to);
+        tokenFactory.transferToken(transfer.tokenId, transfer.from, transfer.to, transfer.amount);
 
         transfer.status = TransferStatus.Approved;
         transfer.resolvedAt = uint64(block.timestamp);
