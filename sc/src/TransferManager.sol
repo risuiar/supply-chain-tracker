@@ -96,7 +96,7 @@ contract TransferManager {
 
         RoleManager.Role senderRole = roleManager.getUserRole(msg.sender);
         RoleManager.Role expectedNext = _nextRole[senderRole];
-        
+
         if (expectedNext == RoleManager.Role.None) {
             revert InvalidRoleTransition();
         }
@@ -141,7 +141,12 @@ contract TransferManager {
         }
 
         // Execute the transfer in TokenFactory
-        tokenFactory.transferToken(transfer.tokenId, transfer.from, transfer.to, transfer.amount);
+        tokenFactory.transferToken(
+            transfer.tokenId,
+            transfer.from,
+            transfer.to,
+            transfer.amount
+        );
 
         transfer.status = TransferStatus.Approved;
         transfer.resolvedAt = uint64(block.timestamp);
@@ -171,7 +176,9 @@ contract TransferManager {
     /// @notice Get transfer information
     /// @param transferId ID of the transfer
     /// @return Transfer struct containing all transfer data
-    function getTransfer(uint256 transferId) external view returns (Transfer memory) {
+    function getTransfer(
+        uint256 transferId
+    ) external view returns (Transfer memory) {
         return _transfers[transferId];
     }
 
@@ -192,7 +199,9 @@ contract TransferManager {
     /// @notice Get pending transfer ID for a token
     /// @param tokenId ID of the token
     /// @return Transfer ID if pending, 0 otherwise
-    function getPendingTransfer(uint256 tokenId) external view returns (uint256) {
+    function getPendingTransfer(
+        uint256 tokenId
+    ) external view returns (uint256) {
         return _pendingTransferByToken[tokenId];
     }
 }

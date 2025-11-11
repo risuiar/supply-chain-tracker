@@ -72,7 +72,11 @@ contract TokenFactory {
         string calldata productName,
         string calldata metadataURI,
         uint256 totalSupply
-    ) external onlyApproved(RoleManager.Role.Producer) returns (uint256 tokenId) {
+    )
+        external
+        onlyApproved(RoleManager.Role.Producer)
+        returns (uint256 tokenId)
+    {
         tokenId = _mintToken(
             productName,
             metadataURI,
@@ -93,7 +97,11 @@ contract TokenFactory {
         string calldata metadataURI,
         uint256 totalSupply,
         uint256[] calldata parentIds
-    ) external onlyApproved(RoleManager.Role.Factory) returns (uint256 tokenId) {
+    )
+        external
+        onlyApproved(RoleManager.Role.Factory)
+        returns (uint256 tokenId)
+    {
         if (parentIds.length == 0) {
             revert MissingParentAssets();
         }
@@ -112,7 +120,13 @@ contract TokenFactory {
             parentCopy[i] = parentIds[i];
         }
 
-        tokenId = _mintToken(productName, metadataURI, totalSupply, AssetType.ProcessedGood, parentCopy);
+        tokenId = _mintToken(
+            productName,
+            metadataURI,
+            totalSupply,
+            AssetType.ProcessedGood,
+            parentCopy
+        );
     }
 
     /// @notice Get token information
@@ -129,7 +143,9 @@ contract TokenFactory {
     /// @notice Get all tokens owned by an address
     /// @param account Address to query
     /// @return Array of token IDs owned by the account
-    function getUserTokens(address account) external view returns (uint256[] memory) {
+    function getUserTokens(
+        address account
+    ) external view returns (uint256[] memory) {
         return _userTokens[account];
     }
 
@@ -147,7 +163,10 @@ contract TokenFactory {
     /// @param tokenId ID of the token
     /// @param account Address to check balance for
     /// @return Balance of the account for this token
-    function balanceOf(uint256 tokenId, address account) external view returns (uint256) {
+    function balanceOf(
+        uint256 tokenId,
+        address account
+    ) external view returns (uint256) {
         if (!_tokens[tokenId].exists) {
             revert AssetDoesNotExist();
         }
@@ -159,7 +178,12 @@ contract TokenFactory {
     /// @param from Current owner address
     /// @param to New owner address
     /// @param amount Amount to transfer
-    function transferToken(uint256 tokenId, address from, address to, uint256 amount) external {
+    function transferToken(
+        uint256 tokenId,
+        address from,
+        address to,
+        uint256 amount
+    ) external {
         Token storage token = _tokens[tokenId];
         if (!token.exists) {
             revert AssetDoesNotExist();
@@ -182,7 +206,8 @@ contract TokenFactory {
         }
 
         // Add to recipient's token list if they don't have it yet
-        if (_balances[tokenId][to] == amount) { // First time receiving this token
+        if (_balances[tokenId][to] == amount) {
+            // First time receiving this token
             _userTokens[to].push(tokenId);
         }
 
@@ -224,14 +249,20 @@ contract TokenFactory {
         _userTokens[msg.sender].push(tokenId);
         _balances[tokenId][msg.sender] = totalSupply;
 
-        emit TokenCreated(tokenId, productName, assetType, msg.sender, metadataURI);
+        emit TokenCreated(
+            tokenId,
+            productName,
+            assetType,
+            msg.sender,
+            metadataURI
+        );
     }
 
     /// @notice Remove a token from a user's token list
     function _removeTokenFromUser(address user, uint256 tokenId) private {
         uint256[] storage tokens = _userTokens[user];
         uint256 length = tokens.length;
-        
+
         for (uint256 i; i < length; ++i) {
             if (tokens[i] == tokenId) {
                 tokens[i] = tokens[length - 1];

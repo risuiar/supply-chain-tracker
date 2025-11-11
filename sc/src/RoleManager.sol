@@ -107,7 +107,10 @@ contract RoleManager {
     /// @param account Address to check
     /// @param expectedRole Role to verify
     /// @return True if the account has the expected approved role
-    function hasRole(address account, Role expectedRole) external view returns (bool) {
+    function hasRole(
+        address account,
+        Role expectedRole
+    ) external view returns (bool) {
         User memory user = _users[account];
         return user.approved && user.role == expectedRole;
     }
