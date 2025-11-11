@@ -1,55 +1,55 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Users, CheckCircle, XCircle, Clock, UserX } from 'lucide-react';
+import { Users, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
-import { User, UserStatus } from '../types';
+
+type AdminUser = {
+  address: string;
+  approved: boolean;
+  role: number; // 0 None, 1 Producer, 2 Factory, 3 Retailer, 4 Consumer
+  requestedRole: number; // pending role if not approved yet
+};
 
 export function Admin() {
   const { isAdmin, contract } = useWeb3();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+
+  const roleLabel = (value: number) => {
+    return ['None', 'Producer', 'Factory', 'Retailer', 'Consumer'][value] || 'Unknown';
+  };
 
   const loadUsers = async () => {
     if (!contract) return;
 
     try {
-      const nextUserId = await contract.nextUserId();
-      const userPromises = [];
-
-      for (let i = 1n; i < nextUserId; i++) {
-        userPromises.push(
-          contract.getUserInfo(`0x${i.toString(16).padStart(40, '0')}`).catch(() => null)
-        );
+  const addresses = new Set<string>();
+  const events = await contract.queryFilter(contract.filters.RoleRequested());
+      for (const ev of events) {
+        const args = (ev as unknown as { args?: unknown[] }).args as unknown[] | undefined;
+        const addr = (args && typeof args[0] === 'string') ? (args[0] as string) : undefined;
+        if (addr) addresses.add(addr.toLowerCase());
       }
 
-      const allUsers: User[] = [];
-      const addresses = new Set<string>();
-
-      const events = await contract.queryFilter(contract.filters.UserRoleRequested());
-      for (const event of events) {
-        const address = event.args?.[0];
-        if (address && !addresses.has(address.toLowerCase())) {
-          addresses.add(address.toLowerCase());
-          try {
-            const userInfo = await contract.getUserInfo(address);
-            if (userInfo.id > 0n) {
-              allUsers.push({
-                id: userInfo.id,
-                userAddress: userInfo.userAddress,
-                role: userInfo.role,
-                status: Number(userInfo.status) as UserStatus,
-              });
-            }
-          } catch (error) {
-            console.error('Error loading user:', error);
-          }
+      const list: AdminUser[] = [];
+      for (const addr of addresses) {
+        try {
+          const info = await contract.getUser(addr);
+          list.push({
+            address: addr,
+            approved: info.approved,
+            role: Number(info.role),
+            requestedRole: Number(info.requestedRole),
+          });
+        } catch (e) {
+          console.error('getUser failed for', addr, e);
         }
       }
 
-      setUsers(allUsers);
+      setUsers(list);
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -59,57 +59,49 @@ export function Admin() {
 
   useEffect(() => {
     loadUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contract]);
 
   if (!isAdmin) {
     return <Navigate to="/" />;
   }
 
-  const handleChangeStatus = async (address: string, newStatus: UserStatus) => {
+  const handleApprove = async (address: string) => {
     if (!contract) return;
-
     setProcessing(address);
     try {
-      const tx = await contract.changeStatusUser(address, newStatus);
+      const tx = await contract.approveRole(address);
       await tx.wait();
       await loadUsers();
     } catch (error) {
-      console.error('Error changing user status:', error);
-      alert('Failed to change user status');
+      console.error('approveRole failed:', error);
+      alert('Failed to approve role');
     } finally {
       setProcessing(null);
     }
   };
 
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  const handleReject = async (address: string) => {
+    if (!contract) return;
+    setProcessing(address);
+    try {
+      const tx = await contract.rejectRole(address);
+      await tx.wait();
+      await loadUsers();
+    } catch (error) {
+      console.error('rejectRole failed:', error);
+      alert('Failed to reject role');
+    } finally {
+      setProcessing(null);
+    }
   };
 
+  // const formatAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`;
+
   const stats = [
-    {
-      label: 'Total Users',
-      value: users.length,
-      icon: Users,
-      color: 'blue',
-    },
-    {
-      label: 'Pending',
-      value: users.filter(u => u.status === UserStatus.Pending).length,
-      icon: Clock,
-      color: 'yellow',
-    },
-    {
-      label: 'Approved',
-      value: users.filter(u => u.status === UserStatus.Approved).length,
-      icon: CheckCircle,
-      color: 'green',
-    },
-    {
-      label: 'Rejected',
-      value: users.filter(u => u.status === UserStatus.Rejected).length,
-      icon: XCircle,
-      color: 'red',
-    },
+    { label: 'Total Requests', value: users.length, icon: Users, color: 'blue' },
+    { label: 'Pending', value: users.filter(u => !u.approved && u.requestedRole !== 0).length, icon: Clock, color: 'yellow' },
+    { label: 'Approved', value: users.filter(u => u.approved).length, icon: CheckCircle, color: 'green' },
   ];
 
   return (
@@ -167,95 +159,58 @@ export function Admin() {
             ) : (
               <div className="space-y-4">
                 {users.map((user) => {
-                  const isProcessing = processing === user.userAddress;
+                  const isProcessing = processing === user.address;
 
                   return (
                     <div
-                      key={user.userAddress}
+                      key={user.address}
                       className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
                     >
                       <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-full ${
-                          user.status === UserStatus.Approved
-                            ? 'bg-green-100'
-                            : user.status === UserStatus.Pending
-                            ? 'bg-yellow-100'
-                            : 'bg-red-100'
-                        }`}>
-                          {user.status === UserStatus.Approved ? (
+                        <div className={`p-3 rounded-full ${user.approved ? 'bg-green-100' : user.requestedRole !== 0 ? 'bg-yellow-100' : 'bg-gray-100'}`}>
+                          {user.approved ? (
                             <CheckCircle className="w-5 h-5 text-green-600" />
-                          ) : user.status === UserStatus.Pending ? (
-                            <Clock className="w-5 h-5 text-yellow-600" />
                           ) : (
-                            <XCircle className="w-5 h-5 text-red-600" />
+                            <Clock className="w-5 h-5 text-yellow-600" />
                           )}
                         </div>
 
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">
-                              User #{user.id.toString()}
-                            </span>
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                user.status === UserStatus.Approved
-                                  ? 'bg-green-100 text-green-800'
-                                  : user.status === UserStatus.Pending
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              {user.status === UserStatus.Approved
-                                ? 'Approved'
-                                : user.status === UserStatus.Pending
-                                ? 'Pending'
-                                : user.status === UserStatus.Rejected
-                                ? 'Rejected'
-                                : 'Canceled'}
+                            <span className="font-medium text-gray-900">{user.address}</span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                              {user.approved ? 'Approved' : 'Pending'}
                             </span>
                             <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {user.role}
+                              {user.approved ? roleLabel(user.role) : `Requested: ${roleLabel(user.requestedRole)}`}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 font-mono">
-                            {user.userAddress}
-                          </p>
+                          <p className="text-sm text-gray-600 font-mono">{user.address}</p>
                         </div>
                       </div>
 
                       <div className="flex gap-2">
-                        {user.status !== UserStatus.Approved && (
-                          <Button
-                            variant="success"
-                            onClick={() => handleChangeStatus(user.userAddress, UserStatus.Approved)}
-                            disabled={isProcessing}
-                            className="text-sm"
-                          >
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            Approve
-                          </Button>
-                        )}
-                        {user.status === UserStatus.Pending && (
-                          <Button
-                            variant="danger"
-                            onClick={() => handleChangeStatus(user.userAddress, UserStatus.Rejected)}
-                            disabled={isProcessing}
-                            className="text-sm"
-                          >
-                            <XCircle className="w-4 h-4 mr-1" />
-                            Reject
-                          </Button>
-                        )}
-                        {user.status === UserStatus.Approved && (
-                          <Button
-                            variant="danger"
-                            onClick={() => handleChangeStatus(user.userAddress, UserStatus.Canceled)}
-                            disabled={isProcessing}
-                            className="text-sm"
-                          >
-                            <UserX className="w-4 h-4 mr-1" />
-                            Revoke
-                          </Button>
+                        {!user.approved && user.requestedRole !== 0 && (
+                          <>
+                            <Button
+                              variant="success"
+                              onClick={() => handleApprove(user.address)}
+                              disabled={isProcessing}
+                              className="text-sm"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              variant="danger"
+                              onClick={() => handleReject(user.address)}
+                              disabled={isProcessing}
+                              className="text-sm"
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>

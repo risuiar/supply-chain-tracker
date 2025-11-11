@@ -3,6 +3,13 @@ export const ADMIN_ADDRESS = import.meta.env.VITE_ADMIN_ADDRESS || '0xf39Fd6e51a
 
 export const CONTRACT_ABI = [
   "function admin() view returns (address)",
+  // SupplyChainTracker (current contract) — added minimal functions needed now
+  "function requestRole(uint8 desiredRole)",
+  "function getUser(address account) view returns (tuple(uint8 role, bool approved, uint8 requestedRole))",
+  "event RoleRequested(address indexed account, uint8 indexed requestedRole)",
+  "event RoleApproved(address indexed account, uint8 indexed role)",
+  "event RoleRejected(address indexed account, uint8 indexed requestedRole)",
+  // Legacy ABI entries kept temporarily to avoid breaking other pages; will be removed during refactor
   "function requestUserRole(string role)",
   "function changeStatusUser(address userAddress, uint8 newStatus)",
   "function getUserInfo(address userAddress) view returns (tuple(uint256 id, address userAddress, string role, uint8 status))",

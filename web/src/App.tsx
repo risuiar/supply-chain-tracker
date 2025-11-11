@@ -10,20 +10,26 @@ import { TransferToken } from './pages/TransferToken';
 import { Transfers } from './pages/Transfers';
 import { Admin } from './pages/Admin';
 import { Profile } from './pages/Profile';
-import { UserStatus } from './types';
+// import { UserStatus } from './types';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useWeb3();
 
-  if (!user || user.status !== UserStatus.Approved) {
+  if (!user || !user.approved) {
     return <Navigate to="/" />;
   }
 
   return <>{children}</>;
 }
 
+function AdminOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { isAdmin } = useWeb3();
+  if (!isAdmin) return <Navigate to="/" />;
+  return <>{children}</>;
+}
+
 function AppRoutes() {
-  const { isConnected } = useWeb3();
+  const { isConnected, isAdmin } = useWeb3();
 
   return (
     <>
@@ -33,9 +39,15 @@ function AppRoutes() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
+            isAdmin ? (
+              <AdminOnlyRoute>
+                <Admin />
+              </AdminOnlyRoute>
+            ) : (
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            )
           }
         />
         <Route
@@ -81,9 +93,9 @@ function AppRoutes() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <AdminOnlyRoute>
               <Admin />
-            </ProtectedRoute>
+            </AdminOnlyRoute>
           }
         />
         <Route

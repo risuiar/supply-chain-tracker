@@ -5,20 +5,26 @@ import { useWeb3 } from '../contexts/Web3Context';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Select } from '../components/Select';
-import { UserStatus, UserRole } from '../types';
+import { UserRole } from '../types';
 
 export function Landing() {
-  const { account, isConnected, user, contract, connectWallet, refreshUser } = useWeb3();
+  const { isConnected, user, connectWallet, requestRole, refreshUser } = useWeb3();
   const [selectedRole, setSelectedRole] = useState<UserRole>('Producer');
   const [isRegistering, setIsRegistering] = useState(false);
 
   const handleRegister = async () => {
-    if (!contract) return;
-
     setIsRegistering(true);
     try {
-      const tx = await contract.requestUserRole(selectedRole);
-      await tx.wait();
+      // Map UI role string to enum Role (Solidity): 1 Producer, 2 Factory, 3 Retailer, 4 Consumer
+      const roleMap: Record<UserRole, number> = {
+        Producer: 1,
+        Factory: 2,
+        Retailer: 3,
+        Consumer: 4,
+        Admin: 0,
+      };
+      const desired = roleMap[selectedRole];
+      await requestRole(desired);
       await refreshUser();
     } catch (error) {
       console.error('Error registering:', error);
@@ -28,7 +34,8 @@ export function Landing() {
     }
   };
 
-  if (isConnected && user && user.status === UserStatus.Approved) {
+  // Approved user: approved == true and role != 0
+  if (isConnected && user && user.approved && user.role !== 0) {
     return <Navigate to="/dashboard" />;
   }
 
@@ -97,7 +104,7 @@ export function Landing() {
               </div>
             </CardContent>
           </Card>
-        ) : user.status === UserStatus.Pending ? (
+  ) : user && !user.approved && user.requestedRole !== 0 ? (
           <Card className="max-w-md mx-auto">
             <CardHeader>
               <h2 className="text-xl font-semibold text-gray-900">Pending Approval</h2>
@@ -116,7 +123,7 @@ export function Landing() {
               </div>
             </CardContent>
           </Card>
-        ) : user.status === UserStatus.Rejected ? (
+  ) : user && !user.approved && user.requestedRole === 0 && user.role === 0 ? (
           <Card className="max-w-md mx-auto">
             <CardHeader>
               <h2 className="text-xl font-semibold text-gray-900">Registration Rejected</h2>
