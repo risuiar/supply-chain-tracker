@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Shield, Wallet } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader } from '../components/Card';
@@ -26,9 +27,10 @@ export function Landing() {
       const desired = roleMap[selectedRole];
       await requestRole(desired);
       await refreshUser();
+      toast.success('Role request submitted! Waiting for admin approval...');
     } catch (error) {
       console.error('Error registering:', error);
-      alert('Failed to register. Please try again.');
+      toast.error('Failed to register. Please try again.');
     } finally {
       setIsRegistering(false);
     }

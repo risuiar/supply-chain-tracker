@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Package, CheckCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
@@ -28,17 +29,18 @@ export function CreateToken() {
     e.preventDefault();
 
     if (!tokenFactory || !productName.trim() || !totalSupply) {
-      alert('Please enter product name and total supply');
+      toast.error('Please enter product name and total supply');
       return;
     }
 
     const supply = parseInt(totalSupply);
     if (isNaN(supply) || supply <= 0) {
-      alert('Total supply must be a positive number');
+      toast.error('Total supply must be a positive number');
       return;
     }
 
     setIsCreating(true);
+    const toastId = toast.loading('Creating token...');
     try {
       let tx;
       
@@ -51,11 +53,11 @@ export function CreateToken() {
       }
       
       await tx.wait();
-      alert('Token created successfully!');
+      toast.success('Token created successfully!', { id: toastId });
       navigate('/tokens');
     } catch (error) {
       console.error('Error creating token:', error);
-      alert('Failed to create token. Please try again.');
+      toast.error('Failed to create token. Please try again.', { id: toastId });
     } finally {
       setIsCreating(false);
     }

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { BrowserProvider, Contract, Eip1193Provider } from 'ethers';
+import toast from 'react-hot-toast';
 import { 
   ROLE_MANAGER_ADDRESS, 
   ROLE_MANAGER_ABI,
@@ -107,7 +108,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   const connectWallet = async () => {
     if (!window.ethereum) {
-      alert('Please install MetaMask to use this application');
+      toast.error('Please install MetaMask to use this application');
       return;
     }
 

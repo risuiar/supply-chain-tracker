@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Users, CheckCircle, XCircle, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
@@ -73,9 +74,10 @@ export function Admin() {
       const tx = await roleManager.approveRole(address);
       await tx.wait();
       await loadUsers();
+      toast.success(`Role approved for ${address.slice(0, 10)}...`);
     } catch (error) {
       console.error('approveRole failed:', error);
-      alert('Failed to approve role');
+      toast.error('Failed to approve role');
     } finally {
       setProcessing(null);
     }
@@ -88,9 +90,10 @@ export function Admin() {
       const tx = await roleManager.rejectRole(address);
       await tx.wait();
       await loadUsers();
+      toast.success(`Role rejected for ${address.slice(0, 10)}...`);
     } catch (error) {
       console.error('rejectRole failed:', error);
-      alert('Failed to reject role');
+      toast.error('Failed to reject role');
     } finally {
       setProcessing(null);
     }
@@ -98,20 +101,42 @@ export function Admin() {
 
   const handleRevoke = async (address: string) => {
     if (!roleManager) return;
-    if (!confirm(`Are you sure you want to revoke access for ${address.slice(0,10)}...?`)) {
-      return;
-    }
-    setProcessing(address);
-    try {
-      const tx = await roleManager.revokeRole(address);
-      await tx.wait();
-      await loadUsers();
-    } catch (error) {
-      console.error('revokeRole failed:', error);
-      alert('Failed to revoke role');
-    } finally {
-      setProcessing(null);
-    }
+    
+    toast((t) => (
+      <div className="flex flex-col gap-2">
+        <p className="font-medium">Are you sure you want to revoke access for {address.slice(0, 10)}...?</p>
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              setProcessing(address);
+              try {
+                const tx = await roleManager.revokeRole(address);
+                await tx.wait();
+                await loadUsers();
+                toast.success(`Access revoked for ${address.slice(0, 10)}...`);
+              } catch (error) {
+                console.error('revokeRole failed:', error);
+                toast.error('Failed to revoke role');
+              } finally {
+                setProcessing(null);
+              }
+            }}
+            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Revoke
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 10000,
+    });
   };
 
   // const formatAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`;

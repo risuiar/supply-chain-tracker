@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, Package, AlertCircle, User } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
@@ -162,13 +163,13 @@ export function TransferToken() {
     e.preventDefault();
 
     if (!transferManager || !selectedRecipient || !amount || !id) {
-      alert('Please fill in all fields');
+      toast.error('Please fill in all fields');
       return;
     }
 
     const amountBigInt = BigInt(amount);
     if (amountBigInt <= 0n || amountBigInt > balance) {
-      alert('Invalid amount');
+      toast.error('Invalid amount');
       return;
     }
 
@@ -176,7 +177,7 @@ export function TransferToken() {
     try {
       const pendingTransferId = await transferManager.getPendingTransfer(id);
       if (pendingTransferId !== 0n) {
-        alert('This token already has a pending transfer. Please wait for it to be accepted or rejected before creating a new transfer.');
+        toast.error('This token already has a pending transfer. Please wait for it to be accepted or rejected before creating a new transfer.');
         return;
       }
     } catch (error) {
@@ -184,11 +185,12 @@ export function TransferToken() {
     }
 
     setIsTransferring(true);
+    const toastId = toast.loading('Sending transfer request...');
     try {
       const tx = await transferManager.requestTransfer(id, selectedRecipient, amountBigInt);
       await tx.wait();
 
-      alert('Transfer request sent successfully!');
+      toast.success('Transfer request sent successfully!', { id: toastId });
       navigate('/transfers');
     } catch (error: unknown) {
       console.error('Error requesting transfer:', error);
@@ -208,7 +210,7 @@ export function TransferToken() {
         }
       }
       
-      alert(`Failed to request transfer: ${errorMessage}`);
+      toast.error(`Failed: ${errorMessage}`, { id: toastId });
     } finally {
       setIsTransferring(false);
     }

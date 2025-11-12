@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Send, CheckCircle, XCircle, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
@@ -154,14 +155,15 @@ export function Transfers() {
     if (!transferManager) return;
 
     setProcessing(transferId.toString());
+    const toastId = toast.loading('Accepting transfer...');
     try {
       const tx = await transferManager.approveTransfer(transferId);
       await tx.wait();
-      alert('Transfer accepted successfully!');
+      toast.success('Transfer accepted successfully!', { id: toastId });
       await loadTransfers();
     } catch (error) {
       console.error('Error accepting transfer:', error);
-      alert('Failed to accept transfer');
+      toast.error('Failed to accept transfer', { id: toastId });
     } finally {
       setProcessing(null);
     }
@@ -171,14 +173,15 @@ export function Transfers() {
     if (!transferManager) return;
 
     setProcessing(transferId.toString());
+    const toastId = toast.loading('Rejecting transfer...');
     try {
       const tx = await transferManager.rejectTransfer(transferId);
       await tx.wait();
-      alert('Transfer rejected successfully!');
+      toast.success('Transfer rejected successfully!', { id: toastId });
       await loadTransfers();
     } catch (error) {
       console.error('Error rejecting transfer:', error);
-      alert('Failed to reject transfer');
+      toast.error('Failed to reject transfer', { id: toastId });
     } finally {
       setProcessing(null);
     }
