@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Package, Plus, ArrowRight } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
-import { Card, CardContent, CardHeader } from '../components/Card';
+import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
 
 type TokenData = {
@@ -62,14 +62,14 @@ export function Tokens() {
 
   const parseMetadata = (uri: string) => {
     try {
-      return uri ? JSON.parse(uri) : {};
+      if (!uri) return {};
+      const parsed = JSON.parse(uri);
+      // Si es un objeto, devolverlo; si es string, convertir a objeto
+      return typeof parsed === 'object' && parsed !== null ? parsed : { value: parsed };
     } catch {
-      return {};
+      // Si falla el parse, es un string plano
+      return uri ? { value: uri } : {};
     }
-  };
-
-  const assetTypeLabel = (type: number) => {
-    return type === 0 ? 'Raw Material' : 'Processed Good';
   };
 
   return (
@@ -124,55 +124,77 @@ export function Tokens() {
               const balance = balances[token.id.toString()] || 0n;
 
               return (
-                <Card key={token.id.toString()}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-1">{token.productName}</h3>
-                        <p className="text-xs text-gray-500">ID: #{token.id.toString()}</p>
-                        <p className="text-xs text-blue-600">{assetTypeLabel(token.assetType)}</p>
-                      </div>
-                      <Package className="w-5 h-5 text-blue-600" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm text-gray-600">Balance</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {balance.toString()} / {token.totalSupply.toString()}
-                        </p>
-                      </div>
-
-                      {token.parentIds.length > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span>Derived from {token.parentIds.length} parent token(s)</span>
+                <Card key={token.id.toString()} className="hover:shadow-lg transition-shadow duration-200">
+                  <CardContent className="p-5">
+                    <div className="space-y-4">
+                      {/* Token Name & Balance */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xl font-bold text-gray-900 mb-0.5 truncate">{token.productName}</h3>
+                          <p className="text-xs text-gray-500">Token #{token.id.toString()}</p>
                         </div>
-                      )}
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-3xl font-bold text-blue-600">
+                            {balance.toString()}
+                          </div>
+                          <div className="text-xs text-gray-500 font-medium">Balance</div>
+                        </div>
+                      </div>
 
+                      {/* Info Grid */}
+                      <div className="grid grid-cols-2 gap-3 py-3 border-y border-gray-200">
+                        <div>
+                          <div className="text-xs text-gray-600 mb-0.5">Total Supply</div>
+                          <div className="text-base font-semibold text-gray-900">
+                            {token.totalSupply.toString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-0.5">Created</div>
+                          <div className="text-base font-semibold text-gray-900">
+                            {new Date(Number(token.createdAt) * 1000).toLocaleDateString('en-GB')}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Creator */}
+                      <div>
+                        <div className="text-xs text-gray-600 mb-1">Creator</div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-mono text-gray-900">
+                            {token.creator.slice(0, 6)}...{token.creator.slice(-4)}
+                          </span>
+                          {token.creator.toLowerCase() === account?.toLowerCase() && (
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                              Owned by you
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Features */}
                       {Object.keys(metadata).length > 0 && (
-                        <div className="pt-3 border-t border-gray-200">
-                          <p className="text-xs font-medium text-gray-700 mb-2">Features:</p>
-                          <div className="space-y-1">
-                            {Object.entries(metadata).slice(0, 3).map(([key, value]) => (
-                              <p key={key} className="text-xs text-gray-600">
-                                <span className="font-medium">{key}:</span> {String(value)}
-                              </p>
-                            ))}
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">Features</div>
+                          <div className="text-sm text-gray-900 italic line-clamp-2">
+                            "{Object.entries(metadata).map(([, value]) => String(value)).join(', ')}"
                           </div>
                         </div>
                       )}
 
-                      <div className="flex gap-2 pt-3">
+                      {/* Actions */}
+                      <div className="flex gap-2 pt-1">
                         <Link to={`/tokens/${token.id.toString()}`} className="flex-1">
-                          <Button variant="secondary" className="w-full text-sm">
-                            View Details
+                          <Button variant="secondary" className="w-full text-sm py-2">
+                            <Package className="w-4 h-4" />
+                            Details
                           </Button>
                         </Link>
                         {balance > 0n && user.role !== 4 && (
-                          <Link to={`/tokens/${token.id.toString()}/transfer`}>
-                            <Button className="text-sm">
+                          <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
+                            <Button className="w-full text-sm py-2">
                               <ArrowRight className="w-4 h-4" />
+                              Transfer
                             </Button>
                           </Link>
                         )}
