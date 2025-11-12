@@ -2,43 +2,137 @@ import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Send, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
-import { Card, CardContent, CardHeader } from '../components/Card';
+import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
-import { Transfer, TransferStatus, UserStatus, Token } from '../types';
+
+type TransferData = {
+  id: bigint;
+  tokenId: bigint;
+  from: string;
+  to: string;
+  amount: bigint;
+  fromRole: number;
+  toRole: number;
+  status: number; // 0: None, 1: Pending, 2: Approved, 3: Rejected
+  requestedAt: bigint;
+  resolvedAt: bigint;
+};
+
+type TokenData = {
+  id: bigint;
+  productName: string;
+  assetType: number;
+  metadataURI: string;
+  totalSupply: bigint;
+  creator: string;
+  currentHolder: string;
+  currentRole: number;
+  createdAt: bigint;
+  parentIds: bigint[];
+  exists: boolean;
+};
 
 export function Transfers() {
-  const { account, user, contract } = useWeb3();
-  const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [tokens, setTokens] = useState<Record<string, Token>>({});
+  const { account, user, tokenFactory, transferManager } = useWeb3();
+  const [transfers, setTransfers] = useState<TransferData[]>([]);
+  const [tokens, setTokens] = useState<Record<string, TokenData>>({});
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
 
   const loadTransfers = async () => {
-    if (!contract || !account) return;
+    if (!tokenFactory || !transferManager || !account) {
+      console.log('Missing dependencies:', { tokenFactory: !!tokenFactory, transferManager: !!transferManager, account });
+      return;
+    }
 
     try {
-      const transferIds = await contract.getUserTransfers(account);
-      const transferPromises = transferIds.map(async (id: bigint) => {
-        const transfer = await contract.getTransfer(id);
-        return transfer;
-      });
+      console.log('Loading transfers for account:', account);
+      const allTransfers: TransferData[] = [];
+      const tokenMap: Record<string, TokenData> = {};
+      const transferIds = new Set<string>();
 
-      const loadedTransfers = await Promise.all(transferPromises);
-      setTransfers(loadedTransfers);
+      // Get all TransferRequested events
+      console.log('Creating filter for TransferRequested events...');
+      const filter = transferManager.filters.TransferRequested();
+      console.log('Filter created:', filter);
+      
+      console.log('Querying events...');
+      const events = await transferManager.queryFilter(filter);
+      console.log(`Found ${events.length} TransferRequested events`, events);
+      
+      for (const event of events) {
+        if ('args' in event) {
+          const tokenId = event.args[0];
+          const transferId = event.args[1];
+          
+          const transferIdStr = transferId.toString();
+          console.log(`Processing transfer #${transferIdStr} for token #${tokenId}`);
+          
+          // Skip if already processed
+          if (transferIds.has(transferIdStr)) {
+            console.log(`Transfer #${transferIdStr} already processed, skipping`);
+            continue;
+          }
+          
+          try {
+            const transfer = await transferManager.getTransfer(transferId);
+            console.log(`Transfer #${transferIdStr} details:`, {
+              from: transfer.from,
+              to: transfer.to,
+              status: transfer.status,
+              amount: transfer.amount.toString()
+            });
+            
+            // Only include transfers that involve this user (from OR to)
+            const fromMatch = transfer.from.toLowerCase() === account.toLowerCase();
+            const toMatch = transfer.to.toLowerCase() === account.toLowerCase();
+            
+            console.log(`Match check for ${account}:`, { fromMatch, toMatch });
+            
+            if (fromMatch || toMatch) {
+              // Normalize the transfer object with proper types
+              const normalizedTransfer: TransferData = {
+                id: transfer.id,
+                tokenId: transfer.tokenId,
+                from: transfer.from,
+                to: transfer.to,
+                amount: transfer.amount,
+                fromRole: Number(transfer.fromRole),
+                toRole: Number(transfer.toRole),
+                status: Number(transfer.status),
+                requestedAt: transfer.requestedAt,
+                resolvedAt: transfer.resolvedAt
+              };
+              allTransfers.push(normalizedTransfer);
+              transferIds.add(transferIdStr);
+              console.log(`Added transfer #${transferIdStr} to list`);
+              
+              // Get token info if not already loaded
+              const tokenIdStr = tokenId.toString();
+              if (!tokenMap[tokenIdStr]) {
+                try {
+                  const token = await tokenFactory.getToken(tokenId);
+                  tokenMap[tokenIdStr] = token;
+                  console.log(`Loaded token #${tokenIdStr}:`, token.productName);
+                } catch (err) {
+                  console.error(`Error loading token ${tokenIdStr}:`, err);
+                }
+              }
+            } else {
+              console.log(`Transfer #${transferIdStr} doesn't involve this user, skipping`);
+            }
+          } catch (err) {
+            console.error(`Error loading transfer ${transferIdStr}:`, err);
+          }
+        }
+      }
 
-      const tokenIds = new Set<string>();
-      loadedTransfers.forEach(t => tokenIds.add(t.tokenId.toString()));
+      console.log(`Total transfers loaded: ${allTransfers.length}`);
 
-      const tokenPromises = Array.from(tokenIds).map(async (id) => {
-        const token = await contract.getToken(id);
-        return { id, token };
-      });
+      // Sort by most recent first
+      allTransfers.sort((a, b) => Number(b.requestedAt) - Number(a.requestedAt));
 
-      const tokenResults = await Promise.all(tokenPromises);
-      const tokenMap: Record<string, Token> = {};
-      tokenResults.forEach(({ id, token }) => {
-        tokenMap[id] = token;
-      });
+      setTransfers(allTransfers);
       setTokens(tokenMap);
     } catch (error) {
       console.error('Error loading transfers:', error);
@@ -49,19 +143,21 @@ export function Transfers() {
 
   useEffect(() => {
     loadTransfers();
-  }, [contract, account]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenFactory, transferManager, account]);
 
-  if (!user || user.status !== UserStatus.Approved) {
+  if (!user || !user.approved) {
     return <Navigate to="/" />;
   }
 
   const handleAccept = async (transferId: bigint) => {
-    if (!contract) return;
+    if (!transferManager) return;
 
     setProcessing(transferId.toString());
     try {
-      const tx = await contract.acceptTransfer(transferId);
+      const tx = await transferManager.approveTransfer(transferId);
       await tx.wait();
+      alert('Transfer accepted successfully!');
       await loadTransfers();
     } catch (error) {
       console.error('Error accepting transfer:', error);
@@ -72,12 +168,13 @@ export function Transfers() {
   };
 
   const handleReject = async (transferId: bigint) => {
-    if (!contract) return;
+    if (!transferManager) return;
 
     setProcessing(transferId.toString());
     try {
-      const tx = await contract.rejectTransfer(transferId);
+      const tx = await transferManager.rejectTransfer(transferId);
       await tx.wait();
+      alert('Transfer rejected successfully!');
       await loadTransfers();
     } catch (error) {
       console.error('Error rejecting transfer:', error);
@@ -88,25 +185,25 @@ export function Transfers() {
   };
 
   const pendingIncoming = transfers.filter(
-    t => t.to.toLowerCase() === account?.toLowerCase() && t.status === TransferStatus.Pending
+    t => account && t.to.toLowerCase() === account.toLowerCase() && t.status === 1
   );
 
   const pendingOutgoing = transfers.filter(
-    t => t.from.toLowerCase() === account?.toLowerCase() && t.status === TransferStatus.Pending
+    t => account && t.from.toLowerCase() === account.toLowerCase() && t.status === 1
   );
 
   const completed = transfers.filter(
-    t => t.status !== TransferStatus.Pending
+    t => t.status === 2 || t.status === 3
   );
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const TransferCard = ({ transfer, showActions = false }: { transfer: Transfer; showActions?: boolean }) => {
+  const TransferCard = ({ transfer, showActions = false }: { transfer: TransferData; showActions?: boolean }) => {
     const token = tokens[transfer.tokenId.toString()];
     const isProcessing = processing === transfer.id.toString();
-    const date = new Date(Number(transfer.dateCreated) * 1000);
+    const date = new Date(Number(transfer.requestedAt) * 1000);
 
     return (
       <Card>
@@ -115,23 +212,27 @@ export function Transfers() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  transfer.status === TransferStatus.Accepted
+                  transfer.status === 2
                     ? 'bg-green-100 text-green-800'
-                    : transfer.status === TransferStatus.Pending
+                    : transfer.status === 1
                     ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
+                    : transfer.status === 3
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {transfer.status === TransferStatus.Accepted
-                    ? 'Accepted'
-                    : transfer.status === TransferStatus.Pending
+                  {transfer.status === 2
+                    ? 'Approved'
+                    : transfer.status === 1
                     ? 'Pending'
-                    : 'Rejected'}
+                    : transfer.status === 3
+                    ? 'Rejected'
+                    : 'Unknown'}
                 </span>
                 <span className="text-sm text-gray-500">#{transfer.id.toString()}</span>
               </div>
 
               <h3 className="font-medium text-gray-900 mb-1">
-                {token?.name || `Token #${transfer.tokenId.toString()}`}
+                {token?.productName || `Token #${transfer.tokenId.toString()}`}
               </h3>
 
               <div className="space-y-1 text-sm text-gray-600">

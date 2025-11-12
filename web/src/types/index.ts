@@ -6,9 +6,10 @@ export enum UserStatus {
 }
 
 export enum TransferStatus {
-  Pending = 0,
-  Accepted = 1,
-  Rejected = 2,
+  None = 0,
+  Pending = 1,
+  Approved = 2,
+  Rejected = 3,
 }
 
 export type UserRole = 'Admin' | 'Producer' | 'Factory' | 'Retailer' | 'Consumer';

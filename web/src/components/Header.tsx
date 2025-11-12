@@ -43,7 +43,7 @@ export function Header() {
 
                   <Link
                     to="/transfers"
-                    className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                    className="flex items-center gap-2 text-gray-600 hover:text-gray-900 relative"
                   >
                     <Send className="w-4 h-4" />
                     <span>Transfers</span>
