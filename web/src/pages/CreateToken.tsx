@@ -84,24 +84,24 @@ export function CreateToken() {
     e.preventDefault();
 
     if (!tokenFactory || !productName.trim() || !totalSupply) {
-      toast.error('Please enter product name and total supply');
+      toast.error('Por favor ingresa el nombre del producto y la cantidad total');
       return;
     }
 
     const supply = parseInt(totalSupply);
     if (isNaN(supply) || supply <= 0) {
-      toast.error('Total supply must be a positive number');
+      toast.error('La cantidad total debe ser un número positivo');
       return;
     }
 
     // Factory must select at least one parent token
     if (user.role === 2 && selectedParents.length === 0) {
-      toast.error('Please select at least one raw material to process');
+      toast.error('Por favor selecciona al menos una materia prima para procesar');
       return;
     }
 
     setIsCreating(true);
-    const toastId = toast.loading('Creating token...');
+    const toastId = toast.loading('Creando producto...');
     try {
       let tx;
 
@@ -120,11 +120,11 @@ export function CreateToken() {
       }
 
       await tx.wait();
-      toast.success('Token created successfully!', { id: toastId });
+      toast.success('¡Producto creado exitosamente!', { id: toastId });
       navigate('/tokens');
     } catch (error) {
       console.error('Error creating token:', error);
-      toast.error('Failed to create token. Please try again.', { id: toastId });
+      toast.error('Error al crear producto. Por favor intenta de nuevo.', { id: toastId });
     } finally {
       setIsCreating(false);
     }

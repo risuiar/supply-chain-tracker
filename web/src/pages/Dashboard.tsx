@@ -62,28 +62,31 @@ export function Dashboard() {
   }
 
   const roleName = (r: number) =>
-    ['None', 'Producer', 'Factory', 'Retailer', 'Consumer'][r] || 'Unknown';
+    ['Ninguno', 'Productor', 'Fábrica', 'Minorista', 'Consumidor'][r] || 'Desconocido';
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Supply Chain Tracker</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Bienvenido a Trazabilidad de Productos
+          </h1>
           <p className="text-gray-600">
-            Manage your tokens and transfers in the decentralized supply chain system
+            Gestiona tus productos y transferencias en el sistema descentralizado de cadena de
+            suministro
           </p>
         </div>
 
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Your Role: {roleName(user.role)}
+            Tu Rol: {roleName(user.role)}
           </h2>
           <p className="text-gray-600">
-            {user.role === 1 && 'Create raw material tokens and transfer to factories'}
+            {user.role === 1 && 'Crea tokens de materias primas y transfiere a fábricas'}
             {user.role === 2 &&
-              'Transform raw materials into processed goods and transfer to retailers'}
-            {user.role === 3 && 'Distribute products to consumers'}
-            {user.role === 4 && 'Track your received products'}
+              'Transforma materias primas en productos procesados y transfiere a minoristas'}
+            {user.role === 3 && 'Distribuye productos a consumidores'}
+            {user.role === 4 && 'Rastrea los productos que recibes'}
           </p>
         </div>
 
@@ -99,7 +102,7 @@ export function Dashboard() {
                     <p className="text-2xl font-bold text-gray-900">
                       {loading ? '...' : tokenCount}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">My Tokens</p>
+                    <p className="text-xs text-gray-500 mt-1">Mis Productos</p>
                   </div>
                 </div>
               </CardContent>
@@ -115,8 +118,8 @@ export function Dashboard() {
                       <Plus className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Create Token</p>
-                      <p className="text-xs text-gray-500 mt-1">Create new token</p>
+                      <p className="text-sm text-gray-600">Crear Producto</p>
+                      <p className="text-xs text-gray-500 mt-1">Crear nuevo producto</p>
                     </div>
                   </div>
                 </CardContent>
@@ -139,12 +142,12 @@ export function Dashboard() {
                     <p className="text-2xl font-bold text-gray-900">
                       {loading ? '...' : pendingIncoming}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">Pending incoming</p>
+                    <p className="text-xs text-gray-500 mt-1">Transferencias pendientes</p>
                   </div>
                 </div>
                 {pendingIncoming > 0 && (
                   <div className="mt-2 px-2 py-1 bg-red-50 border border-red-200 rounded text-xs text-red-800 font-medium">
-                    Action required!
+                    ¡Acción requerida!
                   </div>
                 )}
               </CardContent>
@@ -159,8 +162,8 @@ export function Dashboard() {
                     <User className="w-6 h-6 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Profile</p>
-                    <p className="text-xs text-gray-500 mt-1">View profile</p>
+                    <p className="text-sm text-gray-600">Perfil</p>
+                    <p className="text-xs text-gray-500 mt-1">Ver perfil</p>
                   </div>
                 </div>
               </CardContent>
@@ -169,12 +172,12 @@ export function Dashboard() {
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Next Steps</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Próximos Pasos</h3>
           <ul className="space-y-2 text-gray-600">
-            <li>• View your current tokens</li>
-            {(user.role === 1 || user.role === 2) && <li>• Create new tokens (if applicable)</li>}
-            <li>• Manage pending transfers</li>
-            <li>• Track supply chain history</li>
+            <li>• Ver tus productos actuales</li>
+            {(user.role === 1 || user.role === 2) && <li>• Crear nuevos productos (si aplica)</li>}
+            <li>• Gestionar transferencias pendientes</li>
+            <li>• Rastrear historial de la cadena de suministro</li>
           </ul>
         </div>
       </div>

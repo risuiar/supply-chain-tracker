@@ -37,6 +37,10 @@ interface Web3ContextType {
   disconnectWallet: () => void;
   refreshUser: () => Promise<void>;
   requestRole: (desiredRole: number) => Promise<void>;
+  cancelRequest: () => Promise<void>;
+  approveRole: (userAccount: string) => Promise<void>;
+  rejectRole: (userAccount: string) => Promise<void>;
+  revokeRole: (userAccount: string) => Promise<void>;
 }
 
 const Web3Context = createContext<Web3ContextType | undefined>(undefined);
@@ -50,6 +54,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   const [roleManager, setRoleManager] = useState<Contract | null>(null);
   const [tokenFactory, setTokenFactory] = useState<Contract | null>(null);
   const [transferManager, setTransferManager] = useState<Contract | null>(null);
+  const [manualDisconnect, setManualDisconnect] = useState(false);
 
   const setupProvider = async (ethereum: Eip1193Provider) => {
     const browserProvider = new BrowserProvider(ethereum);
@@ -73,19 +78,20 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   const loadUserInfo = async (address: string, roleManagerContract: Contract) => {
     try {
-      const rawStruct = (await roleManagerContract.getUser(address)) as unknown as {
-        role: bigint;
-        approved: boolean;
-        requestedRole: bigint;
-      };
-
-      const chainUser: ChainUser = {
-        role: Number(rawStruct.role),
-        approved: rawStruct.approved,
-        requestedRole: Number(rawStruct.requestedRole),
-      };
-
-      const adminAddress: string = await roleManagerContract.admin();
+      // Verificar si es admin primero
+      let adminAddress: string;
+      try {
+        adminAddress = await roleManagerContract.admin();
+      } catch (adminError) {
+        // Si falla admin(), el contrato no está desplegado o la dirección es incorrecta
+        console.error('Contract not deployed or incorrect address:', adminError);
+        toast.error(
+          'Error: El contrato no está desplegado en esta red. Verifica la configuración.'
+        );
+        setUser(null);
+        setIsAdmin(false);
+        return;
+      }
 
       const addrLower = address.toLowerCase();
       const chainAdminLower = adminAddress?.toLowerCase?.() ?? '';
@@ -94,15 +100,36 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         addrLower === chainAdminLower || (!!envAdminLower && addrLower === envAdminLower);
       setIsAdmin(adminCheck);
 
-      if (!chainUser.approved && chainUser.requestedRole === 0 && chainUser.role === 0) {
-        setUser(null);
-      } else {
-        const uiUser = {
-          role: chainUser.role,
-          approved: chainUser.approved,
-          requestedRole: chainUser.requestedRole,
+      // Intentar obtener información del usuario
+      try {
+        const rawStruct = (await roleManagerContract.getUser(address)) as unknown as {
+          role: bigint;
+          approved: boolean;
+          requestedRole: bigint;
         };
-        setUser(uiUser);
+
+        const chainUser: ChainUser = {
+          role: Number(rawStruct.role),
+          approved: rawStruct.approved,
+          requestedRole: Number(rawStruct.requestedRole),
+        };
+
+        // Si el usuario no tiene ningún dato relevante, establecer como null
+        if (!chainUser.approved && chainUser.requestedRole === 0 && chainUser.role === 0) {
+          setUser(null);
+        } else {
+          const uiUser = {
+            role: chainUser.role,
+            approved: chainUser.approved,
+            requestedRole: chainUser.requestedRole,
+          };
+          setUser(uiUser);
+        }
+      } catch (userError) {
+        // Si falla getUser (ej: usuario nuevo sin registro), establecer null
+        // pero no fallar completamente - el usuario puede solicitar un rol
+        console.log('User not registered yet, setting to null');
+        setUser(null);
       }
     } catch (error) {
       console.error('Error loading user info:', error);
@@ -113,7 +140,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   const connectWallet = async () => {
     if (!window.ethereum) {
-      toast.error('Please install MetaMask to use this application');
+      toast.error('Por favor instala MetaMask para usar esta aplicación');
       return;
     }
 
@@ -125,6 +152,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       const address = accounts[0];
       setAccount(address);
       setIsConnected(true);
+      setManualDisconnect(false); // Reset flag al conectar
 
       const { roleManagerContract } = await setupProvider(window.ethereum);
       await loadUserInfo(address, roleManagerContract);
@@ -134,6 +162,10 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   };
 
   const disconnectWallet = () => {
+    // Marcar como desconexión manual para evitar reconexión automática
+    setManualDisconnect(true);
+
+    // Limpiar todo el estado
     setAccount(null);
     setIsConnected(false);
     setIsAdmin(false);
@@ -156,8 +188,61 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       const tx = await roleManager.requestRole(desiredRole);
       await tx.wait();
       await refreshUser();
+      toast.success('Solicitud de rol enviada correctamente');
     } catch (e) {
       console.error('requestRole failed', e);
+      throw e;
+    }
+  };
+
+  const cancelRequest = async () => {
+    if (!roleManager || !account) return;
+    try {
+      const tx = await roleManager.cancelRequest();
+      await tx.wait();
+      await refreshUser();
+      toast.success('Solicitud cancelada correctamente');
+    } catch (e) {
+      console.error('cancelRequest failed', e);
+      throw e;
+    }
+  };
+
+  const approveRole = async (userAccount: string) => {
+    if (!roleManager || !account) return;
+    try {
+      const tx = await roleManager.approveRole(userAccount);
+      await tx.wait();
+      await refreshUser();
+      toast.success('Rol aprobado correctamente');
+    } catch (e) {
+      console.error('approveRole failed', e);
+      throw e;
+    }
+  };
+
+  const rejectRole = async (userAccount: string) => {
+    if (!roleManager || !account) return;
+    try {
+      const tx = await roleManager.rejectRole(userAccount);
+      await tx.wait();
+      await refreshUser();
+      toast.success('Solicitud rechazada');
+    } catch (e) {
+      console.error('rejectRole failed', e);
+      throw e;
+    }
+  };
+
+  const revokeRole = async (userAccount: string) => {
+    if (!roleManager || !account) return;
+    try {
+      const tx = await roleManager.revokeRole(userAccount);
+      await tx.wait();
+      await refreshUser();
+      toast.success('Rol revocado correctamente');
+    } catch (e) {
+      console.error('revokeRole failed', e);
       throw e;
     }
   };
@@ -167,6 +252,9 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
     if (window.ethereum) {
       const handleAccountsChanged = (accounts: string[]) => {
+        // Solo procesar si no es una desconexión manual
+        if (manualDisconnect) return;
+
         if (accounts.length === 0) {
           disconnectWallet();
         } else if (account && accounts[0] !== account) {
@@ -191,11 +279,51 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         window.ethereum?.removeListener('chainChanged', handleChainChanged);
       };
     }
-  }, [account]);
+  }, [account, manualDisconnect]);
+
+  // Event listeners para actualizar datos en tiempo real
+  useEffect(() => {
+    if (!roleManager || !account) return;
+
+    const handleRoleRequested = () => {
+      refreshUser();
+    };
+
+    const handleRoleApproved = (userAddress: string) => {
+      if (userAddress.toLowerCase() === account.toLowerCase()) {
+        refreshUser();
+      }
+    };
+
+    const handleRoleRejected = (userAddress: string) => {
+      if (userAddress.toLowerCase() === account.toLowerCase()) {
+        refreshUser();
+      }
+    };
+
+    const handleRoleRevoked = (userAddress: string) => {
+      if (userAddress.toLowerCase() === account.toLowerCase()) {
+        refreshUser();
+      }
+    };
+
+    roleManager.on('RoleRequested', handleRoleRequested);
+    roleManager.on('RoleApproved', handleRoleApproved);
+    roleManager.on('RoleRejected', handleRoleRejected);
+    roleManager.on('RoleRevoked', handleRoleRevoked);
+
+    return () => {
+      roleManager.off('RoleRequested', handleRoleRequested);
+      roleManager.off('RoleApproved', handleRoleApproved);
+      roleManager.off('RoleRejected', handleRoleRejected);
+      roleManager.off('RoleRevoked', handleRoleRevoked);
+    };
+  }, [roleManager, account]);
 
   useEffect(() => {
     let interval: number | undefined;
-    if (window.ethereum && account && isConnected) {
+    // Solo hacer polling si NO es una desconexión manual
+    if (window.ethereum && account && isConnected && !manualDisconnect) {
       const eth = window.ethereum as Eip1193Provider;
       const check = async () => {
         try {
@@ -209,7 +337,8 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             const { roleManagerContract } = await setupProvider(eth);
             await loadUserInfo(current, roleManagerContract);
           }
-          if (!current && account) {
+          if (!current && account && !manualDisconnect) {
+            // Solo desconectar si no fue manual
             disconnectWallet();
           }
         } catch {
@@ -221,7 +350,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     return () => {
       if (interval) window.clearInterval(interval);
     };
-  }, [account, isConnected]);
+  }, [account, isConnected, manualDisconnect]);
 
   return (
     <Web3Context.Provider
@@ -238,6 +367,10 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         disconnectWallet,
         refreshUser,
         requestRole,
+        cancelRequest,
+        approveRole,
+        rejectRole,
+        revokeRole,
       }}
     >
       {children}

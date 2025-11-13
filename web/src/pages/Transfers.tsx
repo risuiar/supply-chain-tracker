@@ -132,15 +132,15 @@ export function Transfers() {
     if (!transferManager) return;
 
     setProcessing(transferId.toString());
-    const toastId = toast.loading('Accepting transfer...');
+    const toastId = toast.loading('Aceptando transferencia...');
     try {
       const tx = await transferManager.approveTransfer(transferId);
       await tx.wait();
-      toast.success('Transfer accepted successfully!', { id: toastId });
+      toast.success('¡Transferencia aceptada exitosamente!', { id: toastId });
       await loadTransfers();
     } catch (error) {
       console.error('Error accepting transfer:', error);
-      toast.error('Failed to accept transfer', { id: toastId });
+      toast.error('Error al aceptar transferencia', { id: toastId });
     } finally {
       setProcessing(null);
     }
@@ -150,15 +150,15 @@ export function Transfers() {
     if (!transferManager) return;
 
     setProcessing(transferId.toString());
-    const toastId = toast.loading('Rejecting transfer...');
+    const toastId = toast.loading('Rechazando transferencia...');
     try {
       const tx = await transferManager.rejectTransfer(transferId);
       await tx.wait();
-      toast.success('Transfer rejected successfully!', { id: toastId });
+      toast.success('¡Transferencia rechazada exitosamente!', { id: toastId });
       await loadTransfers();
     } catch (error) {
       console.error('Error rejecting transfer:', error);
-      toast.error('Failed to reject transfer', { id: toastId });
+      toast.error('Error al rechazar transferencia', { id: toastId });
     } finally {
       setProcessing(null);
     }

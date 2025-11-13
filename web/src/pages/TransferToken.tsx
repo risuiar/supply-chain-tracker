@@ -163,13 +163,13 @@ export function TransferToken() {
     e.preventDefault();
 
     if (!transferManager || !selectedRecipient || !amount || !id) {
-      toast.error('Please fill in all fields');
+      toast.error('Por favor completa todos los campos');
       return;
     }
 
     const amountBigInt = BigInt(amount);
     if (amountBigInt <= 0n || amountBigInt > balance) {
-      toast.error('Invalid amount');
+      toast.error('Cantidad inválida');
       return;
     }
 
@@ -178,7 +178,7 @@ export function TransferToken() {
       const pendingTransferId = await transferManager.getPendingTransfer(id);
       if (pendingTransferId !== 0n) {
         toast.error(
-          'This token already has a pending transfer. Please wait for it to be accepted or rejected before creating a new transfer.'
+          'Este producto ya tiene una transferencia pendiente. Por favor espera a que sea aceptada o rechazada antes de crear una nueva.'
         );
         return;
       }
@@ -187,12 +187,12 @@ export function TransferToken() {
     }
 
     setIsTransferring(true);
-    const toastId = toast.loading('Sending transfer request...');
+    const toastId = toast.loading('Enviando solicitud de transferencia...');
     try {
       const tx = await transferManager.requestTransfer(id, selectedRecipient, amountBigInt);
       await tx.wait();
 
-      toast.success('Transfer request sent successfully!', { id: toastId });
+      toast.success('¡Solicitud de transferencia enviada exitosamente!', { id: toastId });
       navigate('/transfers');
     } catch (error: unknown) {
       console.error('Error requesting transfer:', error);
@@ -216,7 +216,7 @@ export function TransferToken() {
         }
       }
 
-      toast.error(`Failed: ${errorMessage}`, { id: toastId });
+      toast.error(`Error: ${errorMessage}`, { id: toastId });
     } finally {
       setIsTransferring(false);
     }

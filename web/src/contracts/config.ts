@@ -1,7 +1,7 @@
 // Contract addresses (from latest deployment)
-export const ROLE_MANAGER_ADDRESS = '0x59b670e9fA9D0A427751Af201D676719a970857b';
-export const TOKEN_FACTORY_ADDRESS = '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1';
-export const TRANSFER_MANAGER_ADDRESS = '0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44';
+export const ROLE_MANAGER_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+export const TOKEN_FACTORY_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
+export const TRANSFER_MANAGER_ADDRESS = '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0';
 export const ADMIN_ADDRESS = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 // RoleManager ABI
@@ -11,6 +11,7 @@ export const ROLE_MANAGER_ABI = [
   'function approveRole(address account)',
   'function rejectRole(address account)',
   'function revokeRole(address account)',
+  'function cancelRequest()',
   'function getUser(address account) view returns (tuple(uint8 role, bool approved, uint8 requestedRole))',
   'function hasRole(address account, uint8 expectedRole) view returns (bool)',
   'function getUserRole(address account) view returns (uint8)',
