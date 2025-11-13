@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate, Link } from 'react-router-dom';
-import { Package, ArrowLeft, ArrowRight, Calendar, User } from 'lucide-react';
+import { Package, ArrowLeft, ArrowRight, Calendar, User, TrendingRight } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
@@ -19,17 +19,31 @@ type TokenData = {
   exists: boolean;
 };
 
+type TransferData = {
+  id: bigint;
+  tokenId: bigint;
+  from: string;
+  to: string;
+  amount: bigint;
+  fromRole: number;
+  toRole: number;
+  status: number;
+  requestedAt: bigint;
+  resolvedAt: bigint;
+};
+
 export function TokenDetails() {
   const { id } = useParams<{ id: string }>();
-  const { account, user, tokenFactory } = useWeb3();
+  const { account, user, tokenFactory, transferManager } = useWeb3();
   const navigate = useNavigate();
   const [token, setToken] = useState<TokenData | null>(null);
   const [balance, setBalance] = useState<bigint>(0n);
   const [parentTokens, setParentTokens] = useState<TokenData[]>([]);
+  const [transferHistory, setTransferHistory] = useState<TransferData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!tokenFactory || !account || !id) return;
+    if (!tokenFactory || !transferManager || !account || !id) return;
 
     const loadToken = async () => {
       try {
@@ -46,6 +60,16 @@ export function TokenDetails() {
           );
           setParentTokens(parents);
         }
+
+        // Load transfer history
+        try {
+          const history = await transferManager.getTokenTransfers(id);
+          // Only show approved transfers (status === 2)
+          const approvedTransfers = history.filter((t: TransferData) => t.status === 2);
+          setTransferHistory(approvedTransfers);
+        } catch (error) {
+          console.error('Error loading transfer history:', error);
+        }
       } catch (error) {
         console.error('Error loading token:', error);
       } finally {
@@ -54,7 +78,7 @@ export function TokenDetails() {
     };
 
     loadToken();
-  }, [tokenFactory, account, id]);
+  }, [tokenFactory, transferManager, account, id]);
 
   if (!user || !user.approved) {
     return <Navigate to="/" />;
@@ -239,6 +263,105 @@ export function TokenDetails() {
                       <p className="text-gray-900">{String(value)}</p>
                     </div>
                   ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {transferHistory.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <TrendingRight className="w-5 h-5 text-blue-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">Transfer History</h2>
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                    {transferHistory.length} transfer{transferHistory.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">
+                  Complete traceability of this token through the supply chain
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {transferHistory.map((transfer, index) => {
+                    const date = new Date(Number(transfer.requestedAt) * 1000);
+                    const isFirstTransfer = index === 0;
+                    const isLastTransfer = index === transferHistory.length - 1;
+
+                    return (
+                      <div key={transfer.id.toString()} className="relative">
+                        {!isLastTransfer && (
+                          <div className="absolute left-5 top-12 bottom-0 w-0.5 bg-gray-200" />
+                        )}
+                        <div className="flex gap-4">
+                          <div className="flex flex-col items-center">
+                            <div
+                              className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                                isFirstTransfer
+                                  ? 'bg-green-100 text-green-600'
+                                  : isLastTransfer
+                                    ? 'bg-blue-100 text-blue-600'
+                                    : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              <TrendingRight className="w-5 h-5" />
+                            </div>
+                          </div>
+                          <div className="flex-1 pb-8">
+                            <div className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {getRoleName(Number(transfer.fromRole))} →{' '}
+                                    {getRoleName(Number(transfer.toRole))}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {date.toLocaleString()}
+                                  </p>
+                                </div>
+                                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                                  Completed
+                                </span>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex items-start gap-2">
+                                  <span className="text-xs text-gray-500 min-w-[60px]">From:</span>
+                                  <span className="text-xs font-mono text-gray-900 break-all">
+                                    {transfer.from}
+                                  </span>
+                                  {transfer.from.toLowerCase() === account?.toLowerCase() && (
+                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                      You
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-xs text-gray-500 min-w-[60px]">To:</span>
+                                  <span className="text-xs font-mono text-gray-900 break-all">
+                                    {transfer.to}
+                                  </span>
+                                  {transfer.to.toLowerCase() === account?.toLowerCase() && (
+                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                      You
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-500 min-w-[60px]">
+                                    Amount:
+                                  </span>
+                                  <span className="text-xs font-semibold text-gray-900">
+                                    {transfer.amount.toString()} units
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
