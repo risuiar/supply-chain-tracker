@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#grad)"/>
+  
+  <!-- Blockchain cube icon -->
+  <g transform="translate(50, 50)">
+    <!-- Top face -->
+    <polygon points="0,-15 12,-8 0,-1 -12,-8" fill="#FFFFFF" opacity="0.9"/>
+    
+    <!-- Left face -->
+    <polygon points="-12,-8 -12,8 0,15 0,-1" fill="#FFFFFF" opacity="0.7"/>
+    
+    <!-- Right face -->
+    <polygon points="12,-8 12,8 0,15 0,-1" fill="#FFFFFF" opacity="0.5"/>
+    
+    <!-- Connection lines -->
+    <line x1="0" y1="-25" x2="0" y2="-15" stroke="#FFFFFF" stroke-width="2" opacity="0.6"/>
+    <line x1="-20" y1="0" x2="-12" y2="-4" stroke="#FFFFFF" stroke-width="2" opacity="0.6"/>
+    <line x1="20" y1="0" x2="12" y2="-4" stroke="#FFFFFF" stroke-width="2" opacity="0.6"/>
+    <line x1="0" y1="25" x2="0" y2="15" stroke="#FFFFFF" stroke-width="2" opacity="0.6"/>
+    
+    <!-- Small connecting dots -->
+    <circle cx="0" cy="-25" r="2" fill="#FFFFFF"/>
+    <circle cx="-20" cy="0" r="2" fill="#FFFFFF"/>
+    <circle cx="20" cy="0" r="2" fill="#FFFFFF"/>
+    <circle cx="0" cy="25" r="2" fill="#FFFFFF"/>
+  </g>
+</svg>
+
