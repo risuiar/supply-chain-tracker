@@ -1,0 +1,8 @@
+node_modules
+dist
+build
+.cache
+*.json
+*.md
+package-lock.json
+

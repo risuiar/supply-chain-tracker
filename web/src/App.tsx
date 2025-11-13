@@ -11,7 +11,6 @@ import { TransferToken } from './pages/TransferToken';
 import { Transfers } from './pages/Transfers';
 import { Admin } from './pages/Admin';
 import { Profile } from './pages/Profile';
-// import { UserStatus } from './types';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useWeb3();
