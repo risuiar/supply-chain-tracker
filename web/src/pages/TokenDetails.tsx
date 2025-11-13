@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate, Link } from 'react-router-dom';
-import { Package, ArrowLeft, ArrowRight, Calendar, User, TrendingRight } from 'lucide-react';
+import { Package, ArrowLeft, ArrowRight, Calendar, User, ArrowRightLeft } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
@@ -272,7 +272,7 @@ export function TokenDetails() {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <TrendingRight className="w-5 h-5 text-blue-600" />
+                  <ArrowRightLeft className="w-5 h-5 text-blue-600" />
                   <h2 className="text-lg font-semibold text-gray-900">Transfer History</h2>
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
                     {transferHistory.length} transfer{transferHistory.length !== 1 ? 's' : ''}
@@ -305,7 +305,7 @@ export function TokenDetails() {
                                     : 'bg-gray-100 text-gray-600'
                               }`}
                             >
-                              <TrendingRight className="w-5 h-5" />
+                              <ArrowRightLeft className="w-5 h-5" />
                             </div>
                           </div>
                           <div className="flex-1 pb-8">
