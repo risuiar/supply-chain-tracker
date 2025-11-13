@@ -64,8 +64,10 @@ export function TokenDetails() {
         // Load transfer history
         try {
           const history = await transferManager.getTokenTransfers(id);
+          console.log('Transfer history loaded:', history);
           // Only show approved transfers (status === 2)
           const approvedTransfers = history.filter((t: TransferData) => t.status === 2);
+          console.log('Approved transfers:', approvedTransfers);
           setTransferHistory(approvedTransfers);
         } catch (error) {
           console.error('Error loading transfer history:', error);
@@ -268,21 +270,32 @@ export function TokenDetails() {
             </Card>
           )}
 
-          {transferHistory.length > 0 && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <ArrowRightLeft className="w-5 h-5 text-blue-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">Transfer History</h2>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <ArrowRightLeft className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Transfer History</h2>
+                {transferHistory.length > 0 && (
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
                     {transferHistory.length} transfer{transferHistory.length !== 1 ? 's' : ''}
                   </span>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Complete traceability of this token through the supply chain
+              </p>
+            </CardHeader>
+            <CardContent>
+              {transferHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <ArrowRightLeft className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-600 mb-2">No transfers yet</p>
+                  <p className="text-sm text-gray-500">
+                    This token has not been transferred yet. Once approved transfers occur, they
+                    will appear here.
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">
-                  Complete traceability of this token through the supply chain
-                </p>
-              </CardHeader>
-              <CardContent>
+              ) : (
                 <div className="space-y-4">
                   {transferHistory.map((transfer, index) => {
                     const date = new Date(Number(transfer.requestedAt) * 1000);
@@ -363,9 +376,9 @@ export function TokenDetails() {
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
