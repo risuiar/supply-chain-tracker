@@ -138,16 +138,16 @@ export function TokenDetails() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <button
           onClick={() => navigate('/tokens')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Tokens
         </button>
 
-        <div className="grid gap-6">
+        <div className="grid gap-4">
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -178,14 +178,14 @@ export function TokenDetails() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Your Balance</p>
-                  <p className="text-3xl font-bold text-gray-900">{balance.toString()}</p>
+              <div className="flex items-center gap-8">
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600 mb-1">Your Balance</p>
+                  <p className="text-2xl font-bold text-gray-900">{balance.toString()}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Supply</p>
-                  <p className="text-3xl font-bold text-gray-900">{token.totalSupply.toString()}</p>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600 mb-1">Total Supply</p>
+                  <p className="text-2xl font-bold text-gray-900">{token.totalSupply.toString()}</p>
                 </div>
               </div>
             </CardContent>
@@ -193,10 +193,10 @@ export function TokenDetails() {
 
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-gray-900">Token Information</h2>
+              <h2 className="text-base font-semibold text-gray-900">Token Information</h2>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <User className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div className="flex-1">
@@ -253,10 +253,10 @@ export function TokenDetails() {
           {Object.keys(metadata).length > 0 && (
             <Card>
               <CardHeader>
-                <h2 className="text-lg font-semibold text-gray-900">Features & Attributes</h2>
+                <h2 className="text-base font-semibold text-gray-900">Features & Attributes</h2>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-3">
                   {Object.entries(metadata).map(([key, value]) => (
                     <div key={key} className="p-3 bg-gray-50 rounded-lg">
                       <p className="text-sm font-medium text-gray-700 mb-1">
@@ -274,29 +274,29 @@ export function TokenDetails() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <ArrowRightLeft className="w-5 h-5 text-blue-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Transfer History</h2>
+                <h2 className="text-base font-semibold text-gray-900">Transfer History</h2>
                 {transferHistory.length > 0 && (
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
                     {transferHistory.length} transfer{transferHistory.length !== 1 ? 's' : ''}
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-xs text-gray-600 mt-1">
                 Complete traceability of this token through the supply chain
               </p>
             </CardHeader>
             <CardContent>
               {transferHistory.length === 0 ? (
-                <div className="text-center py-8">
-                  <ArrowRightLeft className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-600 mb-2">No transfers yet</p>
-                  <p className="text-sm text-gray-500">
+                <div className="text-center py-6">
+                  <ArrowRightLeft className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600 mb-1">No transfers yet</p>
+                  <p className="text-xs text-gray-500">
                     This token has not been transferred yet. Once approved transfers occur, they
                     will appear here.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {transferHistory.map((transfer, index) => {
                     const date = new Date(Number(transfer.requestedAt) * 1000);
                     const isFirstTransfer = index === 0;
@@ -321,23 +321,23 @@ export function TokenDetails() {
                               <ArrowRightLeft className="w-5 h-5" />
                             </div>
                           </div>
-                          <div className="flex-1 pb-8">
-                            <div className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
-                              <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 pb-6">
+                            <div className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
+                              <div className="flex items-start justify-between mb-2">
                                 <div>
                                   <p className="text-sm font-medium text-gray-900">
                                     {getRoleName(Number(transfer.fromRole))} →{' '}
                                     {getRoleName(Number(transfer.toRole))}
                                   </p>
-                                  <p className="text-xs text-gray-500 mt-1">
+                                  <p className="text-xs text-gray-500 mt-0.5">
                                     {date.toLocaleString()}
                                   </p>
                                 </div>
-                                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
                                   Completed
                                 </span>
                               </div>
-                              <div className="space-y-2">
+                              <div className="space-y-1.5">
                                 <div className="flex items-start gap-2">
                                   <span className="text-xs text-gray-500 min-w-[60px]">From:</span>
                                   <span className="text-xs font-mono text-gray-900 break-all">
