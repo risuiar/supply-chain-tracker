@@ -1,0 +1,408 @@
+import { useState, useEffect } from 'react';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Send, Package, AlertCircle, User } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useWeb3 } from '../contexts/Web3Context';
+import { Card, CardContent } from '../components/Card';
+import { Button } from '../components/Button';
+import { Input } from '../components/Input';
+
+type TokenData = {
+  id: bigint;
+  productName: string;
+  assetType: number;
+  metadataURI: string;
+  totalSupply: bigint;
+  creator: string;
+  currentHolder: string;
+  currentRole: number;
+  createdAt: bigint;
+  parentIds: bigint[];
+  exists: boolean;
+};
+
+type RecipientUser = {
+  address: string;
+  role: number;
+};
+
+export function TransferToken() {
+  const { id } = useParams<{ id: string }>();
+  const { account, user, roleManager, tokenFactory, transferManager } = useWeb3();
+  const navigate = useNavigate();
+  const [token, setToken] = useState<TokenData | null>(null);
+  const [balance, setBalance] = useState<bigint>(0n);
+  const [recipients, setRecipients] = useState<RecipientUser[]>([]);
+  const [selectedRecipient, setSelectedRecipient] = useState('');
+  const [amount, setAmount] = useState('');
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [loadingRecipients, setLoadingRecipients] = useState(true);
+  const [hasPendingTransfer, setHasPendingTransfer] = useState(false);
+
+  useEffect(() => {
+    if (!tokenFactory || !transferManager || !account || !id) return;
+
+    const loadToken = async () => {
+      try {
+        const tokenData = await tokenFactory.getToken(id);
+        setToken(tokenData);
+
+        const userBalance = await tokenFactory.balanceOf(id, account);
+        setBalance(userBalance);
+
+        // Check if there's a pending transfer
+        const pendingTransferId = await transferManager.getPendingTransfer(id);
+        setHasPendingTransfer(pendingTransferId !== 0n);
+      } catch (error) {
+        console.error('Error loading token:', error);
+      }
+    };
+
+    loadToken();
+  }, [tokenFactory, transferManager, account, id]);
+
+  // Get target role in the supply chain
+  const getTargetRole = (currentRole: number): number => {
+    // Producer(1) -> Factory(2) -> Retailer(3) -> Consumer(4)
+    return currentRole + 1;
+  };
+
+  // Load available recipients based on user role
+  useEffect(() => {
+    if (!roleManager || !user) return;
+
+    const loadRecipients = async () => {
+      try {
+        setLoadingRecipients(true);
+
+        const targetRole = getTargetRole(user.role);
+
+        // Consumer (4) cannot transfer
+        if (user.role >= 4 || targetRole > 4) {
+          setRecipients([]);
+          setLoadingRecipients(false);
+          return;
+        }
+
+        // Query RoleApproved events to find approved users with target role
+        const filter = roleManager.filters.RoleApproved();
+        const events = await roleManager.queryFilter(filter);
+
+        const approvedUsers: RecipientUser[] = [];
+        const seenAddresses = new Set<string>();
+
+        for (const event of events) {
+          // Type guard to check if event has args
+          if ('args' in event) {
+            const userAddress = (event.args[0] as string).toLowerCase();
+            const eventRole = event.args[1];
+
+            // Skip if already processed or same as current user
+            if (seenAddresses.has(userAddress) || userAddress === account?.toLowerCase()) {
+              continue;
+            }
+
+            // Check if this user still has the target role and is approved
+            if (Number(eventRole) === targetRole) {
+              try {
+                const userData = await roleManager.getUser(userAddress);
+                if (userData.approved && Number(userData.role) === targetRole) {
+                  approvedUsers.push({
+                    address: userAddress,
+                    role: targetRole,
+                  });
+                  seenAddresses.add(userAddress);
+                }
+              } catch (error) {
+                console.error(`Error checking user ${userAddress}:`, error);
+              }
+            }
+          }
+        }
+
+        setRecipients(approvedUsers);
+      } catch (error) {
+        console.error('Error loading recipients:', error);
+      } finally {
+        setLoadingRecipients(false);
+      }
+    };
+
+    loadRecipients();
+  }, [roleManager, user, account]);
+
+  if (!user || !user.approved) {
+    return <Navigate to="/" />;
+  }
+
+  if (user.role === 4) {
+    return <Navigate to="/tokens" />;
+  }
+
+  const getRoleName = (role: number): string => {
+    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer'];
+    return roles[role] || 'Unknown';
+  };
+
+  const getTargetRoleName = (): string => {
+    const targetRole = getTargetRole(user.role);
+    const pluralNames = ['', 'Producers', 'Factories', 'Retailers', 'Consumers'];
+    return pluralNames[targetRole] || 'Unknown';
+  };
+
+  const getTransferDescription = (): string => {
+    const descriptions: Record<number, string> = {
+      1: 'Send raw materials to factories for processing',
+      2: 'Send processed goods to retailers for distribution',
+      3: 'Send products to consumers for final use',
+    };
+    return descriptions[user.role] || '';
+  };
+
+  const handleTransfer = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!transferManager || !selectedRecipient || !amount || !id) {
+      toast.error('Por favor completa todos los campos');
+      return;
+    }
+
+    const amountBigInt = BigInt(amount);
+    if (amountBigInt <= 0n || amountBigInt > balance) {
+      toast.error('Cantidad inválida');
+      return;
+    }
+
+    // Check if there's a pending transfer for this token
+    try {
+      const pendingTransferId = await transferManager.getPendingTransfer(id);
+      if (pendingTransferId !== 0n) {
+        toast.error(
+          'Este producto ya tiene una transferencia pendiente. Por favor espera a que sea aceptada o rechazada antes de crear una nueva.'
+        );
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking pending transfer:', error);
+    }
+
+    setIsTransferring(true);
+    const toastId = toast.loading('Enviando solicitud de transferencia...');
+    try {
+      const tx = await transferManager.requestTransfer(id, selectedRecipient, amountBigInt);
+      await tx.wait();
+
+      toast.success('¡Solicitud de transferencia enviada exitosamente!', { id: toastId });
+      navigate('/transfers');
+    } catch (error: unknown) {
+      console.error('Error requesting transfer:', error);
+
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        if (error.message.includes('NotTokenCreator')) {
+          errorMessage =
+            'You can only transfer tokens that you created. To process received materials, create a new processed token.';
+        } else if (error.message.includes('TransferAlreadyPending')) {
+          errorMessage =
+            'This token already has a pending transfer. Please wait for it to be resolved.';
+        } else if (error.message.includes('InvalidRoleTransition')) {
+          errorMessage = 'Invalid transfer: Check recipient role or token type.';
+        } else if (error.message.includes('NotApproved')) {
+          errorMessage = 'You or the recipient is not approved in the system.';
+        } else if (error.message.includes('Unauthorized')) {
+          errorMessage = 'You do not have enough balance or permission to make this transfer.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      toast.error(`Error: ${errorMessage}`, { id: toastId });
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <p className="mt-4 text-gray-600">Loading token...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const targetRoleName = getTargetRoleName();
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <button
+          onClick={() => navigate('/tokens')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Tokens
+        </button>
+
+        <div className="space-y-4">
+          {/* Token Info */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Package className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-bold text-gray-900 truncate">{token.productName}</h2>
+                  <p className="text-xs text-gray-600">
+                    Token #{token.id.toString()} • Balance: {balance.toString()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Transfer Rules - Compact */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-base font-bold text-gray-900 mb-1">Transfer Rules</h3>
+                  <p className="text-sm text-gray-700">
+                    <User className="w-3 h-3 inline mr-1" />
+                    <strong>Your Role:</strong> {getRoleName(user.role)}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    You can transfer to:{' '}
+                    <strong>
+                      {targetRoleName} ({recipients.length} available)
+                    </strong>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{getTransferDescription()}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pending Transfer Warning */}
+          {hasPendingTransfer && (
+            <Card>
+              <CardContent className="p-4 bg-yellow-50 border-l-4 border-yellow-400">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-bold text-yellow-900">Pending Transfer</h3>
+                    <p className="text-xs text-yellow-800 mt-1">
+                      This token already has a pending transfer. You must wait for it to be accepted
+                      or rejected before creating a new transfer request.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Transfer Form - Compact */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Send className="w-5 h-5 text-green-600" />
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Send Transfer Request</h3>
+                  <p className="text-xs text-gray-600">
+                    The recipient will need to accept the transfer
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleTransfer} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Recipient ({getRoleName(getTargetRole(user.role))}) *
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={selectedRecipient}
+                    onChange={(e) => setSelectedRecipient(e.target.value)}
+                    required
+                    disabled={loadingRecipients}
+                  >
+                    <option value="">
+                      {loadingRecipients ? 'Loading recipients...' : 'Select a recipient...'}
+                    </option>
+                    {recipients.map((recipient) => (
+                      <option key={recipient.address} value={recipient.address}>
+                        {recipient.address.slice(0, 6)}...{recipient.address.slice(-4)} (
+                        {getRoleName(recipient.role)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Amount *</label>
+                  <Input
+                    type="number"
+                    placeholder="Enter amount to transfer"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    min="1"
+                    max={balance.toString()}
+                    required
+                    className="text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Maximum: {balance.toString()} tokens</p>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-yellow-800">
+                      <p className="font-medium">Important</p>
+                      <p className="mt-1">
+                        This will create a transfer request. The recipient must accept the transfer
+                        before the tokens are actually moved.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => navigate('/tokens')}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={
+                      isTransferring ||
+                      balance === 0n ||
+                      !selectedRecipient ||
+                      recipients.length === 0 ||
+                      hasPendingTransfer
+                    }
+                    className="flex-1"
+                  >
+                    <Send className="w-4 h-4" />
+                    {isTransferring
+                      ? 'Sending...'
+                      : hasPendingTransfer
+                        ? 'Transfer Pending'
+                        : 'Send Request'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
