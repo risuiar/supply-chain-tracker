@@ -149,43 +149,45 @@ export function TokenDetails() {
 
         <div className="grid gap-4">
           <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <Package className="w-8 h-8 text-blue-600" />
+                  <Package className="w-8 h-8 text-blue-600 flex-shrink-0" />
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{token.productName}</h1>
-                    <p className="text-sm text-gray-500">Token ID: #{token.id.toString()}</p>
-                    <span
-                      className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
-                        Number(token.assetType) === 0
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-blue-100 text-blue-700'
-                      }`}
-                    >
-                      {getAssetTypeName(Number(token.assetType))}
-                    </span>
+                    <h1 className="text-xl font-bold text-gray-900">{token.productName}</h1>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-gray-500">#{token.id.toString()}</p>
+                      <span
+                        className={`px-2 py-0.5 text-xs rounded-full ${
+                          Number(token.assetType) === 0
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-blue-100 text-blue-700'
+                        }`}
+                      >
+                        {getAssetTypeName(Number(token.assetType))}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                {balance > 0n && user.role !== 4 && (
-                  <Link to={`/tokens/${id}/transfer`}>
-                    <Button>
-                      <ArrowRight className="w-4 h-4 mr-2" />
-                      Transfer
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-8">
-                <div className="flex-1">
-                  <p className="text-xs text-gray-600 mb-1">Your Balance</p>
-                  <p className="text-2xl font-bold text-gray-900">{balance.toString()}</p>
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-600 mb-1">Total Supply</p>
-                  <p className="text-2xl font-bold text-gray-900">{token.totalSupply.toString()}</p>
+                <div className="flex items-center gap-6">
+                  <div className="text-center">
+                    <p className="text-xs text-gray-600 mb-0.5">Your Balance</p>
+                    <p className="text-xl font-bold text-gray-900">{balance.toString()}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-600 mb-0.5">Total Supply</p>
+                    <p className="text-xl font-bold text-gray-900">
+                      {token.totalSupply.toString()}
+                    </p>
+                  </div>
+                  {balance > 0n && user.role !== 4 && (
+                    <Link to={`/tokens/${id}/transfer`}>
+                      <Button className="whitespace-nowrap">
+                        <ArrowRight className="w-4 h-4 mr-2" />
+                        Transfer
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             </CardContent>
