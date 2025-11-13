@@ -262,20 +262,74 @@ contract RoleManagerTest is Test {
         }
     }
     
-    // ============ Edge Cases ============
+    // ============ Edge Cases & New Validations ============
     
-    function testCanRequestDifferentRoleAfterApproval() public {
+    function testCannotRequestRoleIfAlreadyHasApprovedRole() public {
+        // User requests and gets approved for Producer
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
         roleManager.approveRole(producer);
         
-        // Try to request another role
+        // Try to request another role - should revert with AlreadyHasRole
+        vm.expectRevert(RoleManager.AlreadyHasRole.selector);
+        vm.prank(producer);
+        roleManager.requestRole(RoleManager.Role.Factory);
+    }
+    
+    function testCannotRequestRoleIfAlreadyHasPendingRequest() public {
+        // User requests Producer role
+        vm.prank(producer);
+        roleManager.requestRole(RoleManager.Role.Producer);
+        
+        // Try to request Factory role while Producer request is pending
+        vm.expectRevert(RoleManager.RoleAlreadyRequested.selector);
+        vm.prank(producer);
+        roleManager.requestRole(RoleManager.Role.Factory);
+    }
+    
+    // ============ Cancel Request Tests ============
+    
+    function testUserCanCancelOwnRequest() public {
+        // User requests a role
+        vm.prank(producer);
+        roleManager.requestRole(RoleManager.Role.Producer);
+        
+        // User cancels their request
+        vm.expectEmit(true, true, false, false);
+        emit RoleRejected(producer, RoleManager.Role.Producer);
+        
+        vm.prank(producer);
+        roleManager.cancelRequest();
+        
+        // Verify request was cancelled
+        RoleManager.User memory user = roleManager.getUser(producer);
+        assertEq(uint8(user.requestedRole), uint8(RoleManager.Role.None));
+        assertFalse(user.approved);
+        assertEq(uint8(user.role), uint8(RoleManager.Role.None));
+    }
+    
+    function testCannotCancelWithoutPendingRequest() public {
+        // Try to cancel without having a pending request
+        vm.expectRevert(RoleManager.RoleNotRequested.selector);
+        vm.prank(producer);
+        roleManager.cancelRequest();
+    }
+    
+    function testCanRequestAgainAfterCancellingRequest() public {
+        // User requests Producer
+        vm.prank(producer);
+        roleManager.requestRole(RoleManager.Role.Producer);
+        
+        // User cancels
+        vm.prank(producer);
+        roleManager.cancelRequest();
+        
+        // User can request Factory now
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Factory);
         
-        // Should work to change role
-        roleManager.approveRole(producer);
-        assertEq(uint8(roleManager.getUserRole(producer)), uint8(RoleManager.Role.Factory));
+        RoleManager.User memory user = roleManager.getUser(producer);
+        assertEq(uint8(user.requestedRole), uint8(RoleManager.Role.Factory));
     }
     
     function testGetUserReturnsCorrectData() public {
