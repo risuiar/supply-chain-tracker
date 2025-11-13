@@ -197,10 +197,12 @@ export function TransferToken() {
       
       let errorMessage = 'Unknown error';
       if (error instanceof Error) {
-        if (error.message.includes('TransferAlreadyPending')) {
+        if (error.message.includes('NotTokenCreator')) {
+          errorMessage = 'You can only transfer tokens that you created. To process received materials, create a new processed token.';
+        } else if (error.message.includes('TransferAlreadyPending')) {
           errorMessage = 'This token already has a pending transfer. Please wait for it to be resolved.';
         } else if (error.message.includes('InvalidRoleTransition')) {
-          errorMessage = 'The recipient does not have the correct role for this transfer.';
+          errorMessage = 'Invalid transfer: Check recipient role or token type.';
         } else if (error.message.includes('NotApproved')) {
           errorMessage = 'You or the recipient is not approved in the system.';
         } else if (error.message.includes('Unauthorized')) {

@@ -190,14 +190,57 @@ export function Tokens() {
                             Details
                           </Button>
                         </Link>
-                        {balance > 0n && user.role !== 4 && (
-                          <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
-                            <Button className="w-full text-sm py-2">
-                              <ArrowRight className="w-4 h-4" />
-                              Transfer
-                            </Button>
-                          </Link>
-                        )}
+                        {(() => {
+                          // Determine if transfer button should be shown
+                          const isCreator = token.creator.toLowerCase() === account?.toLowerCase();
+                          const hasBalance = balance > 0n;
+                          const isConsumer = user.role === 4;
+                          
+                          // Consumer cannot transfer
+                          if (isConsumer) return null;
+                          
+                          // Producer: Only transfer RawMaterial tokens they created
+                          if (user.role === 1) {
+                            if (hasBalance && isCreator && token.assetType === 0) {
+                              return (
+                                <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
+                                  <Button className="w-full text-sm py-2">
+                                    <ArrowRight className="w-4 h-4" />
+                                    Transfer
+                                  </Button>
+                                </Link>
+                              );
+                            }
+                          }
+                          
+                          // Factory: Only transfer ProcessedGood tokens they created
+                          if (user.role === 2) {
+                            if (hasBalance && isCreator && token.assetType === 1) {
+                              return (
+                                <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
+                                  <Button className="w-full text-sm py-2">
+                                    <ArrowRight className="w-4 h-4" />
+                                    Transfer
+                                  </Button>
+                                </Link>
+                              );
+                            }
+                          }
+                          
+                          // Retailer: Can transfer any token they have
+                          if (user.role === 3 && hasBalance) {
+                            return (
+                              <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
+                                <Button className="w-full text-sm py-2">
+                                  <ArrowRight className="w-4 h-4" />
+                                  Transfer
+                                </Button>
+                              </Link>
+                            );
+                          }
+                          
+                          return null;
+                        })()}
                       </div>
                     </div>
                   </CardContent>

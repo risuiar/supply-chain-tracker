@@ -34,6 +34,7 @@ contract TransferManager {
     error InvalidRoleTransition();
     error TransferNotPending();
     error TransferAlreadyPending();
+    error NotTokenCreator();
 
     event TransferRequested(
         uint256 indexed tokenId,
@@ -105,6 +106,33 @@ contract TransferManager {
         if (!roleManager.hasRole(to, expectedNext)) {
             revert InvalidRoleTransition();
         }
+
+        // Get token information
+        TokenFactory.Token memory token = tokenFactory.getToken(tokenId);
+        
+        // Validate transfer permissions based on role:
+        // - Producer: Can only transfer RawMaterial tokens they created
+        // - Factory: Can only transfer ProcessedGood tokens they created
+        // - Retailer: Can transfer any token they possess (received from Factory)
+        // - Consumer: Cannot transfer (expectedNext would be None, already checked above)
+        if (senderRole == RoleManager.Role.Producer) {
+            // Producer can only transfer RawMaterial tokens they created
+            if (token.creator != msg.sender) {
+                revert NotTokenCreator();
+            }
+            if (token.assetType != TokenFactory.AssetType.RawMaterial) {
+                revert InvalidRoleTransition();
+            }
+        } else if (senderRole == RoleManager.Role.Factory) {
+            // Factory can only transfer ProcessedGood tokens they created
+            if (token.creator != msg.sender) {
+                revert NotTokenCreator();
+            }
+            if (token.assetType != TokenFactory.AssetType.ProcessedGood) {
+                revert InvalidRoleTransition();
+            }
+        }
+        // Retailer can transfer any token they have balance of (no creator check)
 
         // Check for pending transfers
         if (_pendingTransferByToken[tokenId] != 0) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Package, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -8,13 +8,70 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Textarea } from '../components/Textarea';
 
+type TokenData = {
+  id: bigint;
+  productName: string;
+  assetType: number;
+  balance: bigint;
+};
+
 export function CreateToken() {
-  const { user, tokenFactory } = useWeb3();
+  const { user, tokenFactory, account } = useWeb3();
   const navigate = useNavigate();
   const [productName, setProductName] = useState('');
   const [totalSupply, setTotalSupply] = useState('');
   const [metadataURI, setMetadataURI] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [availableRawMaterials, setAvailableRawMaterials] = useState<TokenData[]>([]);
+  const [selectedParents, setSelectedParents] = useState<string[]>([]);
+
+  // Load available raw materials for Factory
+  useEffect(() => {
+    const loadRawMaterials = async () => {
+      if (!tokenFactory || !account || !user || user.role !== 2) return;
+
+      try {
+        const materials: TokenData[] = [];
+
+        // We need to check all existing tokens to find which ones we have balance for
+        // The contract doesn't have a way to query by balance, so we'll check tokens from events
+        // or iterate through a reasonable range. For now, let's check tokens 1-100
+        // In production, you'd want to query TransferRequested/TokenTransferred events
+        
+        for (let i = 1; i <= 100; i++) {
+          try {
+            const token = await tokenFactory.getToken(i);
+            if (!token.exists) continue;
+            
+            const balance = await tokenFactory.balanceOf(i, account);
+            console.log(`Token #${i} (${token.productName}): assetType=${token.assetType}, balance=${balance.toString()}, type=${typeof balance}`);
+            
+            // Only show RawMaterial tokens (assetType = 0) with balance > 0
+            // Convert both to numbers for safe comparison
+            const balanceNum = typeof balance === 'bigint' ? balance : BigInt(balance);
+            if (Number(token.assetType) === 0 && balanceNum > 0n) {
+              materials.push({
+                id: BigInt(i),
+                productName: token.productName,
+                assetType: Number(token.assetType),
+                balance: balanceNum,
+              });
+            }
+          } catch {
+            // Token doesn't exist, continue
+            break; // Stop when we hit non-existent tokens
+          }
+        }
+
+        console.log('Available raw materials:', materials);
+        setAvailableRawMaterials(materials);
+      } catch (error) {
+        console.error('Error loading raw materials:', error);
+      }
+    };
+
+    loadRawMaterials();
+  }, [tokenFactory, account, user]);
 
   if (!user || !user.approved) {
     return <Navigate to="/" />;
@@ -39,6 +96,12 @@ export function CreateToken() {
       return;
     }
 
+    // Factory must select at least one parent token
+    if (user.role === 2 && selectedParents.length === 0) {
+      toast.error('Please select at least one raw material to process');
+      return;
+    }
+
     setIsCreating(true);
     const toastId = toast.loading('Creating token...');
     try {
@@ -48,8 +111,9 @@ export function CreateToken() {
         // Producer creates raw material token
         tx = await tokenFactory.createRawToken(productName, metadataURI || '', supply);
       } else {
-        // Factory creates processed token (for now without parents - we'll add parent selection later)
-        tx = await tokenFactory.createProcessedToken(productName, metadataURI || '', supply, []);
+        // Factory creates processed token from selected parents
+        const parentIds = selectedParents.map(id => BigInt(id));
+        tx = await tokenFactory.createProcessedToken(productName, metadataURI || '', supply, parentIds);
       }
       
       await tx.wait();
@@ -116,6 +180,50 @@ export function CreateToken() {
                   Optional: Add product characteristics in JSON format
                 </p>
               </div>
+
+              {user.role === 2 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Raw Materials to Process *
+                  </label>
+                  {availableRawMaterials.length === 0 ? (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                      No raw materials available. You need to receive raw materials from a Producer first.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                      {availableRawMaterials.map((material) => (
+                        <label
+                          key={material.id.toString()}
+                          className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedParents.includes(material.id.toString())}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedParents([...selectedParents, material.id.toString()]);
+                              } else {
+                                setSelectedParents(selectedParents.filter(id => id !== material.id.toString()));
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">{material.productName}</div>
+                            <div className="text-sm text-gray-500">
+                              Token #{material.id.toString()} • Balance: {material.balance.toString()} units
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">
+                    Select the raw materials you want to use to create this processed token
+                  </p>
+                </div>
+              )}
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">

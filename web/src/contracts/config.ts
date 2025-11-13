@@ -1,7 +1,7 @@
 // Contract addresses
-export const ROLE_MANAGER_ADDRESS = import.meta.env.VITE_ROLE_MANAGER_ADDRESS || '0x9A676e781A523b5d0C0e43731313A708CB607508';
-export const TOKEN_FACTORY_ADDRESS = import.meta.env.VITE_TOKEN_FACTORY_ADDRESS || '0x0B306BF915C4d645ff596e518fAf3F9669b97016';
-export const TRANSFER_MANAGER_ADDRESS = import.meta.env.VITE_TRANSFER_MANAGER_ADDRESS || '0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1';
+export const ROLE_MANAGER_ADDRESS = import.meta.env.VITE_ROLE_MANAGER_ADDRESS || '0x59b670e9fA9D0A427751Af201D676719a970857b';
+export const TOKEN_FACTORY_ADDRESS = import.meta.env.VITE_TOKEN_FACTORY_ADDRESS || '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1';
+export const TRANSFER_MANAGER_ADDRESS = import.meta.env.VITE_TRANSFER_MANAGER_ADDRESS || '0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44';
 export const ADMIN_ADDRESS = import.meta.env.VITE_ADMIN_ADDRESS || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 // RoleManager ABI
@@ -47,5 +47,6 @@ export const TRANSFER_MANAGER_ABI = [
   "function getTokenTransfers(uint256 tokenId) view returns (tuple(uint256 id, uint256 tokenId, address from, address to, uint256 amount, uint8 fromRole, uint8 toRole, uint8 status, uint64 requestedAt, uint64 resolvedAt)[])",
   "function getPendingTransfer(uint256 tokenId) view returns (uint256)",
   "event TransferRequested(uint256 indexed tokenId, uint256 indexed transferId, address indexed to)",
-  "event TransferResolved(uint256 indexed transferId, uint8 status)"
+  "event TransferResolved(uint256 indexed transferId, uint8 status)",
+  "error NotTokenCreator()"
 ];

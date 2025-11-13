@@ -113,7 +113,8 @@ contract TokenFactory {
             if (!parent.exists) {
                 revert AssetDoesNotExist();
             }
-            if (parent.currentHolder != msg.sender) {
+            // Verify the sender has balance of the parent token
+            if (_balances[parentIds[i]][msg.sender] == 0) {
                 revert InvalidRoleTransition();
             }
 
