@@ -4,31 +4,47 @@ import { Package, ArrowLeft, ArrowRight, Calendar, User } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
-import { Token, UserStatus } from '../types';
+
+type TokenData = {
+  id: bigint;
+  productName: string;
+  assetType: number;
+  metadataURI: string;
+  totalSupply: bigint;
+  creator: string;
+  currentHolder: string;
+  currentRole: number;
+  createdAt: bigint;
+  parentIds: bigint[];
+  exists: boolean;
+};
 
 export function TokenDetails() {
   const { id } = useParams<{ id: string }>();
-  const { account, user, contract } = useWeb3();
+  const { account, user, tokenFactory } = useWeb3();
   const navigate = useNavigate();
-  const [token, setToken] = useState<Token | null>(null);
+  const [token, setToken] = useState<TokenData | null>(null);
   const [balance, setBalance] = useState<bigint>(0n);
-  const [parentToken, setParentToken] = useState<Token | null>(null);
+  const [parentTokens, setParentTokens] = useState<TokenData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!contract || !account || !id) return;
+    if (!tokenFactory || !account || !id) return;
 
     const loadToken = async () => {
       try {
-        const tokenData = await contract.getToken(id);
+        const tokenData = await tokenFactory.getToken(id);
         setToken(tokenData);
 
-        const userBalance = await contract.getTokenBalance(id, account);
+        const userBalance = await tokenFactory.balanceOf(id, account);
         setBalance(userBalance);
 
-        if (tokenData.parentId > 0n) {
-          const parent = await contract.getToken(tokenData.parentId);
-          setParentToken(parent);
+        // Load parent tokens if any
+        if (tokenData.parentIds && tokenData.parentIds.length > 0) {
+          const parents = await Promise.all(
+            tokenData.parentIds.map((parentId: bigint) => tokenFactory.getToken(parentId))
+          );
+          setParentTokens(parents);
         }
       } catch (error) {
         console.error('Error loading token:', error);
@@ -38,9 +54,9 @@ export function TokenDetails() {
     };
 
     loadToken();
-  }, [contract, account, id]);
+  }, [tokenFactory, account, id]);
 
-  if (!user || user.status !== UserStatus.Approved) {
+  if (!user || !user.approved) {
     return <Navigate to="/" />;
   }
 
@@ -76,16 +92,27 @@ export function TokenDetails() {
     );
   }
 
-  const parseFeatures = (features: string) => {
+  const parseMetadata = (uri: string) => {
     try {
-      return JSON.parse(features);
+      if (!uri) return {};
+      const parsed = JSON.parse(uri);
+      return typeof parsed === 'object' && parsed !== null ? parsed : { value: parsed };
     } catch {
-      return {};
+      return uri ? { value: uri } : {};
     }
   };
 
-  const features = parseFeatures(token.features);
-  const date = new Date(Number(token.dateCreated) * 1000);
+  const metadata = parseMetadata(token.metadataURI);
+  const date = new Date(Number(token.createdAt) * 1000);
+  
+  const getAssetTypeName = (assetType: number) => {
+    return assetType === 0 ? 'Raw Material' : 'Processed Good';
+  };
+  
+  const getRoleName = (role: number) => {
+    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer'];
+    return roles[role] || 'Unknown';
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -105,11 +132,18 @@ export function TokenDetails() {
                 <div className="flex items-center gap-3">
                   <Package className="w-8 h-8 text-blue-600" />
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{token.name}</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">{token.productName}</h1>
                     <p className="text-sm text-gray-500">Token ID: #{token.id.toString()}</p>
+                    <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
+                      Number(token.assetType) === 0 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {getAssetTypeName(Number(token.assetType))}
+                    </span>
                   </div>
                 </div>
-                {balance > 0n && user.role !== 'Consumer' && (
+                {balance > 0n && user.role !== 4 && (
                   <Link to={`/tokens/${id}/transfer`}>
                     <Button>
                       <ArrowRight className="w-4 h-4 mr-2" />
@@ -145,9 +179,23 @@ export function TokenDetails() {
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <User className="w-5 h-5 text-gray-400 mt-0.5" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm text-gray-600">Creator</p>
-                    <p className="font-mono text-sm text-gray-900">{token.creator}</p>
+                    <p className="font-mono text-sm text-gray-900 break-all">{token.creator}</p>
+                    {token.creator.toLowerCase() === account?.toLowerCase() && (
+                      <span className="inline-block px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full mt-1">
+                        You created this token
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <User className="w-5 h-5 text-gray-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-gray-600">Current Holder</p>
+                    <p className="font-mono text-sm text-gray-900 break-all">{token.currentHolder}</p>
+                    <p className="text-xs text-gray-500 mt-1">Role: {getRoleName(Number(token.currentRole))}</p>
                   </div>
                 </div>
 
@@ -159,32 +207,36 @@ export function TokenDetails() {
                   </div>
                 </div>
 
-                {parentToken && (
+                {parentTokens.length > 0 && (
                   <div className="pt-4 border-t border-gray-200">
-                    <p className="text-sm text-gray-600 mb-2">Derived From</p>
-                    <Link to={`/tokens/${parentToken.id.toString()}`}>
-                      <div className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <p className="font-medium text-gray-900">{parentToken.name}</p>
-                        <p className="text-xs text-gray-500">Token #{parentToken.id.toString()}</p>
-                      </div>
-                    </Link>
+                    <p className="text-sm text-gray-600 mb-2">Made From (Parent Materials)</p>
+                    <div className="space-y-2">
+                      {parentTokens.map((parent) => (
+                        <Link key={parent.id.toString()} to={`/tokens/${parent.id.toString()}`}>
+                          <div className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <p className="font-medium text-gray-900">{parent.productName}</p>
+                            <p className="text-xs text-gray-500">Token #{parent.id.toString()}</p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {Object.keys(features).length > 0 && (
+          {Object.keys(metadata).length > 0 && (
             <Card>
               <CardHeader>
                 <h2 className="text-lg font-semibold text-gray-900">Features & Attributes</h2>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {Object.entries(features).map(([key, value]) => (
+                  {Object.entries(metadata).map(([key, value]) => (
                     <div key={key} className="p-3 bg-gray-50 rounded-lg">
                       <p className="text-sm font-medium text-gray-700 mb-1">
-                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                        {key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')}
                       </p>
                       <p className="text-gray-900">{String(value)}</p>
                     </div>
