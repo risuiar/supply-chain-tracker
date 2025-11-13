@@ -65,8 +65,18 @@ export function TokenDetails() {
         try {
           const history = await transferManager.getTokenTransfers(id);
           console.log('Transfer history loaded:', history);
+          console.log(
+            'First transfer status:',
+            history[0]?.status,
+            'type:',
+            typeof history[0]?.status
+          );
           // Only show approved transfers (status === 2)
-          const approvedTransfers = history.filter((t: TransferData) => t.status === 2);
+          // Convert to array and filter by status (2 = Approved)
+          const historyArray = Array.from(history);
+          const approvedTransfers = historyArray.filter(
+            (t: TransferData) => Number(t.status) === 2
+          );
           console.log('Approved transfers:', approvedTransfers);
           setTransferHistory(approvedTransfers);
         } catch (error) {
