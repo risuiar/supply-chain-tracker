@@ -1,8 +1,8 @@
-// Contract addresses
-export const ROLE_MANAGER_ADDRESS = import.meta.env.VITE_ROLE_MANAGER_ADDRESS || '0x59b670e9fA9D0A427751Af201D676719a970857b';
-export const TOKEN_FACTORY_ADDRESS = import.meta.env.VITE_TOKEN_FACTORY_ADDRESS || '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1';
-export const TRANSFER_MANAGER_ADDRESS = import.meta.env.VITE_TRANSFER_MANAGER_ADDRESS || '0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44';
-export const ADMIN_ADDRESS = import.meta.env.VITE_ADMIN_ADDRESS || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+// Contract addresses (from latest deployment)
+export const ROLE_MANAGER_ADDRESS = '0x59b670e9fA9D0A427751Af201D676719a970857b';
+export const TOKEN_FACTORY_ADDRESS = '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1';
+export const TRANSFER_MANAGER_ADDRESS = '0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44';
+export const ADMIN_ADDRESS = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 // RoleManager ABI
 export const ROLE_MANAGER_ABI = [
@@ -32,7 +32,12 @@ export const TOKEN_FACTORY_ABI = [
   "function balanceOf(uint256 tokenId, address account) view returns (uint256)",
   "function transferToken(uint256 tokenId, address from, address to, uint256 amount)",
   "event TokenCreated(uint256 indexed tokenId, string productName, uint8 assetType, address indexed creator, string metadataURI)",
-  "event TokenTransferred(uint256 indexed tokenId, address indexed from, address indexed to)"
+  "event TokenTransferred(uint256 indexed tokenId, address indexed from, address indexed to)",
+  "error NotApproved()",
+  "error AssetDoesNotExist()",
+  "error MissingParentAssets()",
+  "error InvalidRoleTransition()",
+  "error Unauthorized()"
 ];
 
 // TransferManager ABI

@@ -201,7 +201,7 @@ export function Tokens() {
                           
                           // Producer: Only transfer RawMaterial tokens they created
                           if (user.role === 1) {
-                            if (hasBalance && isCreator && token.assetType === 0) {
+                            if (hasBalance && isCreator && Number(token.assetType) === 0) {
                               return (
                                 <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
                                   <Button className="w-full text-sm py-2">
@@ -215,7 +215,7 @@ export function Tokens() {
                           
                           // Factory: Only transfer ProcessedGood tokens they created
                           if (user.role === 2) {
-                            if (hasBalance && isCreator && token.assetType === 1) {
+                            if (hasBalance && isCreator && Number(token.assetType) === 1) {
                               return (
                                 <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
                                   <Button className="w-full text-sm py-2">

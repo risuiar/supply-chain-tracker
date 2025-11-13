@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Package, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Contract } from 'ethers';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
