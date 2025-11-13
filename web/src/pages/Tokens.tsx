@@ -74,11 +74,11 @@ export function Tokens() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Tokens</h1>
-            <p className="text-gray-600">Manage your supply chain tokens</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">My Tokens</h1>
+            <p className="text-sm text-gray-600">Manage your supply chain tokens</p>
           </div>
           {(user.role === 1 || user.role === 2) && (
             <Link to="/tokens/create">
@@ -91,16 +91,16 @@ export function Tokens() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12">
+          <div className="text-center py-8">
             <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            <p className="mt-4 text-gray-600">Loading tokens...</p>
+            <p className="mt-3 text-sm text-gray-600">Loading tokens...</p>
           </div>
         ) : tokens.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center">
-              <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No tokens yet</h3>
-              <p className="text-gray-600 mb-6">
+            <CardContent className="py-8 text-center">
+              <Package className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-base font-medium text-gray-900 mb-2">No tokens yet</h3>
+              <p className="text-sm text-gray-600 mb-4">
                 {user.role === 1 || user.role === 2
                   ? 'Create your first token to get started'
                   : 'You will receive tokens through transfers'}
@@ -116,7 +116,7 @@ export function Tokens() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {tokens.map((token) => {
               const metadata = parseMetadata(token.metadataURI);
               const balance = balances[token.id.toString()] || 0n;
@@ -126,35 +126,35 @@ export function Tokens() {
                   key={token.id.toString()}
                   className="hover:shadow-lg transition-shadow duration-200"
                 >
-                  <CardContent className="p-5">
-                    <div className="space-y-4">
+                  <CardContent className="p-3">
+                    <div className="space-y-2">
                       {/* Token Name & Balance */}
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-xl font-bold text-gray-900 mb-0.5 truncate">
+                          <h3 className="text-base font-bold text-gray-900 truncate">
                             {token.productName}
                           </h3>
-                          <p className="text-xs text-gray-500">Token #{token.id.toString()}</p>
+                          <p className="text-xs text-gray-500">#{token.id.toString()}</p>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <div className="text-3xl font-bold text-blue-600">
+                          <div className="text-xl font-bold text-blue-600">
                             {balance.toString()}
                           </div>
-                          <div className="text-xs text-gray-500 font-medium">Balance</div>
+                          <div className="text-xs text-gray-500">Balance</div>
                         </div>
                       </div>
 
                       {/* Info Grid */}
-                      <div className="grid grid-cols-2 gap-3 py-3 border-y border-gray-200">
+                      <div className="grid grid-cols-2 gap-2 py-2 border-y border-gray-200">
                         <div>
-                          <div className="text-xs text-gray-600 mb-0.5">Total Supply</div>
-                          <div className="text-base font-semibold text-gray-900">
+                          <div className="text-xs text-gray-600">Total Supply</div>
+                          <div className="text-sm font-semibold text-gray-900">
                             {token.totalSupply.toString()}
                           </div>
                         </div>
                         <div>
-                          <div className="text-xs text-gray-600 mb-0.5">Created</div>
-                          <div className="text-base font-semibold text-gray-900">
+                          <div className="text-xs text-gray-600">Created</div>
+                          <div className="text-sm font-semibold text-gray-900">
                             {new Date(Number(token.createdAt) * 1000).toLocaleDateString('en-GB')}
                           </div>
                         </div>
@@ -162,14 +162,14 @@ export function Tokens() {
 
                       {/* Creator */}
                       <div>
-                        <div className="text-xs text-gray-600 mb-1">Creator</div>
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="text-xs text-gray-600">Creator</div>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                           <span className="text-xs font-mono text-gray-900">
                             {token.creator.slice(0, 6)}...{token.creator.slice(-4)}
                           </span>
                           {token.creator.toLowerCase() === account?.toLowerCase() && (
-                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
-                              Owned by you
+                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                              You
                             </span>
                           )}
                         </div>
@@ -178,22 +178,20 @@ export function Tokens() {
                       {/* Features */}
                       {Object.keys(metadata).length > 0 && (
                         <div>
-                          <div className="text-xs text-gray-600 mb-1">Features</div>
-                          <div className="text-sm text-gray-900 italic line-clamp-2">
-                            "
+                          <div className="text-xs text-gray-600">Features</div>
+                          <div className="text-xs text-gray-900 italic line-clamp-1 mt-0.5">
                             {Object.entries(metadata)
                               .map(([, value]) => String(value))
                               .join(', ')}
-                            "
                           </div>
                         </div>
                       )}
 
                       {/* Actions */}
-                      <div className="flex gap-2 pt-1">
+                      <div className="flex gap-2">
                         <Link to={`/tokens/${token.id.toString()}`} className="flex-1">
-                          <Button variant="secondary" className="w-full text-sm py-2">
-                            <Package className="w-4 h-4" />
+                          <Button variant="secondary" className="w-full text-xs py-1.5">
+                            <Package className="w-3.5 h-3.5" />
                             Details
                           </Button>
                         </Link>
@@ -214,8 +212,8 @@ export function Tokens() {
                                   to={`/tokens/${token.id.toString()}/transfer`}
                                   className="flex-1"
                                 >
-                                  <Button className="w-full text-sm py-2">
-                                    <ArrowRight className="w-4 h-4" />
+                                  <Button className="w-full text-xs py-1.5">
+                                    <ArrowRight className="w-3.5 h-3.5" />
                                     Transfer
                                   </Button>
                                 </Link>
@@ -231,8 +229,8 @@ export function Tokens() {
                                   to={`/tokens/${token.id.toString()}/transfer`}
                                   className="flex-1"
                                 >
-                                  <Button className="w-full text-sm py-2">
-                                    <ArrowRight className="w-4 h-4" />
+                                  <Button className="w-full text-xs py-1.5">
+                                    <ArrowRight className="w-3.5 h-3.5" />
                                     Transfer
                                   </Button>
                                 </Link>
@@ -247,8 +245,8 @@ export function Tokens() {
                                 to={`/tokens/${token.id.toString()}/transfer`}
                                 className="flex-1"
                               >
-                                <Button className="w-full text-sm py-2">
-                                  <ArrowRight className="w-4 h-4" />
+                                <Button className="w-full text-xs py-1.5">
+                                  <ArrowRight className="w-3.5 h-3.5" />
                                   Transfer
                                 </Button>
                               </Link>
