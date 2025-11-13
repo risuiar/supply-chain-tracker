@@ -25,7 +25,7 @@ export function Dashboard() {
         // Load pending incoming transfers
         const filter = transferManager.filters.TransferRequested();
         const events = await transferManager.queryFilter(filter);
-        
+
         let pendingCount = 0;
         for (const event of events) {
           if ('args' in event) {
@@ -61,25 +61,27 @@ export function Dashboard() {
     return <Navigate to="/" />;
   }
 
-  const roleName = (r: number) => ['None','Producer','Factory','Retailer','Consumer'][r] || 'Unknown';
+  const roleName = (r: number) =>
+    ['None', 'Producer', 'Factory', 'Retailer', 'Consumer'][r] || 'Unknown';
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to Supply Chain Tracker
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Supply Chain Tracker</h1>
           <p className="text-gray-600">
             Manage your tokens and transfers in the decentralized supply chain system
           </p>
         </div>
 
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Role: {roleName(user.role)}</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Your Role: {roleName(user.role)}
+          </h2>
           <p className="text-gray-600">
             {user.role === 1 && 'Create raw material tokens and transfer to factories'}
-            {user.role === 2 && 'Transform raw materials into processed goods and transfer to retailers'}
+            {user.role === 2 &&
+              'Transform raw materials into processed goods and transfer to retailers'}
             {user.role === 3 && 'Distribute products to consumers'}
             {user.role === 4 && 'Track your received products'}
           </p>
@@ -126,8 +128,12 @@ export function Dashboard() {
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardContent className="py-6">
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-full ${pendingIncoming > 0 ? 'bg-red-100' : 'bg-yellow-100'}`}>
-                    <Send className={`w-6 h-6 ${pendingIncoming > 0 ? 'text-red-600' : 'text-yellow-600'}`} />
+                  <div
+                    className={`p-3 rounded-full ${pendingIncoming > 0 ? 'bg-red-100' : 'bg-yellow-100'}`}
+                  >
+                    <Send
+                      className={`w-6 h-6 ${pendingIncoming > 0 ? 'text-red-600' : 'text-yellow-600'}`}
+                    />
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">

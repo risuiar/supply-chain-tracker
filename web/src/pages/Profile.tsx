@@ -37,10 +37,10 @@ export function Profile() {
           return { token, balance };
         });
         const results = await Promise.all(tokenPromises);
-        
-        const loadedTokens = results.map(r => r.token);
+
+        const loadedTokens = results.map((r) => r.token);
         const loadedBalances: Record<string, bigint> = {};
-        results.forEach(r => {
+        results.forEach((r) => {
           loadedBalances[r.token.id.toString()] = r.balance;
         });
 
@@ -71,7 +71,7 @@ export function Profile() {
       'bg-green-100 text-green-700',
       'bg-blue-100 text-blue-700',
       'bg-purple-100 text-purple-700',
-      'bg-orange-100 text-orange-700'
+      'bg-orange-100 text-orange-700',
     ];
     return colors[role] || colors[0];
   };
@@ -88,9 +88,7 @@ export function Profile() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Profile</h1>
-          <p className="text-gray-600">
-            View your account information and activity
-          </p>
+          <p className="text-gray-600">View your account information and activity</p>
         </div>
 
         <div className="grid gap-6">
@@ -115,7 +113,9 @@ export function Profile() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-gray-600">Role</p>
-                    <span className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(user.role)}`}>
+                    <span
+                      className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(user.role)}`}
+                    >
                       {getRoleName(user.role)}
                     </span>
                   </div>
@@ -203,7 +203,7 @@ export function Profile() {
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-gray-900">Token Portfolio</h2>
                   <Link to="/tokens">
-                    <Button variant="secondary" size="sm">
+                    <Button variant="secondary">
                       View All
                       <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
@@ -224,16 +224,19 @@ export function Profile() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-medium text-gray-900">{token.productName}</p>
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                Number(token.assetType) === 0 
-                                  ? 'bg-green-100 text-green-700'
-                                  : 'bg-blue-100 text-blue-700'
-                              }`}>
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full ${
+                                  Number(token.assetType) === 0
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-blue-100 text-blue-700'
+                                }`}
+                              >
                                 {getAssetTypeName(Number(token.assetType))}
                               </span>
                             </div>
                             <p className="text-sm text-gray-600">
-                              Balance: {balance.toString()} • Total Supply: {token.totalSupply.toString()}
+                              Balance: {balance.toString()} • Total Supply:{' '}
+                              {token.totalSupply.toString()}
                             </p>
                           </div>
                           <ArrowRight className="w-5 h-5 text-gray-400" />
@@ -261,9 +264,7 @@ export function Profile() {
                 </p>
                 {(user.role === 1 || user.role === 2) && (
                   <Link to="/tokens/create">
-                    <Button>
-                      Create Token
-                    </Button>
+                    <Button>Create Token</Button>
                   </Link>
                 )}
               </CardContent>
@@ -297,11 +298,15 @@ export function Profile() {
                     </div>
                     <div className="flex items-start gap-2 text-sm">
                       <span className="text-green-600 mt-0.5">✓</span>
-                      <span className="text-gray-700">Create processed product tokens from raw materials</span>
+                      <span className="text-gray-700">
+                        Create processed product tokens from raw materials
+                      </span>
                     </div>
                     <div className="flex items-start gap-2 text-sm">
                       <span className="text-green-600 mt-0.5">✓</span>
-                      <span className="text-gray-700">Transfer processed products to Retailers</span>
+                      <span className="text-gray-700">
+                        Transfer processed products to Retailers
+                      </span>
                     </div>
                   </>
                 )}
@@ -358,9 +363,7 @@ export function Profile() {
                 </Link>
                 {(user.role === 1 || user.role === 2) && (
                   <Link to="/tokens/create">
-                    <Button className="w-full">
-                      Create New Token
-                    </Button>
+                    <Button className="w-full">Create New Token</Button>
                   </Link>
                 )}
               </div>

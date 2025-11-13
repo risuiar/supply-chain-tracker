@@ -38,9 +38,9 @@ export function Tokens() {
         });
 
         const results = await Promise.all(tokenPromises);
-        const loadedTokens = results.map(r => r.token);
+        const loadedTokens = results.map((r) => r.token);
         const loadedBalances: Record<string, bigint> = {};
-        results.forEach(r => {
+        results.forEach((r) => {
           loadedBalances[r.token.id.toString()] = r.balance;
         });
 
@@ -78,9 +78,7 @@ export function Tokens() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">My Tokens</h1>
-            <p className="text-gray-600">
-              Manage your supply chain tokens
-            </p>
+            <p className="text-gray-600">Manage your supply chain tokens</p>
           </div>
           {(user.role === 1 || user.role === 2) && (
             <Link to="/tokens/create">
@@ -124,13 +122,18 @@ export function Tokens() {
               const balance = balances[token.id.toString()] || 0n;
 
               return (
-                <Card key={token.id.toString()} className="hover:shadow-lg transition-shadow duration-200">
+                <Card
+                  key={token.id.toString()}
+                  className="hover:shadow-lg transition-shadow duration-200"
+                >
                   <CardContent className="p-5">
                     <div className="space-y-4">
                       {/* Token Name & Balance */}
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-xl font-bold text-gray-900 mb-0.5 truncate">{token.productName}</h3>
+                          <h3 className="text-xl font-bold text-gray-900 mb-0.5 truncate">
+                            {token.productName}
+                          </h3>
                           <p className="text-xs text-gray-500">Token #{token.id.toString()}</p>
                         </div>
                         <div className="text-right flex-shrink-0">
@@ -177,7 +180,11 @@ export function Tokens() {
                         <div>
                           <div className="text-xs text-gray-600 mb-1">Features</div>
                           <div className="text-sm text-gray-900 italic line-clamp-2">
-                            "{Object.entries(metadata).map(([, value]) => String(value)).join(', ')}"
+                            "
+                            {Object.entries(metadata)
+                              .map(([, value]) => String(value))
+                              .join(', ')}
+                            "
                           </div>
                         </div>
                       )}
@@ -195,15 +202,18 @@ export function Tokens() {
                           const isCreator = token.creator.toLowerCase() === account?.toLowerCase();
                           const hasBalance = balance > 0n;
                           const isConsumer = user.role === 4;
-                          
+
                           // Consumer cannot transfer
                           if (isConsumer) return null;
-                          
+
                           // Producer: Only transfer RawMaterial tokens they created
                           if (user.role === 1) {
                             if (hasBalance && isCreator && Number(token.assetType) === 0) {
                               return (
-                                <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
+                                <Link
+                                  to={`/tokens/${token.id.toString()}/transfer`}
+                                  className="flex-1"
+                                >
                                   <Button className="w-full text-sm py-2">
                                     <ArrowRight className="w-4 h-4" />
                                     Transfer
@@ -212,12 +222,15 @@ export function Tokens() {
                               );
                             }
                           }
-                          
+
                           // Factory: Only transfer ProcessedGood tokens they created
                           if (user.role === 2) {
                             if (hasBalance && isCreator && Number(token.assetType) === 1) {
                               return (
-                                <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
+                                <Link
+                                  to={`/tokens/${token.id.toString()}/transfer`}
+                                  className="flex-1"
+                                >
                                   <Button className="w-full text-sm py-2">
                                     <ArrowRight className="w-4 h-4" />
                                     Transfer
@@ -226,11 +239,14 @@ export function Tokens() {
                               );
                             }
                           }
-                          
+
                           // Retailer: Can transfer any token they have
                           if (user.role === 3 && hasBalance) {
                             return (
-                              <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
+                              <Link
+                                to={`/tokens/${token.id.toString()}/transfer`}
+                                className="flex-1"
+                              >
                                 <Button className="w-full text-sm py-2">
                                   <ArrowRight className="w-4 h-4" />
                                   Transfer
@@ -238,7 +254,7 @@ export function Tokens() {
                               </Link>
                             );
                           }
-                          
+
                           return null;
                         })()}
                       </div>

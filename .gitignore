@@ -9,6 +9,13 @@ broadcast/
 # Keep deployment records but ignore dry-run
 !sc/broadcast/*/run-latest.json
 
+# Foundry config (generated from scfoundry.toml)
+sc/foundry.toml
+
+# Foundry dependencies
+lib/
+sc/lib/
+
 # Node modules
 node_modules/
 web/node_modules/

@@ -42,54 +42,37 @@ export function Transfers() {
 
   const loadTransfers = async () => {
     if (!tokenFactory || !transferManager || !account) {
-      console.log('Missing dependencies:', { tokenFactory: !!tokenFactory, transferManager: !!transferManager, account });
       return;
     }
 
     try {
-      console.log('Loading transfers for account:', account);
       const allTransfers: TransferData[] = [];
       const tokenMap: Record<string, TokenData> = {};
       const transferIds = new Set<string>();
 
       // Get all TransferRequested events
-      console.log('Creating filter for TransferRequested events...');
       const filter = transferManager.filters.TransferRequested();
-      console.log('Filter created:', filter);
-      
-      console.log('Querying events...');
       const events = await transferManager.queryFilter(filter);
-      console.log(`Found ${events.length} TransferRequested events`, events);
-      
+
       for (const event of events) {
         if ('args' in event) {
           const tokenId = event.args[0];
           const transferId = event.args[1];
-          
+
           const transferIdStr = transferId.toString();
-          console.log(`Processing transfer #${transferIdStr} for token #${tokenId}`);
-          
+
           // Skip if already processed
           if (transferIds.has(transferIdStr)) {
-            console.log(`Transfer #${transferIdStr} already processed, skipping`);
             continue;
           }
-          
+
           try {
             const transfer = await transferManager.getTransfer(transferId);
-            console.log(`Transfer #${transferIdStr} details:`, {
-              from: transfer.from,
-              to: transfer.to,
-              status: transfer.status,
-              amount: transfer.amount.toString()
-            });
-            
+
             // Only include transfers that involve this user (from OR to)
             const fromMatch = transfer.from.toLowerCase() === account.toLowerCase();
             const toMatch = transfer.to.toLowerCase() === account.toLowerCase();
-            
-            console.log(`Match check for ${account}:`, { fromMatch, toMatch });
-            
+
             if (fromMatch || toMatch) {
               // Normalize the transfer object with proper types
               const normalizedTransfer: TransferData = {
@@ -102,33 +85,27 @@ export function Transfers() {
                 toRole: Number(transfer.toRole),
                 status: Number(transfer.status),
                 requestedAt: transfer.requestedAt,
-                resolvedAt: transfer.resolvedAt
+                resolvedAt: transfer.resolvedAt,
               };
               allTransfers.push(normalizedTransfer);
               transferIds.add(transferIdStr);
-              console.log(`Added transfer #${transferIdStr} to list`);
-              
+
               // Get token info if not already loaded
               const tokenIdStr = tokenId.toString();
               if (!tokenMap[tokenIdStr]) {
                 try {
                   const token = await tokenFactory.getToken(tokenId);
                   tokenMap[tokenIdStr] = token;
-                  console.log(`Loaded token #${tokenIdStr}:`, token.productName);
                 } catch (err) {
                   console.error(`Error loading token ${tokenIdStr}:`, err);
                 }
               }
-            } else {
-              console.log(`Transfer #${transferIdStr} doesn't involve this user, skipping`);
             }
           } catch (err) {
             console.error(`Error loading transfer ${transferIdStr}:`, err);
           }
         }
       }
-
-      console.log(`Total transfers loaded: ${allTransfers.length}`);
 
       // Sort by most recent first
       allTransfers.sort((a, b) => Number(b.requestedAt) - Number(a.requestedAt));
@@ -188,22 +165,26 @@ export function Transfers() {
   };
 
   const pendingIncoming = transfers.filter(
-    t => account && t.to.toLowerCase() === account.toLowerCase() && t.status === 1
+    (t) => account && t.to.toLowerCase() === account.toLowerCase() && t.status === 1
   );
 
   const pendingOutgoing = transfers.filter(
-    t => account && t.from.toLowerCase() === account.toLowerCase() && t.status === 1
+    (t) => account && t.from.toLowerCase() === account.toLowerCase() && t.status === 1
   );
 
-  const completed = transfers.filter(
-    t => t.status === 2 || t.status === 3
-  );
+  const completed = transfers.filter((t) => t.status === 2 || t.status === 3);
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const TransferCard = ({ transfer, showActions = false }: { transfer: TransferData; showActions?: boolean }) => {
+  const TransferCard = ({
+    transfer,
+    showActions = false,
+  }: {
+    transfer: TransferData;
+    showActions?: boolean;
+  }) => {
     const token = tokens[transfer.tokenId.toString()];
     const isProcessing = processing === transfer.id.toString();
     const date = new Date(Number(transfer.requestedAt) * 1000);
@@ -214,22 +195,24 @@ export function Transfers() {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  transfer.status === 2
-                    ? 'bg-green-100 text-green-800'
-                    : transfer.status === 1
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : transfer.status === 3
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    transfer.status === 2
+                      ? 'bg-green-100 text-green-800'
+                      : transfer.status === 1
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : transfer.status === 3
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
                   {transfer.status === 2
                     ? 'Approved'
                     : transfer.status === 1
-                    ? 'Pending'
-                    : transfer.status === 3
-                    ? 'Rejected'
-                    : 'Unknown'}
+                      ? 'Pending'
+                      : transfer.status === 3
+                        ? 'Rejected'
+                        : 'Unknown'}
                 </span>
                 <span className="text-sm text-gray-500">#{transfer.id.toString()}</span>
               </div>
@@ -289,9 +272,7 @@ export function Transfers() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Transfers</h1>
-          <p className="text-gray-600">
-            Manage incoming and outgoing token transfers
-          </p>
+          <p className="text-gray-600">Manage incoming and outgoing token transfers</p>
         </div>
 
         {loading ? (
@@ -308,7 +289,7 @@ export function Transfers() {
                   Pending Incoming ({pendingIncoming.length})
                 </h2>
                 <div className="space-y-4">
-                  {pendingIncoming.map(transfer => (
+                  {pendingIncoming.map((transfer) => (
                     <TransferCard key={transfer.id.toString()} transfer={transfer} showActions />
                   ))}
                 </div>
@@ -322,7 +303,7 @@ export function Transfers() {
                   Pending Outgoing ({pendingOutgoing.length})
                 </h2>
                 <div className="space-y-4">
-                  {pendingOutgoing.map(transfer => (
+                  {pendingOutgoing.map((transfer) => (
                     <TransferCard key={transfer.id.toString()} transfer={transfer} />
                   ))}
                 </div>
@@ -336,7 +317,7 @@ export function Transfers() {
                   Transfer History ({completed.length})
                 </h2>
                 <div className="space-y-4">
-                  {completed.map(transfer => (
+                  {completed.map((transfer) => (
                     <TransferCard key={transfer.id.toString()} transfer={transfer} />
                   ))}
                 </div>

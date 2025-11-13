@@ -79,12 +79,8 @@ export function TokenDetails() {
             <CardContent className="py-12 text-center">
               <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Token not found</h3>
-              <p className="text-gray-600 mb-6">
-                The token you are looking for does not exist
-              </p>
-              <Button onClick={() => navigate('/tokens')}>
-                Back to Tokens
-              </Button>
+              <p className="text-gray-600 mb-6">The token you are looking for does not exist</p>
+              <Button onClick={() => navigate('/tokens')}>Back to Tokens</Button>
             </CardContent>
           </Card>
         </div>
@@ -104,11 +100,11 @@ export function TokenDetails() {
 
   const metadata = parseMetadata(token.metadataURI);
   const date = new Date(Number(token.createdAt) * 1000);
-  
+
   const getAssetTypeName = (assetType: number) => {
     return assetType === 0 ? 'Raw Material' : 'Processed Good';
   };
-  
+
   const getRoleName = (role: number) => {
     const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer'];
     return roles[role] || 'Unknown';
@@ -134,11 +130,13 @@ export function TokenDetails() {
                   <div>
                     <h1 className="text-2xl font-bold text-gray-900">{token.productName}</h1>
                     <p className="text-sm text-gray-500">Token ID: #{token.id.toString()}</p>
-                    <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
-                      Number(token.assetType) === 0 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
+                    <span
+                      className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
+                        Number(token.assetType) === 0
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-blue-100 text-blue-700'
+                      }`}
+                    >
                       {getAssetTypeName(Number(token.assetType))}
                     </span>
                   </div>
@@ -157,15 +155,11 @@ export function TokenDetails() {
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Your Balance</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {balance.toString()}
-                  </p>
+                  <p className="text-3xl font-bold text-gray-900">{balance.toString()}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Total Supply</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {token.totalSupply.toString()}
-                  </p>
+                  <p className="text-3xl font-bold text-gray-900">{token.totalSupply.toString()}</p>
                 </div>
               </div>
             </CardContent>
@@ -194,8 +188,12 @@ export function TokenDetails() {
                   <User className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div>
                     <p className="text-sm text-gray-600">Current Holder</p>
-                    <p className="font-mono text-sm text-gray-900 break-all">{token.currentHolder}</p>
-                    <p className="text-xs text-gray-500 mt-1">Role: {getRoleName(Number(token.currentRole))}</p>
+                    <p className="font-mono text-sm text-gray-900 break-all">
+                      {token.currentHolder}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Role: {getRoleName(Number(token.currentRole))}
+                    </p>
                   </div>
                 </div>
 

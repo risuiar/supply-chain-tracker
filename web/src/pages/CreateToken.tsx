@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Package, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Contract } from 'ethers';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
@@ -38,15 +37,14 @@ export function CreateToken() {
         // The contract doesn't have a way to query by balance, so we'll check tokens from events
         // or iterate through a reasonable range. For now, let's check tokens 1-100
         // In production, you'd want to query TransferRequested/TokenTransferred events
-        
+
         for (let i = 1; i <= 100; i++) {
           try {
             const token = await tokenFactory.getToken(i);
             if (!token.exists) continue;
-            
+
             const balance = await tokenFactory.balanceOf(i, account);
-            console.log(`Token #${i} (${token.productName}): assetType=${token.assetType}, balance=${balance.toString()}, type=${typeof balance}`);
-            
+
             // Only show RawMaterial tokens (assetType = 0) with balance > 0
             // Convert both to numbers for safe comparison
             const balanceNum = typeof balance === 'bigint' ? balance : BigInt(balance);
@@ -64,7 +62,6 @@ export function CreateToken() {
           }
         }
 
-        console.log('Available raw materials:', materials);
         setAvailableRawMaterials(materials);
       } catch (error) {
         console.error('Error loading raw materials:', error);
@@ -107,16 +104,21 @@ export function CreateToken() {
     const toastId = toast.loading('Creating token...');
     try {
       let tx;
-      
+
       if (user.role === 1) {
         // Producer creates raw material token
         tx = await tokenFactory.createRawToken(productName, metadataURI || '', supply);
       } else {
         // Factory creates processed token from selected parents
-        const parentIds = selectedParents.map(id => BigInt(id));
-        tx = await tokenFactory.createProcessedToken(productName, metadataURI || '', supply, parentIds);
+        const parentIds = selectedParents.map((id) => BigInt(id));
+        tx = await tokenFactory.createProcessedToken(
+          productName,
+          metadataURI || '',
+          supply,
+          parentIds
+        );
       }
-      
+
       await tx.wait();
       toast.success('Token created successfully!', { id: toastId });
       navigate('/tokens');
@@ -139,7 +141,9 @@ export function CreateToken() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Create Token</h1>
-                <p className="text-sm text-gray-600">Create a new token for your role as {user.role === 1 ? 'Producer' : 'Factory'}</p>
+                <p className="text-sm text-gray-600">
+                  Create a new token for your role as {user.role === 1 ? 'Producer' : 'Factory'}
+                </p>
               </div>
             </div>
           </CardHeader>
@@ -189,7 +193,8 @@ export function CreateToken() {
                   </label>
                   {availableRawMaterials.length === 0 ? (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-                      No raw materials available. You need to receive raw materials from a Producer first.
+                      No raw materials available. You need to receive raw materials from a Producer
+                      first.
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3">
@@ -205,7 +210,9 @@ export function CreateToken() {
                               if (e.target.checked) {
                                 setSelectedParents([...selectedParents, material.id.toString()]);
                               } else {
-                                setSelectedParents(selectedParents.filter(id => id !== material.id.toString()));
+                                setSelectedParents(
+                                  selectedParents.filter((id) => id !== material.id.toString())
+                                );
                               }
                             }}
                             className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
@@ -213,7 +220,8 @@ export function CreateToken() {
                           <div className="flex-1">
                             <div className="font-medium text-gray-900">{material.productName}</div>
                             <div className="text-sm text-gray-500">
-                              Token #{material.id.toString()} • Balance: {material.balance.toString()} units
+                              Token #{material.id.toString()} • Balance:{' '}
+                              {material.balance.toString()} units
                             </div>
                           </div>
                         </label>
@@ -230,9 +238,11 @@ export function CreateToken() {
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div>
-                    <h3 className="font-medium text-blue-900 mb-1">Creating as {user.role === 1 ? 'Producer' : 'Factory'}</h3>
+                    <h3 className="font-medium text-blue-900 mb-1">
+                      Creating as {user.role === 1 ? 'Producer' : 'Factory'}
+                    </h3>
                     <p className="text-sm text-blue-800">
-                      {user.role === 1 
+                      {user.role === 1
                         ? 'You can create raw material tokens and transfer them to factories.'
                         : 'You can transform raw materials into processed goods and transfer to retailers.'}
                     </p>
@@ -249,11 +259,7 @@ export function CreateToken() {
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isCreating}
-                  className="flex-1"
-                >
+                <Button type="submit" disabled={isCreating} className="flex-1">
                   <Package className="w-4 h-4 mr-2" />
                   {isCreating ? 'Creating...' : 'Create Token'}
                 </Button>

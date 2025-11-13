@@ -74,9 +74,9 @@ export function TransferToken() {
     const loadRecipients = async () => {
       try {
         setLoadingRecipients(true);
-        
+
         const targetRole = getTargetRole(user.role);
-        
+
         // Consumer (4) cannot transfer
         if (user.role >= 4 || targetRole > 4) {
           setRecipients([]);
@@ -87,21 +87,21 @@ export function TransferToken() {
         // Query RoleApproved events to find approved users with target role
         const filter = roleManager.filters.RoleApproved();
         const events = await roleManager.queryFilter(filter);
-        
+
         const approvedUsers: RecipientUser[] = [];
         const seenAddresses = new Set<string>();
-        
+
         for (const event of events) {
           // Type guard to check if event has args
           if ('args' in event) {
             const userAddress = (event.args[0] as string).toLowerCase();
             const eventRole = event.args[1];
-            
+
             // Skip if already processed or same as current user
             if (seenAddresses.has(userAddress) || userAddress === account?.toLowerCase()) {
               continue;
             }
-            
+
             // Check if this user still has the target role and is approved
             if (Number(eventRole) === targetRole) {
               try {
@@ -109,7 +109,7 @@ export function TransferToken() {
                 if (userData.approved && Number(userData.role) === targetRole) {
                   approvedUsers.push({
                     address: userAddress,
-                    role: targetRole
+                    role: targetRole,
                   });
                   seenAddresses.add(userAddress);
                 }
@@ -119,7 +119,7 @@ export function TransferToken() {
             }
           }
         }
-        
+
         setRecipients(approvedUsers);
       } catch (error) {
         console.error('Error loading recipients:', error);
@@ -154,7 +154,7 @@ export function TransferToken() {
     const descriptions: Record<number, string> = {
       1: 'Send raw materials to factories for processing',
       2: 'Send processed goods to retailers for distribution',
-      3: 'Send products to consumers for final use'
+      3: 'Send products to consumers for final use',
     };
     return descriptions[user.role] || '';
   };
@@ -177,7 +177,9 @@ export function TransferToken() {
     try {
       const pendingTransferId = await transferManager.getPendingTransfer(id);
       if (pendingTransferId !== 0n) {
-        toast.error('This token already has a pending transfer. Please wait for it to be accepted or rejected before creating a new transfer.');
+        toast.error(
+          'This token already has a pending transfer. Please wait for it to be accepted or rejected before creating a new transfer.'
+        );
         return;
       }
     } catch (error) {
@@ -194,13 +196,15 @@ export function TransferToken() {
       navigate('/transfers');
     } catch (error: unknown) {
       console.error('Error requesting transfer:', error);
-      
+
       let errorMessage = 'Unknown error';
       if (error instanceof Error) {
         if (error.message.includes('NotTokenCreator')) {
-          errorMessage = 'You can only transfer tokens that you created. To process received materials, create a new processed token.';
+          errorMessage =
+            'You can only transfer tokens that you created. To process received materials, create a new processed token.';
         } else if (error.message.includes('TransferAlreadyPending')) {
-          errorMessage = 'This token already has a pending transfer. Please wait for it to be resolved.';
+          errorMessage =
+            'This token already has a pending transfer. Please wait for it to be resolved.';
         } else if (error.message.includes('InvalidRoleTransition')) {
           errorMessage = 'Invalid transfer: Check recipient role or token type.';
         } else if (error.message.includes('NotApproved')) {
@@ -211,7 +215,7 @@ export function TransferToken() {
           errorMessage = error.message;
         }
       }
-      
+
       toast.error(`Failed: ${errorMessage}`, { id: toastId });
     } finally {
       setIsTransferring(false);
@@ -252,7 +256,9 @@ export function TransferToken() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-lg font-bold text-gray-900 truncate">{token.productName}</h2>
-                  <p className="text-xs text-gray-600">Token #{token.id.toString()} • Balance: {balance.toString()}</p>
+                  <p className="text-xs text-gray-600">
+                    Token #{token.id.toString()} • Balance: {balance.toString()}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -270,11 +276,12 @@ export function TransferToken() {
                     <strong>Your Role:</strong> {getRoleName(user.role)}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
-                    You can transfer to: <strong>{targetRoleName} ({recipients.length} available)</strong>
+                    You can transfer to:{' '}
+                    <strong>
+                      {targetRoleName} ({recipients.length} available)
+                    </strong>
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {getTransferDescription()}
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{getTransferDescription()}</p>
                 </div>
               </div>
             </CardContent>
@@ -289,7 +296,8 @@ export function TransferToken() {
                   <div>
                     <h3 className="text-sm font-bold text-yellow-900">Pending Transfer</h3>
                     <p className="text-xs text-yellow-800 mt-1">
-                      This token already has a pending transfer. You must wait for it to be accepted or rejected before creating a new transfer request.
+                      This token already has a pending transfer. You must wait for it to be accepted
+                      or rejected before creating a new transfer request.
                     </p>
                   </div>
                 </div>
@@ -304,7 +312,9 @@ export function TransferToken() {
                 <Send className="w-5 h-5 text-green-600" />
                 <div>
                   <h3 className="text-base font-bold text-gray-900">Send Transfer Request</h3>
-                  <p className="text-xs text-gray-600">The recipient will need to accept the transfer</p>
+                  <p className="text-xs text-gray-600">
+                    The recipient will need to accept the transfer
+                  </p>
                 </div>
               </div>
 
@@ -325,16 +335,15 @@ export function TransferToken() {
                     </option>
                     {recipients.map((recipient) => (
                       <option key={recipient.address} value={recipient.address}>
-                        {recipient.address.slice(0, 6)}...{recipient.address.slice(-4)} ({getRoleName(recipient.role)})
+                        {recipient.address.slice(0, 6)}...{recipient.address.slice(-4)} (
+                        {getRoleName(recipient.role)})
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Amount *
-                  </label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Amount *</label>
                   <Input
                     type="number"
                     placeholder="Enter amount to transfer"
@@ -345,9 +354,7 @@ export function TransferToken() {
                     required
                     className="text-sm"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Maximum: {balance.toString()} tokens
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Maximum: {balance.toString()} tokens</p>
                 </div>
 
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
@@ -355,7 +362,10 @@ export function TransferToken() {
                     <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
                     <div className="text-xs text-yellow-800">
                       <p className="font-medium">Important</p>
-                      <p className="mt-1">This will create a transfer request. The recipient must accept the transfer before the tokens are actually moved.</p>
+                      <p className="mt-1">
+                        This will create a transfer request. The recipient must accept the transfer
+                        before the tokens are actually moved.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -371,11 +381,21 @@ export function TransferToken() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isTransferring || balance === 0n || !selectedRecipient || recipients.length === 0 || hasPendingTransfer}
+                    disabled={
+                      isTransferring ||
+                      balance === 0n ||
+                      !selectedRecipient ||
+                      recipients.length === 0 ||
+                      hasPendingTransfer
+                    }
                     className="flex-1"
                   >
                     <Send className="w-4 h-4" />
-                    {isTransferring ? 'Sending...' : hasPendingTransfer ? 'Transfer Pending' : 'Send Request'}
+                    {isTransferring
+                      ? 'Sending...'
+                      : hasPendingTransfer
+                        ? 'Transfer Pending'
+                        : 'Send Request'}
                   </Button>
                 </div>
               </form>

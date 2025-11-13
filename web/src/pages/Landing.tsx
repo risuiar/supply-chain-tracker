@@ -6,7 +6,8 @@ import { useWeb3 } from '../contexts/Web3Context';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Select } from '../components/Select';
-import { UserRole } from '../types';
+
+type UserRole = 'Admin' | 'Producer' | 'Factory' | 'Retailer' | 'Consumer';
 
 export function Landing() {
   const { isConnected, isAdmin, user, connectWallet, requestRole, refreshUser } = useWeb3();
@@ -53,12 +54,10 @@ export function Landing() {
           <div className="flex justify-center mb-4">
             <Shield className="w-16 h-16 text-blue-600" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Supply Chain Tracker
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Supply Chain Tracker</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            A decentralized application for transparent and secure supply chain management.
-            Track products from origin to consumer with blockchain technology.
+            A decentralized application for transparent and secure supply chain management. Track
+            products from origin to consumer with blockchain technology.
           </p>
         </div>
 
@@ -101,17 +100,13 @@ export function Landing() {
                     { value: 'Consumer', label: 'Consumer - End consumer' },
                   ]}
                 />
-                <Button
-                  onClick={handleRegister}
-                  disabled={isRegistering}
-                  className="w-full"
-                >
+                <Button onClick={handleRegister} disabled={isRegistering} className="w-full">
                   {isRegistering ? 'Registering...' : 'Register'}
                 </Button>
               </div>
             </CardContent>
           </Card>
-  ) : user && !user.approved && user.requestedRole !== 0 ? (
+        ) : user && !user.approved && user.requestedRole !== 0 ? (
           <Card className="max-w-md mx-auto">
             <CardHeader>
               <h2 className="text-xl font-semibold text-gray-900">Pending Approval</h2>
@@ -130,14 +125,15 @@ export function Landing() {
               </div>
             </CardContent>
           </Card>
-  ) : user && !user.approved && user.requestedRole === 0 && user.role === 0 ? (
+        ) : user && !user.approved && user.requestedRole === 0 && user.role === 0 ? (
           <Card className="max-w-md mx-auto">
             <CardHeader>
               <h2 className="text-xl font-semibold text-gray-900">Registration Rejected</h2>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 mb-6">
-                Your registration as <strong>{user.role}</strong> has been rejected by an administrator
+                Your registration as <strong>{user.role}</strong> has been rejected by an
+                administrator
               </p>
               <Button
                 onClick={() => setSelectedRole('Producer')}

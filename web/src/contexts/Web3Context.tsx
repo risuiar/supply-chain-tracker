@@ -1,14 +1,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { BrowserProvider, Contract, Eip1193Provider } from 'ethers';
 import toast from 'react-hot-toast';
-import { 
-  ROLE_MANAGER_ADDRESS, 
+import {
+  ROLE_MANAGER_ADDRESS,
   ROLE_MANAGER_ABI,
   TOKEN_FACTORY_ADDRESS,
   TOKEN_FACTORY_ABI,
   TRANSFER_MANAGER_ADDRESS,
   TRANSFER_MANAGER_ABI,
-  ADMIN_ADDRESS 
+  ADMIN_ADDRESS,
 } from '../contracts/config';
 
 // Internal UI user shape adapted to on-chain struct
@@ -54,10 +54,14 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   const setupProvider = async (ethereum: Eip1193Provider) => {
     const browserProvider = new BrowserProvider(ethereum);
     const signer = await browserProvider.getSigner();
-    
+
     const roleManagerContract = new Contract(ROLE_MANAGER_ADDRESS, ROLE_MANAGER_ABI, signer);
     const tokenFactoryContract = new Contract(TOKEN_FACTORY_ADDRESS, TOKEN_FACTORY_ABI, signer);
-    const transferManagerContract = new Contract(TRANSFER_MANAGER_ADDRESS, TRANSFER_MANAGER_ABI, signer);
+    const transferManagerContract = new Contract(
+      TRANSFER_MANAGER_ADDRESS,
+      TRANSFER_MANAGER_ABI,
+      signer
+    );
 
     setProvider(browserProvider);
     setRoleManager(roleManagerContract);
@@ -69,24 +73,25 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   const loadUserInfo = async (address: string, roleManagerContract: Contract) => {
     try {
-      const rawStruct = await roleManagerContract.getUser(address) as unknown as {
+      const rawStruct = (await roleManagerContract.getUser(address)) as unknown as {
         role: bigint;
         approved: boolean;
         requestedRole: bigint;
       };
-      
+
       const chainUser: ChainUser = {
         role: Number(rawStruct.role),
         approved: rawStruct.approved,
         requestedRole: Number(rawStruct.requestedRole),
       };
-      
+
       const adminAddress: string = await roleManagerContract.admin();
-      
+
       const addrLower = address.toLowerCase();
       const chainAdminLower = adminAddress?.toLowerCase?.() ?? '';
       const envAdminLower = ADMIN_ADDRESS?.toLowerCase?.() ?? '';
-      const adminCheck = addrLower === chainAdminLower || (!!envAdminLower && addrLower === envAdminLower);
+      const adminCheck =
+        addrLower === chainAdminLower || (!!envAdminLower && addrLower === envAdminLower);
       setIsAdmin(adminCheck);
 
       if (!chainUser.approved && chainUser.requestedRole === 0 && chainUser.role === 0) {
@@ -114,7 +119,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
     try {
       const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts'
+        method: 'eth_requestAccounts',
       });
 
       const address = accounts[0];
@@ -159,7 +164,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // No auto-reconnect - user must explicitly click Connect
-    
+
     if (window.ethereum) {
       const handleAccountsChanged = (accounts: string[]) => {
         if (accounts.length === 0) {
@@ -178,12 +183,12 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         window.location.reload();
       };
 
-  window.ethereum.on('accountsChanged', handleAccountsChanged);
-  window.ethereum.on('chainChanged', handleChainChanged);
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
 
       return () => {
-  window.ethereum?.removeListener('accountsChanged', handleAccountsChanged);
-  window.ethereum?.removeListener('chainChanged', handleChainChanged);
+        window.ethereum?.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum?.removeListener('chainChanged', handleChainChanged);
       };
     }
   }, [account]);
@@ -198,7 +203,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           const current = list && list.length > 0 ? list[0] : null;
           const currentLower = current?.toLowerCase() ?? '';
           const accountLower = (account ?? '').toLowerCase();
-          
+
           if (current && currentLower !== accountLower) {
             setAccount(current);
             const { roleManagerContract } = await setupProvider(eth);
