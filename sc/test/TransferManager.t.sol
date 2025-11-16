@@ -191,7 +191,7 @@ contract TransferManagerTest is Test {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 1000);
         
-        vm.expectRevert(TransferManager.InvalidAddress.selector);
+        vm.expectRevert(TransferManager.InvalidAmount.selector);
         vm.prank(producer);
         transferManager.requestTransfer(tokenId, factory, 0);
     }
