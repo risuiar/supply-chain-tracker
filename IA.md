@@ -29,5 +29,3 @@ Usé sesiones específicas con ChatGPT para analizar arquitectura, diseñar part
 ---------------------
 
 La IA acelera el trabajo y permite iterar más rápido, especialmente al generar borradores y tests iniciales. Sin embargo, el criterio, la revisión y la arquitectura final deben mantenerse bajo control del desarrollador. Un flujo de versiones claro fue esencial para combinar las sugerencias de IA con un desarrollo ordenado y fiable.
-
-Si querés, te hago una versión muy corta para entregar como “resumen ejecutivo”, o una versión más formal para un informe académico.

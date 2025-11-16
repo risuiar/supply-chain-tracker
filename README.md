@@ -50,6 +50,18 @@ Permite que diferentes actores de una cadena de suministro (productores, fábric
 - **Permisos Claros**: Cada rol tiene permisos específicos y limitados
 - **Sin Intermediarios**: Las transacciones son directas entre las partes
 
+### 🔐 Autenticación y Persistencia de Sesión
+
+- **Conexión con MetaMask**: Integración completa con MetaMask para autenticación Web3
+- **Persistencia en localStorage**: La sesión se mantiene al recargar la página
+  - Tu conexión se guarda automáticamente cuando conectas tu wallet
+  - Al recargar, la aplicación restaura tu sesión si la cuenta sigue disponible en MetaMask
+- **Desconexión Limpia**: Al desconectar, todos los datos se eliminan del localStorage
+- **Detección Automática de Cambios**: 
+  - Si cambias de cuenta en MetaMask, la aplicación se actualiza automáticamente
+  - Si desconectas en MetaMask, la aplicación también se desconecta
+  - Cambios de red detectados y manejo automático
+
 ## 🚀 Inicio Rápido
 
 ### Requisitos Previos
@@ -236,13 +248,20 @@ Para pruebas locales, Anvil proporciona cuentas pre-financiadas. Usa estas para 
 
 ### Cómo Cambiar de Cuenta
 
-**⚠️ IMPORTANTE:** Para cambiar de cuenta correctamente:
+Tienes dos opciones para cambiar de cuenta:
 
+**Opción 1: Cambio Automático**
+1. Cambia a la cuenta deseada directamente en MetaMask
+2. La aplicación detectará el cambio automáticamente y se actualizará
+
+**Opción 2: Desconexión Manual**
 1. Click en **"Desconectar"** en la aplicación
 2. Cambia a la cuenta deseada en MetaMask
 3. Click en **"Conectar MetaMask"** nuevamente
 
-Esto asegura que la aplicación se conecte con la cuenta correcta.
+**💡 Nota sobre Persistencia:**
+- Si recargas la página, tu sesión se restaurará automáticamente si la cuenta sigue disponible en MetaMask
+- Al desconectar manualmente, la sesión no se restaurará al recargar (para mayor seguridad)
 
 ## 🐛 Problemas Comunes y Soluciones
 

@@ -154,6 +154,11 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       setIsConnected(true);
       setManualDisconnect(false); // Reset flag al conectar
 
+      // Guardar en localStorage para persistencia
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('connectedAccount', address);
+      }
+
       const { roleManagerContract } = await setupProvider(window.ethereum);
       await loadUserInfo(address, roleManagerContract);
     } catch (error) {
@@ -247,9 +252,51 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Restaurar sesión desde localStorage al cargar la página
   useEffect(() => {
-    // No auto-reconnect - user must explicitly click Connect
+    const restoreSession = async () => {
+      if (!window.ethereum) return;
 
+      try {
+        const savedAccount = localStorage.getItem('connectedAccount');
+        if (!savedAccount) return;
+
+        // Verificar que la cuenta sigue disponible en MetaMask
+        const accounts = (await window.ethereum.request({
+          method: 'eth_accounts',
+        })) as string[];
+
+        if (accounts.length === 0) {
+          // No hay cuentas conectadas, limpiar localStorage
+          localStorage.removeItem('connectedAccount');
+          return;
+        }
+
+        const currentAccount = accounts[0];
+        const savedLower = savedAccount.toLowerCase();
+        const currentLower = currentAccount.toLowerCase();
+
+        // Solo restaurar si la cuenta guardada coincide con la actual en MetaMask
+        if (savedLower === currentLower) {
+          setAccount(currentAccount);
+          setIsConnected(true);
+          const { roleManagerContract } = await setupProvider(window.ethereum);
+          await loadUserInfo(currentAccount, roleManagerContract);
+        } else {
+          // La cuenta cambió, limpiar localStorage
+          localStorage.removeItem('connectedAccount');
+        }
+      } catch (error) {
+        console.error('Error restoring session:', error);
+        // Si hay error, limpiar localStorage
+        localStorage.removeItem('connectedAccount');
+      }
+    };
+
+    restoreSession();
+  }, []); // Solo ejecutar una vez al montar
+
+  useEffect(() => {
     if (window.ethereum) {
       const handleAccountsChanged = (accounts: string[]) => {
         // Solo procesar si no es una desconexión manual
@@ -258,10 +305,15 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         if (accounts.length === 0) {
           disconnectWallet();
         } else if (account && accounts[0] !== account) {
-          setAccount(accounts[0]);
+          const newAccount = accounts[0];
+          setAccount(newAccount);
+          // Actualizar localStorage con la nueva cuenta
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('connectedAccount', newAccount);
+          }
           if (window.ethereum) {
             setupProvider(window.ethereum as Eip1193Provider).then(({ roleManagerContract }) => {
-              loadUserInfo(accounts[0], roleManagerContract);
+              loadUserInfo(newAccount, roleManagerContract);
             });
           }
         }
