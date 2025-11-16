@@ -5,7 +5,7 @@ import "./RoleManager.sol";
 import "./TokenFactory.sol";
 
 /// @title TransferManager
-/// @notice Manages token transfers between supply chain participants
+/// @notice Gestiona las transferencias de tokens entre participantes de la cadena de suministro
 contract TransferManager {
     enum TransferStatus {
         None,
@@ -60,17 +60,17 @@ contract TransferManager {
         tokenFactory = TokenFactory(_tokenFactory);
         admin = roleManager.admin();
 
-        // Define valid role transitions
+        // Define las transiciones válidas de roles
         _nextRole[RoleManager.Role.Producer] = RoleManager.Role.Factory;
         _nextRole[RoleManager.Role.Factory] = RoleManager.Role.Retailer;
         _nextRole[RoleManager.Role.Retailer] = RoleManager.Role.Consumer;
     }
 
-    /// @notice Request a token transfer to the next role in the supply chain
-    /// @param tokenId ID of the token to transfer
-    /// @param to Address of the recipient
-    /// @param amount Amount of tokens to transfer
-    /// @return transferId The ID of the created transfer request
+    /// @notice Solicita una transferencia de token al siguiente rol en la cadena de suministro
+    /// @param tokenId ID del token a transferir
+    /// @param to Dirección del destinatario
+    /// @param amount Cantidad de tokens a transferir
+    /// @return transferId El ID de la solicitud de transferencia creada
     function requestTransfer(
         uint256 tokenId,
         address to,
@@ -81,16 +81,16 @@ contract TransferManager {
         }
 
         if (amount == 0) {
-            revert InvalidAddress(); // Reusing error for simplicity
+            revert InvalidAddress(); // Reutilizamos el error por simplicidad
         }
 
-        // Check if sender has enough balance
+        // Verifica si el remitente tiene suficiente balance
         uint256 balance = tokenFactory.balanceOf(tokenId, msg.sender);
         if (balance < amount) {
             revert Unauthorized();
         }
 
-        // Verify sender is approved
+        // Verifica que el remitente esté aprobado
         if (!roleManager.isApproved(msg.sender)) {
             revert NotApproved();
         }
@@ -102,21 +102,21 @@ contract TransferManager {
             revert InvalidRoleTransition();
         }
 
-        // Verify recipient has the expected next role
+        // Verifica que el destinatario tenga el siguiente rol esperado
         if (!roleManager.hasRole(to, expectedNext)) {
             revert InvalidRoleTransition();
         }
 
-        // Get token information
+        // Obtiene la información del token
         TokenFactory.Token memory token = tokenFactory.getToken(tokenId);
         
-        // Validate transfer permissions based on role:
-        // - Producer: Can only transfer RawMaterial tokens they created
-        // - Factory: Can only transfer ProcessedGood tokens they created
-        // - Retailer: Can transfer any token they possess (received from Factory)
-        // - Consumer: Cannot transfer (expectedNext would be None, already checked above)
+        // Valida los permisos de transferencia según el rol:
+        // - Producer: Solo puede transferir tokens RawMaterial que haya creado
+        // - Factory: Solo puede transferir tokens ProcessedGood que haya creado
+        // - Retailer: Puede transferir cualquier token que posea (recibido de Factory)
+        // - Consumer: No puede transferir (expectedNext sería None, ya verificado arriba)
         if (senderRole == RoleManager.Role.Producer) {
-            // Producer can only transfer RawMaterial tokens they created
+            // El productor solo puede transferir tokens RawMaterial que haya creado
             if (token.creator != msg.sender) {
                 revert NotTokenCreator();
             }
@@ -124,7 +124,7 @@ contract TransferManager {
                 revert InvalidRoleTransition();
             }
         } else if (senderRole == RoleManager.Role.Factory) {
-            // Factory can only transfer ProcessedGood tokens they created
+            // La fábrica solo puede transferir tokens ProcessedGood que haya creado
             if (token.creator != msg.sender) {
                 revert NotTokenCreator();
             }
@@ -132,9 +132,9 @@ contract TransferManager {
                 revert InvalidRoleTransition();
             }
         }
-        // Retailer can transfer any token they have balance of (no creator check)
+        // El minorista puede transferir cualquier token del que tenga balance (sin verificar creador)
 
-        // Check for pending transfers
+        // Verifica si hay transferencias pendientes
         if (_pendingTransferByToken[tokenId] != 0) {
             revert TransferAlreadyPending();
         }
@@ -157,8 +157,8 @@ contract TransferManager {
         emit TransferRequested(tokenId, transferId, to);
     }
 
-    /// @notice Approve a pending transfer (recipient or admin only)
-    /// @param transferId ID of the transfer to approve
+    /// @notice Aprueba una transferencia pendiente (solo destinatario o admin)
+    /// @param transferId ID de la transferencia a aprobar
     function approveTransfer(uint256 transferId) external {
         Transfer storage transfer = _transfers[transferId];
         if (transfer.status != TransferStatus.Pending) {
@@ -168,7 +168,7 @@ contract TransferManager {
             revert Unauthorized();
         }
 
-        // Execute the transfer in TokenFactory
+        // Ejecuta la transferencia en TokenFactory
         tokenFactory.transferToken(
             transfer.tokenId,
             transfer.from,
@@ -183,8 +183,8 @@ contract TransferManager {
         emit TransferResolved(transferId, TransferStatus.Approved);
     }
 
-    /// @notice Reject a pending transfer (recipient or admin only)
-    /// @param transferId ID of the transfer to reject
+    /// @notice Rechaza una transferencia pendiente (solo destinatario o admin)
+    /// @param transferId ID de la transferencia a rechazar
     function rejectTransfer(uint256 transferId) external {
         Transfer storage transfer = _transfers[transferId];
         if (transfer.status != TransferStatus.Pending) {
@@ -201,18 +201,18 @@ contract TransferManager {
         emit TransferResolved(transferId, TransferStatus.Rejected);
     }
 
-    /// @notice Get transfer information
-    /// @param transferId ID of the transfer
-    /// @return Transfer struct containing all transfer data
+    /// @notice Obtiene la información de una transferencia
+    /// @param transferId ID de la transferencia
+    /// @return Estructura Transfer con todos los datos de la transferencia
     function getTransfer(
         uint256 transferId
     ) external view returns (Transfer memory) {
         return _transfers[transferId];
     }
 
-    /// @notice Get all transfers for a specific token
-    /// @param tokenId ID of the token
-    /// @return history Array of Transfer structs representing the token's transfer history
+    /// @notice Obtiene todas las transferencias de un token específico
+    /// @param tokenId ID del token
+    /// @return history Array de estructuras Transfer que representan el historial de transferencias del token
     function getTokenTransfers(
         uint256 tokenId
     ) external view returns (Transfer[] memory history) {
@@ -224,9 +224,9 @@ contract TransferManager {
         }
     }
 
-    /// @notice Get pending transfer ID for a token
-    /// @param tokenId ID of the token
-    /// @return Transfer ID if pending, 0 otherwise
+    /// @notice Obtiene el ID de la transferencia pendiente de un token
+    /// @param tokenId ID del token
+    /// @return ID de la transferencia si está pendiente, 0 en caso contrario
     function getPendingTransfer(
         uint256 tokenId
     ) external view returns (uint256) {

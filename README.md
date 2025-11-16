@@ -119,13 +119,18 @@ TokenFactory:     0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
 TransferManager:  0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
 ```
 
-Actualiza estas direcciones en `web/src/contracts/config.ts`:
+#### Paso 2.1: Configurar Variables de Entorno
 
-```typescript
-export const ROLE_MANAGER_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-export const TOKEN_FACTORY_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
-export const TRANSFER_MANAGER_ADDRESS = '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0';
+Crea o actualiza el archivo `web/.env` con las direcciones:
+
+```env
+VITE_ROLE_MANAGER_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+VITE_TOKEN_FACTORY_ADDRESS=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+VITE_TRANSFER_MANAGER_ADDRESS=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+VITE_ADMIN_ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 ```
+
+**💡 Tip:** Hay un archivo `.env.example` que puedes copiar: `cp web/.env.example web/.env`
 
 #### Paso 3: Iniciar Frontend
 
@@ -248,8 +253,8 @@ Esto asegura que la aplicación se conecte con la cuenta correcta.
 2. Vuelve a desplegar los contratos:
    - Windows: `deploy-windows.bat`
    - Mac/Linux: `./deploy-mac.sh`
-3. Actualiza las direcciones en `web/src/contracts/config.ts`
-4. Reinicia el frontend
+3. Actualiza las direcciones en `web/.env`
+4. Reinicia el frontend (Ctrl+C y `npm run dev` de nuevo)
 
 ### ❌ "Ya tienes un rol aprobado"
 
@@ -278,6 +283,55 @@ Esto asegura que la aplicación se conecte con la cuenta correcta.
 - **Web3**: ethers.js v6
 - **Notificaciones**: react-hot-toast
 
+## 🌐 Deployment en Testnets (Sepolia, etc.)
+
+Para desplegar en una red de prueba real en lugar de local:
+
+### 1. Configurar Variables de Entorno
+
+Crea un archivo `sc/.env` con tu configuración:
+
+```env
+SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/TU_INFURA_KEY
+PRIVATE_KEY=tu_private_key_sin_0x
+ETHERSCAN_API_KEY=tu_api_key_opcional
+```
+
+### 2. Desplegar en Sepolia
+
+```bash
+cd sc
+forge script script/DeploySupplyChain.s.sol:DeploySupplyChain \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --private-key $PRIVATE_KEY \
+  --broadcast \
+  --verify
+```
+
+### 3. Actualizar Frontend
+
+Actualiza `web/.env` con las **nuevas direcciones de Sepolia**:
+
+```env
+VITE_ROLE_MANAGER_ADDRESS=0x... # Dirección de Sepolia
+VITE_TOKEN_FACTORY_ADDRESS=0x... # Dirección de Sepolia
+VITE_TRANSFER_MANAGER_ADDRESS=0x... # Dirección de Sepolia
+VITE_ADMIN_ADDRESS=0x... # Tu cuenta que desplegó
+```
+
+### 4. Configurar MetaMask
+
+- Cambia a la red **Sepolia**
+- Usa la cuenta con la que desplegaste (será el admin)
+- Asegúrate de tener SepoliaETH (usa un faucet si necesitas)
+
+**💡 Ventaja:** Con variables de entorno puedes tener:
+- `web/.env.local` → Direcciones de Anvil
+- `web/.env.sepolia` → Direcciones de Sepolia
+- `web/.env.mainnet` → Direcciones de producción (cuando estés listo)
+
+Simplemente copia el archivo correspondiente a `web/.env` según la red que quieras usar.
+
 ## 📚 Documentación Técnica
 
 Para desarrolladores que quieran entender el código en detalle:
@@ -292,7 +346,7 @@ Sigue estos pasos para probar todas las funcionalidades:
 
 1. **Inicia Anvil** → Terminal 1: `anvil`
 2. **Despliega Contratos** → Terminal 2: Script según tu sistema operativo
-3. **Actualiza Direcciones** → En `web/src/contracts/config.ts`
+3. **Actualiza Direcciones** → En `web/.env`
 4. **Inicia Frontend** → Terminal 3: `cd web && npm run dev`
 
 ### 2. Como Administrador

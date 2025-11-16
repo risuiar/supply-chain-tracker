@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /// @title RoleManager
-/// @notice Manages user roles and access control for the supply chain
+/// @notice Gestiona los roles de usuario y el control de acceso para la cadena de suministro
 /// @dev Se han añadido algunas validaciones extra y nuevas funciones sin romper la interfaz original.
 contract RoleManager {
     enum Role {
@@ -91,8 +91,8 @@ contract RoleManager {
     // Core logic
     // =====================
 
-    /// @notice Request a role in the supply chain
-    /// @param desiredRole The role being requested
+    /// @notice Solicita un rol en la cadena de suministro
+    /// @param desiredRole El rol que se está solicitando
     /// @dev Mejoras:
     ///  - No permite pedir Role.None
     ///  - No permite pedir un rol si el usuario ya tiene uno aprobado
@@ -118,8 +118,8 @@ contract RoleManager {
         emit RoleRequested(msg.sender, desiredRole);
     }
 
-    /// @notice Approve a user's role request (admin only)
-    /// @param account Address of the user to approve
+    /// @notice Aprueba la solicitud de rol de un usuario (solo admin)
+    /// @param account Dirección del usuario a aprobar
     function approveRole(address account) external onlyAdmin {
         User storage user = _users[account];
         Role requested = user.requestedRole;
@@ -133,8 +133,8 @@ contract RoleManager {
         emit RoleApproved(account, requested);
     }
 
-    /// @notice Reject a user's role request (admin only)
-    /// @param account Address of the user to reject
+    /// @notice Rechaza la solicitud de rol de un usuario (solo admin)
+    /// @param account Dirección del usuario a rechazar
     function rejectRole(address account) external onlyAdmin {
         User storage user = _users[account];
         Role requested = user.requestedRole;
@@ -146,7 +146,7 @@ contract RoleManager {
         emit RoleRejected(account, requested);
     }
 
-    /// @notice Allow a user to cancel their own pending role request
+    /// @notice Permite a un usuario cancelar su propia solicitud de rol pendiente
     /// @dev Mejora extra: da control al usuario para retirar su solicitud
     function cancelRequest() external {
         User storage user = _users[msg.sender];
@@ -161,8 +161,8 @@ contract RoleManager {
         emit RoleRejected(msg.sender, requested);
     }
 
-    /// @notice Revoke an approved user's role (admin only)
-    /// @param account Address of the user to revoke
+    /// @notice Revoca el rol de un usuario aprobado (solo admin)
+    /// @param account Dirección del usuario a revocar
     function revokeRole(address account) external onlyAdmin {
         User storage user = _users[account];
         if (!user.approved || user.role == Role.None) {
@@ -180,17 +180,17 @@ contract RoleManager {
     // View helpers
     // =====================
 
-    /// @notice Get user information
-    /// @param account Address of the user
-    /// @return User struct containing role, approval status, and requested role
+    /// @notice Obtiene la información de un usuario
+    /// @param account Dirección del usuario
+    /// @return Estructura User que contiene el rol, estado de aprobación y rol solicitado
     function getUser(address account) external view returns (User memory) {
         return _users[account];
     }
 
-    /// @notice Check if an account has a specific approved role
-    /// @param account Address to check
-    /// @param expectedRole Role to verify
-    /// @return True if the account has the expected approved role
+    /// @notice Verifica si una cuenta tiene un rol aprobado específico
+    /// @param account Dirección a verificar
+    /// @param expectedRole Rol a verificar
+    /// @return True si la cuenta tiene el rol aprobado esperado
     function hasRole(
         address account,
         Role expectedRole
@@ -199,16 +199,16 @@ contract RoleManager {
         return user.approved && user.role == expectedRole;
     }
 
-    /// @notice Get the role of an account
-    /// @param account Address to check
-    /// @return The current role of the account
+    /// @notice Obtiene el rol de una cuenta
+    /// @param account Dirección a verificar
+    /// @return El rol actual de la cuenta
     function getUserRole(address account) external view returns (Role) {
         return _users[account].role;
     }
 
-    /// @notice Check if an account is approved
-    /// @param account Address to check
-    /// @return True if the account is approved
+    /// @notice Verifica si una cuenta está aprobada
+    /// @param account Dirección a verificar
+    /// @return True si la cuenta está aprobada
     function isApproved(address account) external view returns (bool) {
         return _users[account].approved;
     }
