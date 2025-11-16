@@ -4,33 +4,7 @@ import { Package, ArrowLeft, ArrowRight, Calendar, User, ArrowRightLeft } from '
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
-
-type TokenData = {
-  id: bigint;
-  productName: string;
-  assetType: number;
-  metadataURI: string;
-  totalSupply: bigint;
-  creator: string;
-  currentHolder: string;
-  currentRole: number;
-  createdAt: bigint;
-  parentIds: bigint[];
-  exists: boolean;
-};
-
-type TransferData = {
-  id: bigint;
-  tokenId: bigint;
-  from: string;
-  to: string;
-  amount: bigint;
-  fromRole: number;
-  toRole: number;
-  status: number;
-  requestedAt: bigint;
-  resolvedAt: bigint;
-};
+import type { TokenData, TransferData } from '../types';
 
 export function TokenDetails() {
   const { id } = useParams<{ id: string }>();

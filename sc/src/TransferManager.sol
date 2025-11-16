@@ -29,7 +29,7 @@ contract TransferManager {
 
     error NotApproved();
     error InvalidAddress();
-    error AssetDoesNotExist();
+    error InvalidAmount();
     error Unauthorized();
     error InvalidRoleTransition();
     error TransferNotPending();
@@ -81,7 +81,7 @@ contract TransferManager {
         }
 
         if (amount == 0) {
-            revert InvalidAddress(); // Reutilizamos el error por simplicidad
+            revert InvalidAmount();
         }
 
         // Verifica si el remitente tiene suficiente balance

@@ -1,9 +1,8 @@
-import { Navigate } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Navigate, Link } from 'react-router-dom';
 import { Package, Send, User, Plus } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent } from '../components/Card';
-import { useState, useEffect } from 'react';
 
 export function Dashboard() {
   const { user, isAdmin, account, tokenFactory, transferManager } = useWeb3();

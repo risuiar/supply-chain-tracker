@@ -75,9 +75,9 @@ contract RoleManager {
         _;
     }
 
-    /// @dev Ejemplo de modifier para usar en contratos que hereden:
-    /// solo permite que un usuario con un rol aprobado específico ejecute la función.
-    /// (No se usa dentro de este contrato, pero queda listo para extender la lógica.)
+    /// @dev Modifier para usar en contratos que hereden o extiendan este contrato.
+    /// Solo permite que un usuario con un rol aprobado específico ejecute la función.
+    /// Nota: No se usa actualmente en este contrato, pero está disponible para extensión futura.
     modifier onlyRole(Role requiredRole) {
         User storage user = _users[msg.sender];
         if (!user.approved || user.role != requiredRole) {
