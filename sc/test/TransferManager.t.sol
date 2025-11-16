@@ -6,8 +6,8 @@ import "../src/RoleManager.sol";
 import "../src/TokenFactory.sol";
 import "../src/TransferManager.sol";
 
-/// @title TransferManager Test Suite
-/// @notice Comprehensive tests for the TransferManager contract
+/// @title Suite de Pruebas de TransferManager
+/// @notice Pruebas exhaustivas para el contrato TransferManager
 contract TransferManagerTest is Test {
     RoleManager public roleManager;
     TokenFactory public tokenFactory;
@@ -33,7 +33,7 @@ contract TransferManagerTest is Test {
         tokenFactory = new TokenFactory(address(roleManager));
         transferManager = new TransferManager(address(roleManager), address(tokenFactory));
         
-        // Approve all users
+        // Aprueba todos los usuarios
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
         roleManager.approveRole(producer);
@@ -74,21 +74,21 @@ contract TransferManagerTest is Test {
     }
     
     function testFactoryCanRequestTransferToRetailer() public {
-        // Setup: Producer creates and transfers to Factory
+        // Configuración: El productor crea y transfiere a la fábrica
         vm.prank(producer);
         uint256 rawToken = tokenFactory.createRawToken("Leather", "", 100);
         
         vm.prank(producer);
         tokenFactory.transferToken(rawToken, producer, factory, 50);
         
-        // Factory creates processed token
+        // La fábrica crea token procesado
         uint256[] memory parentIds = new uint256[](1);
         parentIds[0] = rawToken;
         
         vm.prank(factory);
         uint256 processedToken = tokenFactory.createProcessedToken("Wallet", "", 10, parentIds);
         
-        // Factory requests transfer to Retailer
+        // La fábrica solicita transferencia al minorista
         vm.prank(factory);
         uint256 transferId = transferManager.requestTransfer(processedToken, retailer, 5);
         
@@ -100,7 +100,7 @@ contract TransferManagerTest is Test {
     }
     
     function testRetailerCanRequestTransferToConsumer() public {
-        // Setup: Create token and get it to retailer
+        // Configuración: Crear token y llevarlo al minorista
         vm.prank(producer);
         uint256 rawToken = tokenFactory.createRawToken("Leather", "", 100);
         
@@ -116,7 +116,7 @@ contract TransferManagerTest is Test {
         vm.prank(factory);
         tokenFactory.transferToken(processedToken, factory, retailer, 5);
         
-        // Retailer requests transfer to Consumer
+        // El minorista solicita transferencia al consumidor
         vm.prank(retailer);
         uint256 transferId = transferManager.requestTransfer(processedToken, consumer, 2);
         
@@ -153,7 +153,7 @@ contract TransferManagerTest is Test {
     }
     
     function testConsumerCannotTransferTokens() public {
-        // Setup: Get token to consumer
+        // Configuración: Llevar token al consumidor
         vm.prank(producer);
         uint256 rawToken = tokenFactory.createRawToken("Leather", "", 100);
         
@@ -172,7 +172,7 @@ contract TransferManagerTest is Test {
         vm.prank(retailer);
         tokenFactory.transferToken(processedToken, retailer, consumer, 2);
         
-        // Consumer tries to transfer (should fail - no valid next role)
+        // El consumidor intenta transferir (debe fallar - no hay siguiente rol válido)
         vm.expectRevert(TransferManager.InvalidRoleTransition.selector);
         vm.prank(consumer);
         transferManager.requestTransfer(processedToken, producer, 1);
@@ -211,7 +211,7 @@ contract TransferManagerTest is Test {
         
         address unapproved = makeAddr("unapproved");
         
-        // Unapproved user gets Unauthorized error (from insufficient balance check before role check)
+        // Usuario no aprobado obtiene error Unauthorized (por verificación de balance insuficiente antes de verificar rol)
         vm.expectRevert(TransferManager.Unauthorized.selector);
         vm.prank(unapproved);
         transferManager.requestTransfer(tokenId, factory, 100);
@@ -220,7 +220,7 @@ contract TransferManagerTest is Test {
     // ============ Role-Based Transfer Validation Tests ============
     
     function testProducerCanOnlyTransferRawMaterialTheyCreated() public {
-        // Producer 1 creates token
+        // El productor 1 crea token
         address producer2 = makeAddr("producer2");
         vm.prank(producer2);
         roleManager.requestRole(RoleManager.Role.Producer);
@@ -229,11 +229,11 @@ contract TransferManagerTest is Test {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 1000);
         
-        // Transfer some to producer2
+        // Transfiere algo al productor 2
         vm.prank(producer);
         tokenFactory.transferToken(tokenId, producer, producer2, 100);
         
-        // Producer2 tries to transfer but didn't create it
+        // El productor 2 intenta transferir pero no lo creó
         vm.expectRevert(TransferManager.NotTokenCreator.selector);
         vm.prank(producer2);
         transferManager.requestTransfer(tokenId, factory, 50);
@@ -252,11 +252,11 @@ contract TransferManagerTest is Test {
         vm.prank(factory);
         uint256 processedToken = tokenFactory.createProcessedToken("Wallet", "", 10, parentIds);
         
-        // Transfer processed token to producer
+        // Transfiere token procesado al productor
         vm.prank(factory);
         tokenFactory.transferToken(processedToken, factory, producer, 5);
         
-        // Producer tries to transfer processed token (not creator, so should fail with NotTokenCreator)
+        // El productor intenta transferir token procesado (no es creador, debe fallar con NotTokenCreator)
         vm.expectRevert(TransferManager.NotTokenCreator.selector);
         vm.prank(producer);
         transferManager.requestTransfer(processedToken, factory, 2);
@@ -269,14 +269,14 @@ contract TransferManagerTest is Test {
         vm.prank(producer);
         tokenFactory.transferToken(rawToken, producer, factory, 50);
         
-        // Factory tries to transfer raw material
+        // La fábrica intenta transferir materia prima
         vm.expectRevert(TransferManager.NotTokenCreator.selector);
         vm.prank(factory);
         transferManager.requestTransfer(rawToken, retailer, 10);
     }
     
     function testRetailerCanTransferAnyToken() public {
-        // Get both raw and processed tokens to retailer
+        // Llevar tanto tokens de materia prima como procesados al minorista
         vm.prank(producer);
         uint256 rawToken = tokenFactory.createRawToken("Leather", "", 100);
         
@@ -295,12 +295,12 @@ contract TransferManagerTest is Test {
         vm.prank(factory);
         tokenFactory.transferToken(rawToken, factory, retailer, 10);
         
-        // Retailer can transfer processed token
+        // El minorista puede transferir token procesado
         vm.prank(retailer);
         uint256 transfer1 = transferManager.requestTransfer(processedToken, consumer, 2);
         assertEq(transfer1, 1);
         
-        // Retailer can also transfer raw material
+        // El minorista también puede transferir materia prima
         vm.prank(retailer);
         uint256 transfer2 = transferManager.requestTransfer(rawToken, consumer, 5);
         assertEq(transfer2, 2);
@@ -324,7 +324,7 @@ contract TransferManagerTest is Test {
         TransferManager.Transfer memory transfer = transferManager.getTransfer(transferId);
         assertEq(uint8(transfer.status), uint8(TransferManager.TransferStatus.Approved));
         
-        // Verify balances updated
+        // Verifica que los balances se actualizaron
         assertEq(tokenFactory.balanceOf(tokenId, producer), 500);
         assertEq(tokenFactory.balanceOf(tokenId, factory), 500);
     }
@@ -336,7 +336,7 @@ contract TransferManagerTest is Test {
         vm.prank(producer);
         uint256 transferId = transferManager.requestTransfer(tokenId, factory, 500);
         
-        // Admin approves instead of recipient
+        // El admin aprueba en lugar del destinatario
         transferManager.approveTransfer(transferId);
         
         TransferManager.Transfer memory transfer = transferManager.getTransfer(transferId);
@@ -365,7 +365,7 @@ contract TransferManagerTest is Test {
         vm.prank(factory);
         transferManager.approveTransfer(transferId);
         
-        // Try to approve again
+        // Intenta aprobar de nuevo
         vm.expectRevert(TransferManager.TransferNotPending.selector);
         vm.prank(factory);
         transferManager.approveTransfer(transferId);
@@ -389,7 +389,7 @@ contract TransferManagerTest is Test {
         TransferManager.Transfer memory transfer = transferManager.getTransfer(transferId);
         assertEq(uint8(transfer.status), uint8(TransferManager.TransferStatus.Rejected));
         
-        // Verify balances unchanged
+        // Verifica que los balances no cambiaron
         assertEq(tokenFactory.balanceOf(tokenId, producer), 1000);
         assertEq(tokenFactory.balanceOf(tokenId, factory), 0);
     }
@@ -443,7 +443,7 @@ contract TransferManagerTest is Test {
         vm.prank(factory);
         transferManager.approveTransfer(transferId1);
         
-        // Now can request another transfer
+        // Ahora puede solicitar otra transferencia
         vm.prank(producer);
         uint256 transferId2 = transferManager.requestTransfer(tokenId, factory, 300);
         assertEq(transferId2, 2);
@@ -459,7 +459,7 @@ contract TransferManagerTest is Test {
         vm.prank(factory);
         transferManager.rejectTransfer(transferId1);
         
-        // Now can request another transfer
+        // Ahora puede solicitar otra transferencia
         vm.prank(producer);
         uint256 transferId2 = transferManager.requestTransfer(tokenId, factory, 300);
         assertEq(transferId2, 2);
@@ -508,11 +508,11 @@ contract TransferManagerTest is Test {
     // ============ Complete Flow Tests ============
     
     function testCompleteSupplyChainTransferFlow() public {
-        // Producer creates raw material
+        // El productor crea materia prima
         vm.prank(producer);
         uint256 rawToken = tokenFactory.createRawToken("Leather", "", 1000);
         
-        // Producer -> Factory
+        // Productor -> Fábrica
         vm.prank(producer);
         uint256 transfer1 = transferManager.requestTransfer(rawToken, factory, 500);
         
@@ -526,21 +526,21 @@ contract TransferManagerTest is Test {
         vm.prank(factory);
         uint256 processedToken = tokenFactory.createProcessedToken("Wallet", "", 100, parentIds);
         
-        // Factory -> Retailer
+        // Fábrica -> Minorista
         vm.prank(factory);
         uint256 transfer2 = transferManager.requestTransfer(processedToken, retailer, 50);
         
         vm.prank(retailer);
         transferManager.approveTransfer(transfer2);
         
-        // Retailer -> Consumer
+        // Minorista -> Consumidor
         vm.prank(retailer);
         uint256 transfer3 = transferManager.requestTransfer(processedToken, consumer, 10);
         
         vm.prank(consumer);
         transferManager.approveTransfer(transfer3);
         
-        // Verify final state
+        // Verifica el estado final
         assertEq(tokenFactory.balanceOf(rawToken, producer), 500);
         assertEq(tokenFactory.balanceOf(rawToken, factory), 500);
         assertEq(tokenFactory.balanceOf(processedToken, factory), 50);

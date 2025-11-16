@@ -6,26 +6,28 @@ import "../src/RoleManager.sol";
 import "../src/TokenFactory.sol";
 import "../src/TransferManager.sol";
 
+/// @title Script de Despliegue del Sistema de Cadena de Suministro
+/// @notice Despliega los tres contratos principales: RoleManager, TokenFactory y TransferManager
 contract DeploySupplyChain is Script {
     function run() external {
         vm.startBroadcast();
 
-        // 1. Deploy RoleManager first
+        // 1. Despliega RoleManager primero (es independiente)
         RoleManager roleManager = new RoleManager();
-        console.log("RoleManager deployed to:", address(roleManager));
+        console.log("RoleManager desplegado en:", address(roleManager));
 
-        // 2. Deploy TokenFactory with RoleManager address
+        // 2. Despliega TokenFactory con la dirección de RoleManager
         TokenFactory tokenFactory = new TokenFactory(address(roleManager));
-        console.log("TokenFactory deployed to:", address(tokenFactory));
+        console.log("TokenFactory desplegado en:", address(tokenFactory));
 
-        // 3. Deploy TransferManager with both addresses
+        // 3. Despliega TransferManager con ambas direcciones
         TransferManager transferManager = new TransferManager(
             address(roleManager),
             address(tokenFactory)
         );
-        console.log("TransferManager deployed to:", address(transferManager));
+        console.log("TransferManager desplegado en:", address(transferManager));
 
-        console.log("\n=== Deployment Summary ===");
+        console.log("\n=== Resumen del Despliegue ===");
         console.log("RoleManager:     ", address(roleManager));
         console.log("TokenFactory:    ", address(tokenFactory));
         console.log("TransferManager: ", address(transferManager));
@@ -34,3 +36,4 @@ contract DeploySupplyChain is Script {
         vm.stopBroadcast();
     }
 }
+

@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/RoleManager.sol";
 
-/// @title RoleManager Test Suite
-/// @notice Comprehensive tests for the RoleManager contract
+/// @title Suite de Pruebas de RoleManager
+/// @notice Pruebas exhaustivas para el contrato RoleManager
 contract RoleManagerTest is Test {
     RoleManager public roleManager;
     
@@ -265,23 +265,23 @@ contract RoleManagerTest is Test {
     // ============ Edge Cases & New Validations ============
     
     function testCannotRequestRoleIfAlreadyHasApprovedRole() public {
-        // User requests and gets approved for Producer
+        // El usuario solicita y es aprobado como Productor
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
         roleManager.approveRole(producer);
         
-        // Try to request another role - should revert with AlreadyHasRole
+        // Intenta solicitar otro rol - debe revertir con AlreadyHasRole
         vm.expectRevert(RoleManager.AlreadyHasRole.selector);
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Factory);
     }
     
     function testCannotRequestRoleIfAlreadyHasPendingRequest() public {
-        // User requests Producer role
+        // El usuario solicita rol de Productor
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
         
-        // Try to request Factory role while Producer request is pending
+        // Intenta solicitar rol de Fábrica mientras la solicitud de Productor está pendiente
         vm.expectRevert(RoleManager.RoleAlreadyRequested.selector);
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Factory);
@@ -290,18 +290,18 @@ contract RoleManagerTest is Test {
     // ============ Cancel Request Tests ============
     
     function testUserCanCancelOwnRequest() public {
-        // User requests a role
+        // El usuario solicita un rol
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
         
-        // User cancels their request
+        // El usuario cancela su solicitud
         vm.expectEmit(true, true, false, false);
         emit RoleRejected(producer, RoleManager.Role.Producer);
         
         vm.prank(producer);
         roleManager.cancelRequest();
         
-        // Verify request was cancelled
+        // Verifica que la solicitud fue cancelada
         RoleManager.User memory user = roleManager.getUser(producer);
         assertEq(uint8(user.requestedRole), uint8(RoleManager.Role.None));
         assertFalse(user.approved);
@@ -309,22 +309,22 @@ contract RoleManagerTest is Test {
     }
     
     function testCannotCancelWithoutPendingRequest() public {
-        // Try to cancel without having a pending request
+        // Intenta cancelar sin tener una solicitud pendiente
         vm.expectRevert(RoleManager.RoleNotRequested.selector);
         vm.prank(producer);
         roleManager.cancelRequest();
     }
     
     function testCanRequestAgainAfterCancellingRequest() public {
-        // User requests Producer
+        // El usuario solicita Productor
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
         
-        // User cancels
+        // El usuario cancela
         vm.prank(producer);
         roleManager.cancelRequest();
         
-        // User can request Factory now
+        // El usuario puede solicitar Fábrica ahora
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Factory);
         

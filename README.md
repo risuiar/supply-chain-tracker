@@ -105,7 +105,7 @@ O manualmente:
 
 ```bash
 cd sc
-forge script script/DeploySupplyChain.s.sol:DeploySupplyChain \
+forge script script/DeploySupplyChainSystem.s.sol:DeploySupplyChain \
   --rpc-url http://localhost:8545 \
   --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
   --broadcast
@@ -301,7 +301,7 @@ ETHERSCAN_API_KEY=tu_api_key_opcional
 
 ```bash
 cd sc
-forge script script/DeploySupplyChain.s.sol:DeploySupplyChain \
+forge script script/DeploySupplyChainSystem.s.sol:DeploySupplyChain \
   --rpc-url $SEPOLIA_RPC_URL \
   --private-key $PRIVATE_KEY \
   --broadcast \
