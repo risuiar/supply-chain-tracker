@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Web3Provider, useWeb3 } from './contexts/Web3Context';
 import { Header } from './components/Header';
+import { Footer } from './components/Footer';
 import { Landing } from './pages/Landing';
 import { Dashboard } from './pages/Dashboard';
 import { Tokens } from './pages/Tokens';
@@ -32,82 +33,85 @@ function AppRoutes() {
   const { isConnected, isAdmin } = useWeb3();
 
   return (
-    <>
+    <div className="flex min-h-screen flex-col bg-gray-50">
       {isConnected && <Header />}
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route
-          path="/dashboard"
-          element={
-            isAdmin ? (
+      <div className="flex-1">
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route
+            path="/dashboard"
+            element={
+              isAdmin ? (
+                <AdminOnlyRoute>
+                  <Admin />
+                </AdminOnlyRoute>
+              ) : (
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              )
+            }
+          />
+          <Route
+            path="/tokens"
+            element={
+              <ProtectedRoute>
+                <Tokens />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tokens/create"
+            element={
+              <ProtectedRoute>
+                <CreateToken />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tokens/:id"
+            element={
+              <ProtectedRoute>
+                <TokenDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tokens/:id/transfer"
+            element={
+              <ProtectedRoute>
+                <TransferToken />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transfers"
+            element={
+              <ProtectedRoute>
+                <Transfers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
               <AdminOnlyRoute>
                 <Admin />
               </AdminOnlyRoute>
-            ) : (
+            }
+          />
+          <Route
+            path="/profile"
+            element={
               <ProtectedRoute>
-                <Dashboard />
+                <Profile />
               </ProtectedRoute>
-            )
-          }
-        />
-        <Route
-          path="/tokens"
-          element={
-            <ProtectedRoute>
-              <Tokens />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tokens/create"
-          element={
-            <ProtectedRoute>
-              <CreateToken />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tokens/:id"
-          element={
-            <ProtectedRoute>
-              <TokenDetails />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tokens/:id/transfer"
-          element={
-            <ProtectedRoute>
-              <TransferToken />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/transfers"
-          element={
-            <ProtectedRoute>
-              <Transfers />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <AdminOnlyRoute>
-              <Admin />
-            </AdminOnlyRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </>
+            }
+          />
+        </Routes>
+      </div>
+      <Footer />
+    </div>
   );
 }
 

@@ -1,4 +1,6 @@
 # 🔗 Trazabilidad de Productos con Blockchain
+**Proyecto de Ricardo Vögeli – GitHub: [@risuiar](https://github.com/risuiar)**  
+**Sitio:** <codecrypto.academy/>
 
 Aplicación descentralizada para rastrear productos desde su origen hasta el consumidor final, garantizando transparencia y trazabilidad completa en toda la cadena de suministro.
 
