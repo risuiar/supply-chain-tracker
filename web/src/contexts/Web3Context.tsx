@@ -31,19 +31,27 @@ function decodeContractError(error: unknown): string {
   const errorObj = error as any;
   const message = errorObj.message || '';
 
-  // Si es un error de rechazo del usuario
-  if (message.includes('user rejected') || message.includes('User denied')) {
+  // Detectar primero si el usuario canceló (ACTION_REJECTED = 4001)
+  // Esto tiene prioridad sobre rate limiting para mostrar el mensaje correcto
+  if (
+    errorObj.code === 4001 ||
+    errorObj.error?.code === 4001 ||
+    message.includes('ACTION_REJECTED') ||
+    message.includes('user rejected') ||
+    message.includes('User denied')
+  ) {
     return 'Transacción cancelada por el usuario';
   }
 
   // Si es un error de rate limiting del RPC
   if (
     errorObj.code === -32603 ||
+    errorObj.code === -32005 ||
     message.includes('rate limited') ||
     message.includes('rate limit') ||
     (errorObj.error && errorObj.error.message && errorObj.error.message.includes('rate limit'))
   ) {
-    return 'Demasiadas solicitudes al nodo RPC. Por favor espera unos segundos e intenta de nuevo.';
+    return 'Demasiadas solicitudes al nodo RPC. Por favor espera 60 segundos antes de intentar de nuevo.';
   }
 
   // Intentar buscar el nombre del error en el mensaje
@@ -588,8 +596,9 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     if (window.ethereum && account && isConnected && !manualDisconnect) {
       const eth = window.ethereum as Eip1193Provider;
       const configuredNetwork = import.meta.env.VITE_NETWORK?.toLowerCase().trim();
-      // Polling más lento en Sepolia (cada 10 segundos) vs Anvil (cada 5 segundos)
-      const pollInterval = configuredNetwork === 'sepolia' ? 10000 : 5000;
+      // Polling mucho más lento en Sepolia (cada 30 segundos) vs Anvil (cada 10 segundos)
+      // Esto reduce significativamente las solicitudes al RPC
+      const pollInterval = configuredNetwork === 'sepolia' ? 30000 : 10000;
 
       const check = async () => {
         try {
@@ -609,6 +618,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           }
         } catch (error) {
           // Log pero no desconectar por errores de red temporales
+          // No hacer nada para evitar más solicitudes al RPC
           console.warn('Polling check error (ignored):', error);
         }
       };

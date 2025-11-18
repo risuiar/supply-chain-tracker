@@ -187,11 +187,25 @@ export function TransferToken() {
 
       let errorMessage = 'Error desconocido';
       if (error && typeof error === 'object') {
-        const errorObj = error as { message?: string; code?: number; error?: { message?: string } };
+        const errorObj = error as {
+          message?: string;
+          code?: number;
+          error?: { message?: string; code?: number };
+        };
         const message = errorObj.message || '';
 
-        // Detectar rate limiting
+        // Detectar primero si el usuario canceló (ACTION_REJECTED = 4001)
+        // Esto tiene prioridad sobre rate limiting para mostrar el mensaje correcto
         if (
+          errorObj.code === 4001 ||
+          errorObj.error?.code === 4001 ||
+          message.includes('user rejected') ||
+          message.includes('User denied') ||
+          message.includes('ACTION_REJECTED')
+        ) {
+          errorMessage = 'Transacción cancelada por el usuario';
+        } else if (
+          // Detectar rate limiting
           errorObj.code === -32603 ||
           errorObj.code === -32005 ||
           message.includes('rate limited') ||
@@ -201,9 +215,7 @@ export function TransferToken() {
             errorObj.error.message.includes('rate limit'))
         ) {
           errorMessage =
-            'Demasiadas solicitudes al nodo RPC. Por favor espera 30 segundos e intenta de nuevo.';
-        } else if (message.includes('user rejected') || message.includes('User denied')) {
-          errorMessage = 'Transacción cancelada por el usuario';
+            'Demasiadas solicitudes al nodo RPC. Por favor espera 60 segundos antes de intentar de nuevo.';
         } else if (message.includes('NotTokenCreator')) {
           errorMessage =
             'Solo puedes transferir tokens que creaste. Para procesar materiales recibidos, crea un nuevo token procesado.';
