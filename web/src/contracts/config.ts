@@ -62,6 +62,12 @@ export const ROLE_MANAGER_ABI = [
   'event RoleApproved(address indexed account, uint8 indexed role)',
   'event RoleRejected(address indexed account, uint8 indexed requestedRole)',
   'event RoleRevoked(address indexed account, uint8 indexed previousRole)',
+  'error NotAdmin()',
+  'error RoleNotRequested()',
+  'error InvalidRoleRequest()',
+  'error NotApproved()',
+  'error AlreadyHasRole()',
+  'error RoleAlreadyRequested()',
 ];
 
 // TokenFactory ABI

@@ -11,6 +11,54 @@ import {
   ADMIN_ADDRESS,
 } from '../contracts/config';
 
+// Mapeo de errores del contrato a mensajes en español
+const ERROR_MESSAGES: Record<string, string> = {
+  AlreadyHasRole:
+    'Ya tienes un rol aprobado. No puedes solicitar otro rol mientras tengas uno activo.',
+  RoleAlreadyRequested: 'Ya tienes una solicitud pendiente. Espera a que sea aprobada o rechazada.',
+  RoleNotRequested: 'No hay ninguna solicitud para cancelar.',
+  NotApproved: 'No tienes un rol aprobado.',
+  InvalidRoleRequest: 'Rol solicitado no válido.',
+  NotAdmin: 'Solo el administrador puede hacer esta acción.',
+};
+
+// Helper para decodificar errores del contrato
+function decodeContractError(error: unknown): string {
+  if (!error || typeof error !== 'object') {
+    return 'Error desconocido';
+  }
+
+  const errorObj = error as any;
+  const message = errorObj.message || '';
+
+  // Si es un error de rechazo del usuario
+  if (message.includes('user rejected') || message.includes('User denied')) {
+    return 'Transacción cancelada por el usuario';
+  }
+
+  // Intentar buscar el nombre del error en el mensaje
+  for (const [errorName, translatedMessage] of Object.entries(ERROR_MESSAGES)) {
+    if (message.includes(errorName)) {
+      return translatedMessage;
+    }
+  }
+
+  // Si es un error de "missing revert data", probablemente es un error de validación del contrato
+  // Este error ocurre cuando estimateGas falla porque el contrato revierte con un custom error
+  // que no se puede decodificar (generalmente porque el usuario ya tiene un rol o solicitud pendiente)
+  if (message.includes('missing revert data')) {
+    return 'La transacción fue rechazada por el contrato. Verifica que no tengas un rol aprobado o una solicitud pendiente.';
+  }
+
+  // Si es un error de estimación de gas (CALL_EXCEPTION), probablemente es un error de validación
+  if (errorObj.action === 'estimateGas' || errorObj.code === 'CALL_EXCEPTION') {
+    return 'La transacción fue rechazada. Verifica que no tengas un rol aprobado o una solicitud pendiente.';
+  }
+
+  // Mensaje genérico
+  return message || 'Error en la transacción. Por favor intenta de nuevo.';
+}
+
 // Internal UI user shape adapted to on-chain struct
 interface ChainUser {
   role: number; // enum Role: 0 None, 1 Producer, 2 Factory, 3 Retailer, 4 Consumer
@@ -246,65 +294,85 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   const requestRole = async (desiredRole: number) => {
     if (!roleManager || !account) return;
+    const toastId = toast.loading('Enviando transacción...');
     try {
       const tx = await roleManager.requestRole(desiredRole);
+      toast.loading('Esperando confirmación...', { id: toastId });
       await tx.wait();
       await refreshUser();
-      toast.success('Solicitud de rol enviada correctamente');
+      toast.success('Solicitud de rol enviada correctamente', { id: toastId });
     } catch (e) {
       console.error('requestRole failed', e);
+      const errorMessage = decodeContractError(e);
+      toast.error(errorMessage, { id: toastId });
       throw e;
     }
   };
 
   const cancelRequest = async () => {
     if (!roleManager || !account) return;
+    const toastId = toast.loading('Enviando transacción...');
     try {
       const tx = await roleManager.cancelRequest();
+      toast.loading('Esperando confirmación...', { id: toastId });
       await tx.wait();
       await refreshUser();
-      toast.success('Solicitud cancelada correctamente');
+      toast.success('Solicitud cancelada correctamente', { id: toastId });
     } catch (e) {
       console.error('cancelRequest failed', e);
+      const errorMessage = decodeContractError(e);
+      toast.error(errorMessage, { id: toastId });
       throw e;
     }
   };
 
   const approveRole = async (userAccount: string) => {
     if (!roleManager || !account) return;
+    const toastId = toast.loading('Enviando transacción...');
     try {
       const tx = await roleManager.approveRole(userAccount);
+      toast.loading('Esperando confirmación...', { id: toastId });
       await tx.wait();
       await refreshUser();
-      toast.success('Rol aprobado correctamente');
+      toast.success('Rol aprobado correctamente', { id: toastId });
     } catch (e) {
       console.error('approveRole failed', e);
+      const errorMessage = decodeContractError(e);
+      toast.error(errorMessage, { id: toastId });
       throw e;
     }
   };
 
   const rejectRole = async (userAccount: string) => {
     if (!roleManager || !account) return;
+    const toastId = toast.loading('Enviando transacción...');
     try {
       const tx = await roleManager.rejectRole(userAccount);
+      toast.loading('Esperando confirmación...', { id: toastId });
       await tx.wait();
       await refreshUser();
-      toast.success('Solicitud rechazada');
+      toast.success('Solicitud rechazada', { id: toastId });
     } catch (e) {
       console.error('rejectRole failed', e);
+      const errorMessage = decodeContractError(e);
+      toast.error(errorMessage, { id: toastId });
       throw e;
     }
   };
 
   const revokeRole = async (userAccount: string) => {
     if (!roleManager || !account) return;
+    const toastId = toast.loading('Enviando transacción...');
     try {
       const tx = await roleManager.revokeRole(userAccount);
+      toast.loading('Esperando confirmación...', { id: toastId });
       await tx.wait();
       await refreshUser();
-      toast.success('Rol revocado correctamente');
+      toast.success('Rol revocado correctamente', { id: toastId });
     } catch (e) {
       console.error('revokeRole failed', e);
+      const errorMessage = decodeContractError(e);
+      toast.error(errorMessage, { id: toastId });
       throw e;
     }
   };
