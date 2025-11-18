@@ -60,13 +60,26 @@ function decodeContractError(error: unknown): string {
     return 'La transacción fue rechazada por el contrato. Verifica que no tengas un rol aprobado o una solicitud pendiente.';
   }
 
-  // Si es un error de estimación de gas (CALL_EXCEPTION), probablemente es un error de validación
+  // Si es un error de estimación de gas (CALL_EXCEPTION), puede ser varias cosas
+  // Solo mostrar el mensaje genérico si realmente parece ser un error de validación del contrato
   if (errorObj.action === 'estimateGas' || errorObj.code === 'CALL_EXCEPTION') {
-    return 'La transacción fue rechazada. Verifica que no tengas un rol aprobado o una solicitud pendiente.';
+    // Si el error tiene "missing revert data", ya lo manejamos arriba
+    // Para otros CALL_EXCEPTION, mostrar un mensaje más genérico
+    if (!message.includes('missing revert data')) {
+      return 'Error al procesar la transacción. Por favor verifica tu conexión y vuelve a intentar.';
+    }
   }
 
-  // Mensaje genérico
-  return message || 'Error en la transacción. Por favor intenta de nuevo.';
+  // Mensaje genérico - mostrar el mensaje original si está disponible
+  if (message) {
+    // Si el mensaje es muy técnico, simplificarlo
+    if (message.length > 200 || message.includes('0x')) {
+      return 'Error en la transacción. Por favor intenta de nuevo o verifica la consola para más detalles.';
+    }
+    return message;
+  }
+
+  return 'Error en la transacción. Por favor intenta de nuevo.';
 }
 
 // Internal UI user shape adapted to on-chain struct
@@ -304,6 +317,34 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   const requestRole = async (desiredRole: number) => {
     if (!roleManager || !account) return;
+
+    // Validar estado del usuario antes de intentar la transacción
+    try {
+      const userInfo = await roleManager.getUser(account);
+      const userRole = Number(userInfo.role);
+      const userApproved = userInfo.approved;
+      const userRequestedRole = Number(userInfo.requestedRole);
+
+      // Si ya tiene un rol aprobado
+      if (userApproved && userRole !== 0) {
+        toast.error(
+          'Ya tienes un rol aprobado. No puedes solicitar otro rol mientras tengas uno activo.'
+        );
+        return;
+      }
+
+      // Si ya tiene una solicitud pendiente
+      if (userRequestedRole !== 0) {
+        toast.error(
+          'Ya tienes una solicitud pendiente. Espera a que sea aprobada o rechazada, o cancélala primero.'
+        );
+        return;
+      }
+    } catch (validationError) {
+      console.error('Error validando estado del usuario:', validationError);
+      // Continuar con la transacción si la validación falla (puede ser un error de conexión)
+    }
+
     const toastId = toast.loading('Enviando transacción...');
     try {
       const tx = await roleManager.requestRole(desiredRole);
