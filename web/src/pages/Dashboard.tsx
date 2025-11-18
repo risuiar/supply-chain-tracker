@@ -91,13 +91,17 @@ export function Dashboard() {
                     <li>Selecciona "Sepolia"</li>
                     <li>Haz clic en "Edit"</li>
                     <li>Cambia el "RPC URL" por uno alternativo:</li>
-                    <li className="ml-4">
-                      • Alchemy: https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
+                    <li className="ml-4 font-semibold">
+                      • <strong>Recomendado (sin registro):</strong> https://rpc.sepolia.org
                     </li>
-                    <li className="ml-4">• Infura: https://sepolia.infura.io/v3/YOUR_KEY</li>
-                    <li className="ml-4">• Public: https://rpc.sepolia.org</li>
+                    <li className="ml-4 text-yellow-600">
+                      • Opcional (requiere registro): Alchemy o Infura
+                    </li>
                     <li>Guarda los cambios y vuelve a intentar</li>
                   </ol>
+                  <p className="mt-2 text-yellow-600 italic">
+                    💡 El endpoint público no requiere API key ni registro. Es la opción más rápida.
+                  </p>
                 </div>
               </details>
             </div>
