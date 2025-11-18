@@ -135,16 +135,41 @@ TransferManager:  0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
 
 #### Paso 2.1: Configurar Variables de Entorno
 
-Crea o actualiza el archivo `web/.env` con las direcciones:
+Crea o actualiza el archivo `web/.env` con la configuración de ambas redes:
 
 ```env
-VITE_ROLE_MANAGER_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
-VITE_TOKEN_FACTORY_ADDRESS=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-VITE_TRANSFER_MANAGER_ADDRESS=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
-VITE_ADMIN_ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+# Red activa: anvil o sepolia
+VITE_NETWORK=anvil
+
+# Direcciones para Anvil (red local)
+VITE_ROLE_MANAGER_ADDRESS_ANVIL=0x5FbDB2315678afecb367f032d93F642f64180aa3
+VITE_TOKEN_FACTORY_ADDRESS_ANVIL=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+VITE_TRANSFER_MANAGER_ADDRESS_ANVIL=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+VITE_ADMIN_ADDRESS_ANVIL=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+
+# Direcciones para Sepolia (testnet)
+# Actualiza estas después de desplegar en Sepolia
+VITE_ROLE_MANAGER_ADDRESS_SEPOLIA=0x0000000000000000000000000000000000000000
+VITE_TOKEN_FACTORY_ADDRESS_SEPOLIA=0x0000000000000000000000000000000000000000
+VITE_TRANSFER_MANAGER_ADDRESS_SEPOLIA=0x0000000000000000000000000000000000000000
+VITE_ADMIN_ADDRESS_SEPOLIA=0x0000000000000000000000000000000000000000
 ```
 
-**💡 Tip:** Hay un archivo `.env.example` que puedes copiar: `cp web/.env.example web/.env`
+**💡 Tip:** Puedes copiar desde el template: `cp web/env.local.template web/.env`
+
+#### Paso 2.2: Cambiar entre Redes (Anvil Local o Sepolia)
+
+Para cambiar entre Anvil (local) y Sepolia (testnet), simplemente edita `web/.env` y cambia el flag:
+
+```env
+VITE_NETWORK=anvil    # Para desarrollo local
+VITE_NETWORK=sepolia  # Para testnet
+```
+
+**💡 Ventaja:** 
+- Un solo archivo `.env` con todas las configuraciones
+- Solo cambias `VITE_NETWORK=anvil` o `VITE_NETWORK=sepolia`
+- Al arrancar `npm run dev`, el servidor lee el `.env` y usa las direcciones correctas automáticamente
 
 #### Paso 3: Iniciar Frontend
 
@@ -306,6 +331,8 @@ Tienes dos opciones para cambiar de cuenta:
 
 ## 🌐 Deployment en Testnets (Sepolia, etc.)
 
+> 💻 **Live Testnet Frontend:** La versión conectada a Sepolia está desplegada en un VPS propio y disponible en https://supply-chain-tracker-risuiar.travix.app. Usa la red Sepolia en MetaMask para interactuar con los contratos verificados.
+
 Para desplegar en una red de prueba real en lugar de local:
 
 ### 1. Configurar Variables de Entorno
@@ -318,15 +345,36 @@ PRIVATE_KEY=tu_private_key_sin_0x
 ETHERSCAN_API_KEY=tu_api_key_opcional
 ```
 
+**⚠️ Importante:**
+- `PRIVATE_KEY` debe ser sin el prefijo `0x`
+- Asegúrate de tener SepoliaETH en tu cuenta (usa un faucet: https://sepoliafaucet.com)
+- `ETHERSCAN_API_KEY` es opcional, pero recomendado para verificar contratos
+
 ### 2. Desplegar en Sepolia
 
+**En Windows:**
 ```bash
-cd sc
-forge script script/DeploySupplyChainSystem.s.sol:DeploySupplyChain \
-  --rpc-url $SEPOLIA_RPC_URL \
-  --private-key $PRIVATE_KEY \
-  --broadcast \
-  --verify
+deploy-sepolia-windows.bat
+```
+
+**En Mac/Linux:**
+```bash
+chmod +x deploy-sepolia-mac.sh
+./deploy-sepolia-mac.sh
+```
+
+Los scripts automáticamente:
+- ✅ Verifican que existe `sc/.env`
+- ✅ Cargan las variables de entorno
+- ✅ Validan que las variables estén configuradas
+- ✅ Despliegan los contratos en Sepolia
+- ✅ Verifican los contratos en Etherscan (si tienes API key)
+
+**📝 Copia las 3 direcciones que aparecen:**
+```
+RoleManager:      0x...
+TokenFactory:     0x...
+TransferManager:  0x...
 ```
 
 ### 3. Actualizar Frontend
@@ -334,24 +382,67 @@ forge script script/DeploySupplyChainSystem.s.sol:DeploySupplyChain \
 Actualiza `web/.env` con las **nuevas direcciones de Sepolia**:
 
 ```env
-VITE_ROLE_MANAGER_ADDRESS=0x... # Dirección de Sepolia
-VITE_TOKEN_FACTORY_ADDRESS=0x... # Dirección de Sepolia
-VITE_TRANSFER_MANAGER_ADDRESS=0x... # Dirección de Sepolia
-VITE_ADMIN_ADDRESS=0x... # Tu cuenta que desplegó
+# Cambia la red a sepolia
+VITE_NETWORK=sepolia
+
+# Actualiza las direcciones SEPOLIA (mantén las ANVIL también)
+VITE_ROLE_MANAGER_ADDRESS_SEPOLIA=0x... # Dirección de Sepolia
+VITE_TOKEN_FACTORY_ADDRESS_SEPOLIA=0x... # Dirección de Sepolia
+VITE_TRANSFER_MANAGER_ADDRESS_SEPOLIA=0x... # Dirección de Sepolia
+VITE_ADMIN_ADDRESS_SEPOLIA=0x... # Tu cuenta que desplegó
 ```
 
 ### 4. Configurar MetaMask
 
-- Cambia a la red **Sepolia**
-- Usa la cuenta con la que desplegaste (será el admin)
-- Asegúrate de tener SepoliaETH (usa un faucet si necesitas)
+1. **Agregar Red Sepolia**:
+   - Nombre: `Sepolia`
+   - RPC URL: `https://sepolia.infura.io/v3/TU_INFURA_KEY` (o usa una pública)
+   - Chain ID: `11155111`
+   - Moneda: `ETH`
 
-**💡 Ventaja:** Con variables de entorno puedes tener:
-- `web/.env.local` → Direcciones de Anvil
-- `web/.env.sepolia` → Direcciones de Sepolia
-- `web/.env.mainnet` → Direcciones de producción (cuando estés listo)
+2. **Importar tu cuenta** (la que usaste para desplegar):
+   - Esta será tu cuenta de administrador
+   - Asegúrate de tener SepoliaETH (usa un faucet si necesitas)
 
-Simplemente copia el archivo correspondiente a `web/.env` según la red que quieras usar.
+3. **Conectar a la aplicación**:
+   - Cambia a la red Sepolia en MetaMask
+   - Conecta tu wallet en la aplicación
+
+### 5. Desplegar Frontend (Opcional)
+
+Si quieres desplegar el frontend en un servidor:
+
+#### Opción A: Coolify (Recomendado)
+
+1. **Conectar repositorio** en Coolify
+2. **Configurar variables de entorno** en Coolify:
+   ```
+   VITE_NETWORK=sepolia
+   VITE_ROLE_MANAGER_ADDRESS_ANVIL=0x...
+   VITE_TOKEN_FACTORY_ADDRESS_ANVIL=0x...
+   VITE_TRANSFER_MANAGER_ADDRESS_ANVIL=0x...
+   VITE_ADMIN_ADDRESS_ANVIL=0x...
+   VITE_ROLE_MANAGER_ADDRESS_SEPOLIA=0x...
+   VITE_TOKEN_FACTORY_ADDRESS_SEPOLIA=0x...
+   VITE_TRANSFER_MANAGER_ADDRESS_SEPOLIA=0x...
+   VITE_ADMIN_ADDRESS_SEPOLIA=0x...
+   ```
+3. **Configurar build**:
+   - Build Command: `npm run build`
+   - Output Directory: `web/dist`
+4. **Deploy!** 🚀
+
+#### Opción B: Servidor tradicional
+
+```bash
+# Compilar frontend
+cd web
+npm run build
+
+# Subir carpeta dist/ a tu servidor
+# Configurar Nginx para servir los archivos estáticos
+```
+
 
 ## 📚 Documentación Técnica
 

@@ -1,10 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate, Link } from 'react-router-dom';
-import { Package, ArrowLeft, ArrowRight, Calendar, User, ArrowRightLeft } from 'lucide-react';
+import {
+  Package,
+  ArrowLeft,
+  ArrowRight,
+  Calendar,
+  User,
+  ArrowRightLeft,
+  ExternalLink,
+} from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import type { TokenData, TransferData } from '../types';
+import {
+  EXPLORER_BASE_URL,
+  TOKEN_FACTORY_ADDRESS,
+  TRANSFER_MANAGER_ADDRESS,
+} from '../contracts/config';
 
 export function TokenDetails() {
   const { id } = useParams<{ id: string }>();
@@ -154,14 +167,27 @@ export function TokenDetails() {
                       {token.totalSupply.toString()}
                     </p>
                   </div>
-                  {balance > 0n && user.role !== 4 && (
-                    <Link to={`/tokens/${id}/transfer`}>
-                      <Button className="whitespace-nowrap">
-                        <ArrowRight className="w-4 h-4 mr-2" />
-                        Transfer
-                      </Button>
-                    </Link>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {EXPLORER_BASE_URL && (
+                      <a
+                        href={`${EXPLORER_BASE_URL}/token/${TOKEN_FACTORY_ADDRESS}?a=${token.id.toString()}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        View on Etherscan
+                      </a>
+                    )}
+                    {balance > 0n && user.role !== 4 && (
+                      <Link to={`/tokens/${id}/transfer`}>
+                        <Button className="whitespace-nowrap">
+                          <ArrowRight className="w-4 h-4 mr-2" />
+                          Transfer
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -355,6 +381,34 @@ export function TokenDetails() {
               )}
             </CardContent>
           </Card>
+
+          {EXPLORER_BASE_URL && (
+            <Card>
+              <CardHeader>
+                <h2 className="text-base font-semibold text-gray-900">Blockchain Explorer</h2>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <a
+                  href={`${EXPLORER_BASE_URL}/address/${TOKEN_FACTORY_ADDRESS}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  TokenFactory contract
+                </a>
+                <a
+                  href={`${EXPLORER_BASE_URL}/address/${TRANSFER_MANAGER_ADDRESS}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  TransferManager contract
+                </a>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
