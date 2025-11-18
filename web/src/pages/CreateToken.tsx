@@ -101,7 +101,7 @@ export function CreateToken() {
     }
 
     setIsCreating(true);
-    const toastId = toast.loading('Creando producto...');
+    const toastId = toast.loading('Enviando transacción...');
     try {
       let tx;
 
@@ -119,12 +119,54 @@ export function CreateToken() {
         );
       }
 
+      toast.loading('Esperando confirmación...', { id: toastId });
       await tx.wait();
       toast.success('¡Producto creado exitosamente!', { id: toastId });
       navigate('/tokens');
     } catch (error) {
       console.error('Error creating token:', error);
-      toast.error('Error al crear producto. Por favor intenta de nuevo.', { id: toastId });
+
+      let errorMessage = 'Error desconocido';
+      if (error && typeof error === 'object') {
+        const errorObj = error as { message?: string; code?: number; error?: { message?: string } };
+        const message = errorObj.message || '';
+
+        // Detectar rate limiting
+        if (
+          errorObj.code === -32603 ||
+          errorObj.code === -32005 ||
+          message.includes('rate limited') ||
+          message.includes('rate limit') ||
+          (errorObj.error &&
+            errorObj.error.message &&
+            errorObj.error.message.includes('rate limit'))
+        ) {
+          errorMessage =
+            'Demasiadas solicitudes al nodo RPC. Por favor espera 30 segundos e intenta de nuevo.';
+        } else if (message.includes('user rejected') || message.includes('User denied')) {
+          errorMessage = 'Transacción cancelada por el usuario';
+        } else if (message.includes('NotApproved')) {
+          errorMessage = 'No tienes un rol aprobado para crear tokens.';
+        } else if (message.includes('AssetDoesNotExist')) {
+          errorMessage = 'Una de las materias primas seleccionadas no existe.';
+        } else if (message.includes('MissingParentAssets')) {
+          errorMessage = 'Faltan materias primas requeridas para crear este producto procesado.';
+        } else if (message.includes('InvalidRoleTransition')) {
+          errorMessage = 'No tienes permiso para crear este tipo de token con tu rol actual.';
+        } else if (message.includes('Unauthorized')) {
+          errorMessage = 'No tienes permiso para crear tokens.';
+        } else if (message) {
+          // Si el mensaje es muy técnico, simplificarlo
+          if (message.length > 200 || message.includes('0x')) {
+            errorMessage =
+              'Error al crear el producto. Por favor intenta de nuevo o verifica la consola para más detalles.';
+          } else {
+            errorMessage = message;
+          }
+        }
+      }
+
+      toast.error(`Error: ${errorMessage}`, { id: toastId });
     } finally {
       setIsCreating(false);
     }
