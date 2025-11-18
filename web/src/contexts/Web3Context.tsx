@@ -115,6 +115,7 @@ interface Web3ContextType {
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   refreshUser: () => Promise<void>;
+  retryConnection: () => Promise<void>;
   requestRole: (desiredRole: number) => Promise<void>;
   cancelRequest: () => Promise<void>;
   approveRole: (userAccount: string) => Promise<void>;
@@ -232,19 +233,87 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   const loadUserInfo = async (address: string, roleManagerContract: Contract) => {
     try {
-      // Verificar si es admin primero
+      // Verificar si es admin primero con retry logic para manejar errores temporales de red
       let adminAddress: string;
-      try {
-        adminAddress = await roleManagerContract.admin();
-      } catch (adminError) {
-        // Si falla admin(), el contrato no está desplegado o la dirección es incorrecta
-        console.error('Contract not deployed or incorrect address:', adminError);
-        toast.error(
-          'Error: El contrato no está desplegado en esta red. Verifica la configuración.'
-        );
-        setUser(null);
-        setIsAdmin(false);
-        return;
+      let retries = 3;
+      let lastError: unknown = null;
+
+      while (retries > 0) {
+        try {
+          // Timeout de 10 segundos para evitar esperar indefinidamente
+          adminAddress = await Promise.race([
+            roleManagerContract.admin(),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error('Timeout: La solicitud tardó demasiado')), 10000)
+            ),
+          ]);
+          lastError = null;
+          break; // Éxito, salir del loop
+        } catch (adminError) {
+          lastError = adminError;
+          retries--;
+          const errorMessage =
+            adminError instanceof Error ? adminError.message : String(adminError);
+
+          // Si es un error de rate limiting o timeout, esperar antes de reintentar
+          if (
+            errorMessage.includes('rate limit') ||
+            errorMessage.includes('timeout') ||
+            errorMessage.includes('Timeout')
+          ) {
+            if (retries > 0) {
+              console.warn(
+                `Error temporal de red, reintentando... (${retries} intentos restantes)`
+              );
+              await new Promise((resolve) => setTimeout(resolve, 2000)); // Esperar 2 segundos
+              continue;
+            }
+          }
+
+          // Si no es un error temporal o se agotaron los reintentos, lanzar el error
+          if (retries === 0) {
+            throw adminError;
+          }
+        }
+      }
+
+      // Si después de todos los reintentos aún falla, verificar el tipo de error
+      if (lastError) {
+        const errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
+
+        // Distinguir entre error de red temporal y contrato no desplegado
+        if (
+          errorMessage.includes('rate limit') ||
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('network') ||
+          errorMessage.includes('connect')
+        ) {
+          console.error('Error de conexión con la red:', lastError);
+          toast.error(
+            'Error temporal de conexión con Sepolia. La red puede estar inestable. Por favor intenta refrescar la página en unos momentos.',
+            {
+              duration: 8000,
+              id: 'network-connection-error',
+            }
+          );
+          // No desconectar completamente, mantener el estado pero sin datos
+          setUser(null);
+          setIsAdmin(false);
+          return;
+        } else {
+          // Error real de contrato no desplegado
+          console.error('Contract not deployed or incorrect address:', lastError);
+          toast.error(
+            'Error: El contrato no está desplegado en esta red. Verifica la configuración.',
+            {
+              duration: 8000,
+              id: 'contract-not-deployed-error',
+            }
+          );
+          setUser(null);
+          setIsAdmin(false);
+          return;
+        }
       }
 
       const addrLower = address.toLowerCase();
@@ -254,36 +323,70 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         addrLower === chainAdminLower || (!!envAdminLower && addrLower === envAdminLower);
       setIsAdmin(adminCheck);
 
-      // Intentar obtener información del usuario
-      try {
-        const rawStruct = (await roleManagerContract.getUser(address)) as unknown as {
-          role: bigint;
-          approved: boolean;
-          requestedRole: bigint;
-        };
+      // Intentar obtener información del usuario con retry logic
+      let userRetries = 2; // Menos reintentos para getUser ya que admin() ya pasó
+      let userData: ChainUser | null = null;
 
-        const chainUser: ChainUser = {
-          role: Number(rawStruct.role),
-          approved: rawStruct.approved,
-          requestedRole: Number(rawStruct.requestedRole),
-        };
-
-        // Si el usuario no tiene ningún dato relevante, establecer como null
-        if (!chainUser.approved && chainUser.requestedRole === 0 && chainUser.role === 0) {
-          setUser(null);
-        } else {
-          const uiUser = {
-            role: chainUser.role,
-            approved: chainUser.approved,
-            requestedRole: chainUser.requestedRole,
+      while (userRetries > 0) {
+        try {
+          const rawStruct = (await Promise.race([
+            roleManagerContract.getUser(address),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000)),
+          ])) as unknown as {
+            role: bigint;
+            approved: boolean;
+            requestedRole: bigint;
           };
-          setUser(uiUser);
+
+          userData = {
+            role: Number(rawStruct.role),
+            approved: rawStruct.approved,
+            requestedRole: Number(rawStruct.requestedRole),
+          };
+          break; // Éxito
+        } catch (userError) {
+          userRetries--;
+          const errorMessage = userError instanceof Error ? userError.message : String(userError);
+
+          // Si es un error temporal, reintentar
+          if (
+            (errorMessage.includes('rate limit') ||
+              errorMessage.includes('timeout') ||
+              errorMessage.includes('Timeout') ||
+              errorMessage.includes('network')) &&
+            userRetries > 0
+          ) {
+            console.warn(`Error temporal obteniendo datos del usuario, reintentando...`);
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            continue;
+          }
+
+          // Si es un error de usuario no registrado, es normal
+          if (
+            errorMessage.includes('revert') ||
+            errorMessage.includes('execution reverted') ||
+            userRetries === 0
+          ) {
+            console.log('User not registered yet or error getting user data, setting to null');
+            userData = null;
+            break;
+          }
         }
-      } catch (userError) {
-        // Si falla getUser (ej: usuario nuevo sin registro), establecer null
-        // pero no fallar completamente - el usuario puede solicitar un rol
-        console.log('User not registered yet, setting to null');
+      }
+
+      // Establecer datos del usuario
+      if (
+        !userData ||
+        (!userData.approved && userData.requestedRole === 0 && userData.role === 0)
+      ) {
         setUser(null);
+      } else {
+        const uiUser = {
+          role: userData.role,
+          approved: userData.approved,
+          requestedRole: userData.requestedRole,
+        };
+        setUser(uiUser);
       }
     } catch (error) {
       console.error('Error loading user info:', error);
@@ -339,6 +442,25 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     if (!account || !roleManager) return;
     await loadUserInfo(account, roleManager);
+  };
+
+  // Función para reintentar la conexión cuando hay errores de red
+  const retryConnection = async () => {
+    if (!account || !window.ethereum) {
+      toast.error('No hay cuenta conectada o MetaMask no está disponible');
+      return;
+    }
+
+    const toastId = toast.loading('Reintentando conexión...');
+    try {
+      const { roleManagerContract } = await setupProvider(window.ethereum);
+      await loadUserInfo(account, roleManagerContract);
+      toast.success('Conexión restablecida correctamente', { id: toastId });
+    } catch (error) {
+      console.error('Error retrying connection:', error);
+      const errorMessage = decodeContractError(error);
+      toast.error(`Error al reintentar: ${errorMessage}`, { id: toastId });
+    }
   };
 
   const requestRole = async (desiredRole: number) => {
@@ -643,6 +765,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         connectWallet,
         disconnectWallet,
         refreshUser,
+        retryConnection,
         requestRole,
         cancelRequest,
         approveRole,

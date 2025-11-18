@@ -5,7 +5,8 @@ import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent } from '../components/Card';
 
 export function Dashboard() {
-  const { user, isAdmin, account, tokenFactory, transferManager } = useWeb3();
+  const { user, isAdmin, account, tokenFactory, transferManager, isConnected, retryConnection } =
+    useWeb3();
   const [tokenCount, setTokenCount] = useState<number>(0);
   const [pendingIncoming, setPendingIncoming] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -54,6 +55,30 @@ export function Dashboard() {
   // If admin, redirect to admin panel
   if (isAdmin) {
     return <Navigate to="/admin" />;
+  }
+
+  // Si está conectado pero no hay usuario (puede ser error de conexión)
+  if (isConnected && !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto px-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <h2 className="text-xl font-semibold text-yellow-900 mb-2">
+              Error de conexión con Sepolia
+            </h2>
+            <p className="text-yellow-800 mb-4">
+              La red puede estar inestable. Por favor intenta reconectar.
+            </p>
+            <button
+              onClick={retryConnection}
+              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+            >
+              Reintentar conexión
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!user || !user.approved) {
