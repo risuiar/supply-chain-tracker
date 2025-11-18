@@ -36,6 +36,16 @@ function decodeContractError(error: unknown): string {
     return 'Transacción cancelada por el usuario';
   }
 
+  // Si es un error de rate limiting del RPC
+  if (
+    errorObj.code === -32603 ||
+    message.includes('rate limited') ||
+    message.includes('rate limit') ||
+    (errorObj.error && errorObj.error.message && errorObj.error.message.includes('rate limit'))
+  ) {
+    return 'Demasiadas solicitudes al nodo RPC. Por favor espera unos segundos e intenta de nuevo.';
+  }
+
   // Intentar buscar el nombre del error en el mensaje
   for (const [errorName, translatedMessage] of Object.entries(ERROR_MESSAGES)) {
     if (message.includes(errorName)) {
