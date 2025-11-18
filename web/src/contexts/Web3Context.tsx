@@ -654,23 +654,54 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (window.ethereum) {
-      const handleAccountsChanged = (accounts: string[]) => {
+      const handleAccountsChanged = async (accounts: string[]) => {
+        console.log('🔄 accountsChanged event:', accounts);
         // Solo procesar si no es una desconexión manual
-        if (manualDisconnect) return;
+        if (manualDisconnect) {
+          console.log('⏸️ Ignorando accountsChanged porque fue desconexión manual');
+          return;
+        }
 
         if (accounts.length === 0) {
+          console.log('🔌 No hay cuentas, desconectando...');
           disconnectWallet();
-        } else if (account && accounts[0] !== account) {
+        } else {
           const newAccount = accounts[0];
-          setAccount(newAccount);
-          // Actualizar localStorage con la nueva cuenta
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('connectedAccount', newAccount);
-          }
-          if (window.ethereum) {
-            setupProvider(window.ethereum as Eip1193Provider).then(({ roleManagerContract }) => {
-              loadUserInfo(newAccount, roleManagerContract);
+          const currentAccountLower = account?.toLowerCase() ?? '';
+          const newAccountLower = newAccount.toLowerCase();
+
+          // Si la cuenta cambió o es la primera vez que se conecta
+          if (!account || currentAccountLower !== newAccountLower) {
+            console.log('👤 Cambio de cuenta detectado:', {
+              anterior: account,
+              nueva: newAccount,
             });
+
+            setAccount(newAccount);
+            setIsConnected(true);
+            setManualDisconnect(false); // Reset flag al cambiar cuenta
+
+            // Actualizar localStorage con la nueva cuenta
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('connectedAccount', newAccount);
+            }
+
+            // Cargar datos del usuario con la nueva cuenta
+            try {
+              const { roleManagerContract } = await setupProvider(
+                window.ethereum as Eip1193Provider
+              );
+              await loadUserInfo(newAccount, roleManagerContract);
+              console.log('✅ Datos del usuario cargados para la nueva cuenta');
+            } catch (error) {
+              console.error('❌ Error cargando datos del usuario al cambiar cuenta:', error);
+              // No desconectar, solo mostrar error
+              toast.error('Error al cargar datos del usuario. Intenta refrescar la página.', {
+                duration: 6000,
+              });
+            }
+          } else {
+            console.log('ℹ️ Misma cuenta, no se necesita actualizar');
           }
         }
       };
@@ -762,9 +793,24 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           const accountLower = (account ?? '').toLowerCase();
 
           if (current && currentLower !== accountLower) {
+            console.log('🔄 Polling detectó cambio de cuenta:', {
+              anterior: account,
+              nueva: current,
+            });
             setAccount(current);
-            const { roleManagerContract } = await setupProvider(eth);
-            await loadUserInfo(current, roleManagerContract);
+            setIsConnected(true);
+            setManualDisconnect(false);
+            // Actualizar localStorage
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('connectedAccount', current);
+            }
+            try {
+              const { roleManagerContract } = await setupProvider(eth);
+              await loadUserInfo(current, roleManagerContract);
+              console.log('✅ Datos del usuario cargados vía polling');
+            } catch (error) {
+              console.error('❌ Error cargando datos del usuario vía polling:', error);
+            }
           }
           if (!current && account && !manualDisconnect) {
             // Solo desconectar si no fue manual
