@@ -177,6 +177,7 @@ export function TransferToken() {
     const toastId = toast.loading('Enviando solicitud de transferencia...');
     try {
       const tx = await transferManager.requestTransfer(id, selectedRecipient, amountBigInt);
+      toast.loading('Esperando confirmación...', { id: toastId });
       await tx.wait();
 
       toast.success('¡Solicitud de transferencia enviada exitosamente!', { id: toastId });
@@ -184,22 +185,46 @@ export function TransferToken() {
     } catch (error: unknown) {
       console.error('Error requesting transfer:', error);
 
-      let errorMessage = 'Unknown error';
-      if (error instanceof Error) {
-        if (error.message.includes('NotTokenCreator')) {
+      let errorMessage = 'Error desconocido';
+      if (error && typeof error === 'object') {
+        const errorObj = error as { message?: string; code?: number; error?: { message?: string } };
+        const message = errorObj.message || '';
+
+        // Detectar rate limiting
+        if (
+          errorObj.code === -32603 ||
+          errorObj.code === -32005 ||
+          message.includes('rate limited') ||
+          message.includes('rate limit') ||
+          (errorObj.error &&
+            errorObj.error.message &&
+            errorObj.error.message.includes('rate limit'))
+        ) {
           errorMessage =
-            'You can only transfer tokens that you created. To process received materials, create a new processed token.';
-        } else if (error.message.includes('TransferAlreadyPending')) {
+            'Demasiadas solicitudes al nodo RPC. Por favor espera 30 segundos e intenta de nuevo.';
+        } else if (message.includes('user rejected') || message.includes('User denied')) {
+          errorMessage = 'Transacción cancelada por el usuario';
+        } else if (message.includes('NotTokenCreator')) {
           errorMessage =
-            'This token already has a pending transfer. Please wait for it to be resolved.';
-        } else if (error.message.includes('InvalidRoleTransition')) {
-          errorMessage = 'Invalid transfer: Check recipient role or token type.';
-        } else if (error.message.includes('NotApproved')) {
-          errorMessage = 'You or the recipient is not approved in the system.';
-        } else if (error.message.includes('Unauthorized')) {
-          errorMessage = 'You do not have enough balance or permission to make this transfer.';
-        } else {
-          errorMessage = error.message;
+            'Solo puedes transferir tokens que creaste. Para procesar materiales recibidos, crea un nuevo token procesado.';
+        } else if (message.includes('TransferAlreadyPending')) {
+          errorMessage =
+            'Este token ya tiene una transferencia pendiente. Por favor espera a que sea resuelta.';
+        } else if (message.includes('InvalidRoleTransition')) {
+          errorMessage =
+            'Transferencia inválida: Verifica el rol del destinatario o el tipo de token.';
+        } else if (message.includes('NotApproved')) {
+          errorMessage = 'Tú o el destinatario no están aprobados en el sistema.';
+        } else if (message.includes('Unauthorized')) {
+          errorMessage = 'No tienes suficiente balance o permiso para hacer esta transferencia.';
+        } else if (message) {
+          // Si el mensaje es muy técnico, simplificarlo
+          if (message.length > 200 || message.includes('0x')) {
+            errorMessage =
+              'Error en la transferencia. Por favor intenta de nuevo o verifica la consola para más detalles.';
+          } else {
+            errorMessage = message;
+          }
         }
       }
 
