@@ -193,7 +193,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         errorMessage.includes('Timeout: MetaMask no puede conectarse')
       ) {
         toast.error(
-          'MetaMask no puede conectarse a Sepolia. Intenta: 1) Cambiar el RPC endpoint en MetaMask (Settings > Networks > Sepolia > RPC URL), 2) Usar un RPC alternativo como Alchemy o Infura, 3) Esperar unos minutos y reintentar.',
+          'MetaMask no puede conectarse a Sepolia. Solución rápida: Cambia el RPC URL en MetaMask (Settings > Networks > Sepolia > Edit) por: https://rpc.sepolia.org (no requiere registro).',
           {
             duration: 12000,
             id: 'metamask-connection-error',
