@@ -668,10 +668,17 @@ Si quieres desplegar el frontend en un servidor:
    VITE_TRANSFER_MANAGER_ADDRESS_SEPOLIA=0x...
    VITE_ADMIN_ADDRESS_SEPOLIA=0x...
    ```
-3. **Configurar build**:
-   - Build Command: `npm run build`
-   - Output Directory: `web/dist`
-4. **Deploy!** 🚀
+3. **Configurar build en Coolify**:
+   - **Base Directory**: `/web`
+   - **Publish Directory**: `/dist`
+   - **Build Command**: `npm run build`
+   - **Is it a static site?**: ✅ Sí (marcar esta opción)
+4. **Configurar Nginx (importante para evitar 404 al refrescar)**:
+   - Coolify debería usar automáticamente el archivo `web/nginx.conf` que está en el repositorio
+   - Si no funciona automáticamente, en la configuración avanzada de Coolify, puedes especificar el archivo de configuración de Nginx
+5. **Deploy!** 🚀
+
+**Nota**: El archivo `web/nginx.conf` está configurado para que todas las rutas redirijan a `index.html`, evitando errores 404 al refrescar la página en rutas como `/tokens`, `/dashboard`, etc.
 
 #### Opción B: Servidor tradicional
 
