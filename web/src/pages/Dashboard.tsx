@@ -62,19 +62,45 @@ export function Dashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-md mx-auto px-4">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-            <h2 className="text-xl font-semibold text-yellow-900 mb-2">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-yellow-900 mb-2 text-center">
               Error de conexión con Sepolia
             </h2>
-            <p className="text-yellow-800 mb-4">
-              La red puede estar inestable. Por favor intenta reconectar.
+            <p className="text-yellow-800 mb-4 text-sm">
+              MetaMask no puede conectarse a Sepolia. Esto puede deberse a:
             </p>
-            <button
-              onClick={retryConnection}
-              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-            >
-              Reintentar conexión
-            </button>
+            <ul className="text-yellow-800 text-sm mb-4 list-disc list-inside space-y-1">
+              <li>El RPC endpoint por defecto de MetaMask está caído</li>
+              <li>Problemas de red temporales</li>
+              <li>Rate limiting del proveedor RPC</li>
+            </ul>
+            <div className="space-y-2">
+              <button
+                onClick={retryConnection}
+                className="w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              >
+                Reintentar conexión
+              </button>
+              <details className="mt-4">
+                <summary className="text-sm text-yellow-800 cursor-pointer hover:text-yellow-900">
+                  ¿Cómo cambiar el RPC endpoint en MetaMask?
+                </summary>
+                <div className="mt-2 text-xs text-yellow-700 bg-yellow-100 p-3 rounded">
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Abre MetaMask → Settings → Networks</li>
+                    <li>Selecciona "Sepolia"</li>
+                    <li>Haz clic en "Edit"</li>
+                    <li>Cambia el "RPC URL" por uno alternativo:</li>
+                    <li className="ml-4">
+                      • Alchemy: https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
+                    </li>
+                    <li className="ml-4">• Infura: https://sepolia.infura.io/v3/YOUR_KEY</li>
+                    <li className="ml-4">• Public: https://rpc.sepolia.org</li>
+                    <li>Guarda los cambios y vuelve a intentar</li>
+                  </ol>
+                </div>
+              </details>
+            </div>
           </div>
         </div>
       </div>

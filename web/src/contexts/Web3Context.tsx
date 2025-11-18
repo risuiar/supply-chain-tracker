@@ -163,16 +163,48 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
     try {
       browserProvider = new BrowserProvider(ethereum);
-      network = await browserProvider.getNetwork();
+
+      // Agregar timeout más largo para detectar problemas de conexión de MetaMask
+      network = await Promise.race([
+        browserProvider.getNetwork(),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () =>
+              reject(
+                new Error(
+                  'Timeout: MetaMask no puede conectarse a Sepolia. Intenta cambiar el RPC endpoint en MetaMask.'
+                )
+              ),
+            15000 // 15 segundos de timeout
+          )
+        ),
+      ]);
+
       signer = await browserProvider.getSigner();
     } catch (error) {
       console.error('Error setting up provider:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (errorMessage.includes('network') || errorMessage.includes('connect')) {
+
+      // Detectar errores específicos de conexión de MetaMask
+      if (
+        errorMessage.includes('Unable to connect') ||
+        errorMessage.includes('Check network connectivity') ||
+        errorMessage.includes('Still connecting') ||
+        errorMessage.includes('Timeout: MetaMask no puede conectarse')
+      ) {
+        toast.error(
+          'MetaMask no puede conectarse a Sepolia. Intenta: 1) Cambiar el RPC endpoint en MetaMask (Settings > Networks > Sepolia > RPC URL), 2) Usar un RPC alternativo como Alchemy o Infura, 3) Esperar unos minutos y reintentar.',
+          {
+            duration: 12000,
+            id: 'metamask-connection-error',
+          }
+        );
+      } else if (errorMessage.includes('network') || errorMessage.includes('connect')) {
         toast.error(
           'Error de conexión con la red. Verifica tu conexión a internet y que MetaMask esté conectado a Sepolia.',
           {
-            duration: 6000,
+            duration: 8000,
+            id: 'network-connection-error',
           }
         );
       }
@@ -290,9 +322,9 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         ) {
           console.error('Error de conexión con la red:', lastError);
           toast.error(
-            'Error temporal de conexión con Sepolia. La red puede estar inestable. Por favor intenta refrescar la página en unos momentos.',
+            'Error temporal de conexión con Sepolia. MetaMask puede estar teniendo problemas para conectarse. Intenta: 1) Cambiar el RPC endpoint en MetaMask, 2) Esperar unos minutos y refrescar la página, 3) Usar el botón "Reintentar conexión" en el Dashboard.',
             {
-              duration: 8000,
+              duration: 10000,
               id: 'network-connection-error',
             }
           );
