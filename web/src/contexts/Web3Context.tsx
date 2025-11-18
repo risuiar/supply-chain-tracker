@@ -148,9 +148,27 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   }, []);
 
   const setupProvider = async (ethereum: Eip1193Provider) => {
-    const browserProvider = new BrowserProvider(ethereum);
-    const network = await browserProvider.getNetwork();
-    const signer = await browserProvider.getSigner();
+    let browserProvider: BrowserProvider;
+    let network;
+    let signer;
+
+    try {
+      browserProvider = new BrowserProvider(ethereum);
+      network = await browserProvider.getNetwork();
+      signer = await browserProvider.getSigner();
+    } catch (error) {
+      console.error('Error setting up provider:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('network') || errorMessage.includes('connect')) {
+        toast.error(
+          'Error de conexión con la red. Verifica tu conexión a internet y que MetaMask esté conectado a Sepolia.',
+          {
+            duration: 6000,
+          }
+        );
+      }
+      throw error;
+    }
 
     // Validar que la red de MetaMask coincida con la configuración
     const configuredNetwork = import.meta.env.VITE_NETWORK?.toLowerCase().trim();
@@ -566,8 +584,13 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let interval: number | undefined;
     // Solo hacer polling si NO es una desconexión manual
+    // Reducir frecuencia en Sepolia para evitar problemas de rate limiting
     if (window.ethereum && account && isConnected && !manualDisconnect) {
       const eth = window.ethereum as Eip1193Provider;
+      const configuredNetwork = import.meta.env.VITE_NETWORK?.toLowerCase().trim();
+      // Polling más lento en Sepolia (cada 10 segundos) vs Anvil (cada 5 segundos)
+      const pollInterval = configuredNetwork === 'sepolia' ? 10000 : 5000;
+
       const check = async () => {
         try {
           const list = (await eth.request({ method: 'eth_accounts' })) as string[];
@@ -584,11 +607,12 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             // Solo desconectar si no fue manual
             disconnectWallet();
           }
-        } catch {
-          // Ignore polling errors
+        } catch (error) {
+          // Log pero no desconectar por errores de red temporales
+          console.warn('Polling check error (ignored):', error);
         }
       };
-      interval = window.setInterval(check, 2000);
+      interval = window.setInterval(check, pollInterval);
     }
     return () => {
       if (interval) window.clearInterval(interval);

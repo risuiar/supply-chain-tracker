@@ -15,12 +15,14 @@ export function AdminRolePanel() {
   const { approveRole, rejectRole, revokeRole, isLoading } = useRoleManager();
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
   const [approvedUsers, setApprovedUsers] = useState<{ address: string; role: number }[]>([]);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
 
   // Escuchar eventos del contrato para mantener la lista actualizada
   useEffect(() => {
     if (!roleManager) return;
 
     const loadPendingRequests = async () => {
+      setIsLoadingRequests(true);
       try {
         // Obtener eventos RoleRequested
         const roleRequestedFilter = roleManager.filters.RoleRequested();
@@ -91,6 +93,8 @@ export function AdminRolePanel() {
         setApprovedUsers(approved);
       } catch (error) {
         console.error('Error loading requests:', error);
+      } finally {
+        setIsLoadingRequests(false);
       }
     };
 
@@ -182,9 +186,70 @@ export function AdminRolePanel() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Solicitudes Pendientes</h2>
-            <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
-              {pendingRequests.length} pendientes
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (roleManager) {
+                    const loadPendingRequests = async () => {
+                      setIsLoadingRequests(true);
+                      try {
+                        const roleRequestedFilter = roleManager.filters.RoleRequested();
+                        const roleRequestedEvents =
+                          await roleManager.queryFilter(roleRequestedFilter);
+                        const roleApprovedFilter = roleManager.filters.RoleApproved();
+                        const roleApprovedEvents =
+                          await roleManager.queryFilter(roleApprovedFilter);
+                        const roleRejectedFilter = roleManager.filters.RoleRejected();
+                        const roleRejectedEvents =
+                          await roleManager.queryFilter(roleRejectedFilter);
+
+                        const requestsMap = new Map<string, number>();
+                        for (const event of roleRequestedEvents) {
+                          const address = event.args?.[0] as string;
+                          const role = Number(event.args?.[1]);
+                          requestsMap.set(address.toLowerCase(), role);
+                        }
+                        for (const event of roleApprovedEvents) {
+                          const address = event.args?.[0] as string;
+                          requestsMap.delete(address.toLowerCase());
+                        }
+                        for (const event of roleRejectedEvents) {
+                          const address = event.args?.[0] as string;
+                          requestsMap.delete(address.toLowerCase());
+                        }
+
+                        const pending: PendingRequest[] = [];
+                        for (const [address, role] of requestsMap.entries()) {
+                          try {
+                            const user = await roleManager.getUser(address);
+                            const requestedRole = Number(user.requestedRole);
+                            if (requestedRole !== 0 && !user.approved) {
+                              pending.push({ address, requestedRole });
+                            }
+                          } catch (error) {
+                            console.error('Error checking user:', address, error);
+                          }
+                        }
+                        setPendingRequests(pending);
+                      } catch (error) {
+                        console.error('Error refreshing requests:', error);
+                      } finally {
+                        setIsLoadingRequests(false);
+                      }
+                    };
+                    loadPendingRequests();
+                  }
+                }}
+                disabled={isLoadingRequests}
+                className="px-2 py-1 text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                title="Actualizar lista"
+              >
+                {isLoadingRequests ? '⏳' : '🔄'}
+              </button>
+              <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                {pendingRequests.length} pendientes
+              </span>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
