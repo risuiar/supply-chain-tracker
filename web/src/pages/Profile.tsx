@@ -4,20 +4,7 @@ import { User as UserIcon, Package, ArrowRight, Calendar, CheckCircle } from 'lu
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
-
-type TokenData = {
-  id: bigint;
-  productName: string;
-  assetType: number;
-  metadataURI: string;
-  totalSupply: bigint;
-  creator: string;
-  currentHolder: string;
-  currentRole: number;
-  createdAt: bigint;
-  parentIds: bigint[];
-  exists: boolean;
-};
+import type { TokenData } from '../types';
 
 export function Profile() {
   const { account, user, tokenFactory } = useWeb3();

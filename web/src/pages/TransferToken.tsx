@@ -6,20 +6,7 @@ import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-
-type TokenData = {
-  id: bigint;
-  productName: string;
-  assetType: number;
-  metadataURI: string;
-  totalSupply: bigint;
-  creator: string;
-  currentHolder: string;
-  currentRole: number;
-  createdAt: bigint;
-  parentIds: bigint[];
-  exists: boolean;
-};
+import type { TokenData } from '../types';
 
 type RecipientUser = {
   address: string;

@@ -56,9 +56,66 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   const [transferManager, setTransferManager] = useState<Contract | null>(null);
   const [manualDisconnect, setManualDisconnect] = useState(false);
 
+  // Validar configuración de red al montar el componente
+  useEffect(() => {
+    const network = import.meta.env.VITE_NETWORK?.toLowerCase();
+    console.log('🔍 VITE_NETWORK check:', { network, env: import.meta.env.VITE_NETWORK });
+
+    if (!network || (network !== 'anvil' && network !== 'sepolia')) {
+      console.error('❌ VITE_NETWORK no configurado o inválido');
+      toast.error(
+        '⚠️ VITE_NETWORK no está configurado en .env. Debe ser "anvil" o "sepolia". ' +
+          'Configura VITE_NETWORK en web/.env y reinicia el servidor.',
+        {
+          duration: 10000,
+          id: 'network-config-error', // Evita duplicados
+        }
+      );
+    } else {
+      console.log('✅ VITE_NETWORK configurado correctamente:', network);
+    }
+  }, []);
+
   const setupProvider = async (ethereum: Eip1193Provider) => {
     const browserProvider = new BrowserProvider(ethereum);
+    const network = await browserProvider.getNetwork();
     const signer = await browserProvider.getSigner();
+
+    // Validar que la red de MetaMask coincida con la configuración
+    const configuredNetwork = import.meta.env.VITE_NETWORK?.toLowerCase().trim();
+    const expectedChainId = configuredNetwork === 'sepolia' ? 11155111n : 31337n;
+    const networkName = configuredNetwork === 'sepolia' ? 'Sepolia' : 'Anvil (Local)';
+
+    console.log('🔍 Network validation:', {
+      configuredNetwork,
+      expectedChainId: expectedChainId.toString(),
+      actualChainId: network.chainId.toString(),
+      match: network.chainId === expectedChainId,
+    });
+
+    if (network.chainId !== expectedChainId) {
+      const currentNetworkName =
+        network.chainId === 11155111n
+          ? 'Sepolia'
+          : network.chainId === 31337n
+            ? 'Anvil'
+            : `Chain ID ${network.chainId}`;
+      const currentChainId = network.chainId.toString();
+      const expectedChainIdStr = expectedChainId.toString();
+
+      toast.error(
+        `⚠️ Red incorrecta: Estás en ${currentNetworkName} (Chain ID: ${currentChainId}) pero la app está configurada para ${networkName} (Chain ID: ${expectedChainIdStr}). ` +
+          `Por favor cambia la red en MetaMask a ${networkName} o ajusta VITE_NETWORK en web/.env`,
+        {
+          duration: 8000,
+          id: 'network-mismatch-error', // ID único para evitar duplicados
+        }
+      );
+    } else {
+      console.log('✅ Red correcta:', networkName);
+      // Limpiar el toast de error si existe y ahora la red es correcta
+      toast.dismiss('network-mismatch-error');
+    }
 
     const roleManagerContract = new Contract(ROLE_MANAGER_ADDRESS, ROLE_MANAGER_ABI, signer);
     const tokenFactoryContract = new Contract(TOKEN_FACTORY_ADDRESS, TOKEN_FACTORY_ABI, signer);
@@ -154,6 +211,11 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       setIsConnected(true);
       setManualDisconnect(false); // Reset flag al conectar
 
+      // Guardar en localStorage para persistencia
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('connectedAccount', address);
+      }
+
       const { roleManagerContract } = await setupProvider(window.ethereum);
       await loadUserInfo(address, roleManagerContract);
     } catch (error) {
@@ -247,9 +309,51 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Restaurar sesión desde localStorage al cargar la página
   useEffect(() => {
-    // No auto-reconnect - user must explicitly click Connect
+    const restoreSession = async () => {
+      if (!window.ethereum) return;
 
+      try {
+        const savedAccount = localStorage.getItem('connectedAccount');
+        if (!savedAccount) return;
+
+        // Verificar que la cuenta sigue disponible en MetaMask
+        const accounts = (await window.ethereum.request({
+          method: 'eth_accounts',
+        })) as string[];
+
+        if (accounts.length === 0) {
+          // No hay cuentas conectadas, limpiar localStorage
+          localStorage.removeItem('connectedAccount');
+          return;
+        }
+
+        const currentAccount = accounts[0];
+        const savedLower = savedAccount.toLowerCase();
+        const currentLower = currentAccount.toLowerCase();
+
+        // Solo restaurar si la cuenta guardada coincide con la actual en MetaMask
+        if (savedLower === currentLower) {
+          setAccount(currentAccount);
+          setIsConnected(true);
+          const { roleManagerContract } = await setupProvider(window.ethereum);
+          await loadUserInfo(currentAccount, roleManagerContract);
+        } else {
+          // La cuenta cambió, limpiar localStorage
+          localStorage.removeItem('connectedAccount');
+        }
+      } catch (error) {
+        console.error('Error restoring session:', error);
+        // Si hay error, limpiar localStorage
+        localStorage.removeItem('connectedAccount');
+      }
+    };
+
+    restoreSession();
+  }, []); // Solo ejecutar una vez al montar
+
+  useEffect(() => {
     if (window.ethereum) {
       const handleAccountsChanged = (accounts: string[]) => {
         // Solo procesar si no es una desconexión manual
@@ -258,16 +362,36 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         if (accounts.length === 0) {
           disconnectWallet();
         } else if (account && accounts[0] !== account) {
-          setAccount(accounts[0]);
+          const newAccount = accounts[0];
+          setAccount(newAccount);
+          // Actualizar localStorage con la nueva cuenta
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('connectedAccount', newAccount);
+          }
           if (window.ethereum) {
             setupProvider(window.ethereum as Eip1193Provider).then(({ roleManagerContract }) => {
-              loadUserInfo(accounts[0], roleManagerContract);
+              loadUserInfo(newAccount, roleManagerContract);
             });
           }
         }
       };
 
-      const handleChainChanged = () => {
+      const handleChainChanged = (chainId: string | number) => {
+        console.log('🔄 Chain changed detected:', chainId);
+        const configuredNetwork = import.meta.env.VITE_NETWORK?.toLowerCase().trim();
+        const expectedChainId = configuredNetwork === 'sepolia' ? '0xaa36a7' : '0x7a69'; // Sepolia: 11155111, Anvil: 31337
+
+        // Convertir chainId a número para comparar
+        const currentChainId = typeof chainId === 'string' ? parseInt(chainId, 16) : chainId;
+        const expectedChainIdNum = configuredNetwork === 'sepolia' ? 11155111 : 31337;
+
+        console.log('🔍 Chain change validation:', {
+          currentChainId,
+          expectedChainIdNum,
+          configuredNetwork,
+          match: currentChainId === expectedChainIdNum,
+        });
+
         window.location.reload();
       };
 

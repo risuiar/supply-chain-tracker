@@ -5,8 +5,13 @@ import "forge-std/Test.sol";
 import "../src/RoleManager.sol";
 import "../src/TokenFactory.sol";
 
+<<<<<<< HEAD
 /// @title TokenFactory Test Suite
 /// @notice Comprehensive tests for the TokenFactory contract
+=======
+/// @title Suite de Pruebas de TokenFactory
+/// @notice Pruebas exhaustivas para el contrato TokenFactory
+>>>>>>> dev
 contract TokenFactoryTest is Test {
     RoleManager public roleManager;
     TokenFactory public tokenFactory;

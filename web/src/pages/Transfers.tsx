@@ -5,33 +5,7 @@ import toast from 'react-hot-toast';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
-
-type TransferData = {
-  id: bigint;
-  tokenId: bigint;
-  from: string;
-  to: string;
-  amount: bigint;
-  fromRole: number;
-  toRole: number;
-  status: number; // 0: None, 1: Pending, 2: Approved, 3: Rejected
-  requestedAt: bigint;
-  resolvedAt: bigint;
-};
-
-type TokenData = {
-  id: bigint;
-  productName: string;
-  assetType: number;
-  metadataURI: string;
-  totalSupply: bigint;
-  creator: string;
-  currentHolder: string;
-  currentRole: number;
-  createdAt: bigint;
-  parentIds: bigint[];
-  exists: boolean;
-};
+import type { TokenData, TransferData } from '../types';
 
 export function Transfers() {
   const { account, user, tokenFactory, transferManager } = useWeb3();

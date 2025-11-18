@@ -1,23 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Package, Plus, ArrowRight } from 'lucide-react';
+import { Package, Plus, ArrowRight, ExternalLink } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
-
-type TokenData = {
-  id: bigint;
-  productName: string;
-  assetType: number;
-  metadataURI: string;
-  totalSupply: bigint;
-  creator: string;
-  currentHolder: string;
-  currentRole: number;
-  createdAt: bigint;
-  parentIds: bigint[];
-  exists: boolean;
-};
+import type { TokenData } from '../types';
+import { EXPLORER_BASE_URL, TOKEN_FACTORY_ADDRESS } from '../contracts/config';
 
 export function Tokens() {
   const { account, user, tokenFactory } = useWeb3();
@@ -189,6 +177,19 @@ export function Tokens() {
 
                       {/* Actions */}
                       <div className="flex gap-2">
+                        {EXPLORER_BASE_URL && (
+                          <a
+                            href={`${EXPLORER_BASE_URL}/token/${TOKEN_FACTORY_ADDRESS}?a=${token.id.toString()}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex-1"
+                          >
+                            <Button variant="secondary" className="w-full text-xs py-1.5">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              Etherscan
+                            </Button>
+                          </a>
+                        )}
                         <Link to={`/tokens/${token.id.toString()}`} className="flex-1">
                           <Button variant="secondary" className="w-full text-xs py-1.5">
                             <Package className="w-3.5 h-3.5" />
