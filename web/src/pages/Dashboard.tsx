@@ -5,8 +5,16 @@ import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent } from '../components/Card';
 
 export function Dashboard() {
-  const { user, isAdmin, account, tokenFactory, transferManager, isConnected, retryConnection } =
-    useWeb3();
+  const {
+    user,
+    isAdmin,
+    account,
+    tokenFactory,
+    transferManager,
+    isConnected,
+    retryConnection,
+    getReasonableFromBlock,
+  } = useWeb3();
   const [tokenCount, setTokenCount] = useState<number>(0);
   const [pendingIncoming, setPendingIncoming] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -23,8 +31,9 @@ export function Dashboard() {
         setTokenCount(tokenIds.length);
 
         // Load pending incoming transfers
+        const fromBlock = await getReasonableFromBlock();
         const filter = transferManager.filters.TransferRequested();
-        const events = await transferManager.queryFilter(filter);
+        const events = await transferManager.queryFilter(filter, fromBlock);
 
         let pendingCount = 0;
         for (const event of events) {

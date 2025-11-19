@@ -11,7 +11,7 @@ interface PendingRequest {
 }
 
 export function AdminRolePanel() {
-  const { isAdmin, isConnected, roleManager } = useWeb3();
+  const { isAdmin, isConnected, roleManager, getReasonableFromBlock } = useWeb3();
   const { approveRole, rejectRole, revokeRole, isLoading } = useRoleManager();
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
   const [approvedUsers, setApprovedUsers] = useState<{ address: string; role: number }[]>([]);
@@ -24,17 +24,20 @@ export function AdminRolePanel() {
     const loadPendingRequests = async () => {
       setIsLoadingRequests(true);
       try {
+        // Obtener un bloque de inicio razonable para evitar consultar desde el bloque 0
+        const fromBlock = await getReasonableFromBlock();
+
         // Obtener eventos RoleRequested
         const roleRequestedFilter = roleManager.filters.RoleRequested();
-        const roleRequestedEvents = await roleManager.queryFilter(roleRequestedFilter);
+        const roleRequestedEvents = await roleManager.queryFilter(roleRequestedFilter, fromBlock);
 
         // Obtener eventos RoleApproved
         const roleApprovedFilter = roleManager.filters.RoleApproved();
-        const roleApprovedEvents = await roleManager.queryFilter(roleApprovedFilter);
+        const roleApprovedEvents = await roleManager.queryFilter(roleApprovedFilter, fromBlock);
 
         // Obtener eventos RoleRejected
         const roleRejectedFilter = roleManager.filters.RoleRejected();
-        const roleRejectedEvents = await roleManager.queryFilter(roleRejectedFilter);
+        const roleRejectedEvents = await roleManager.queryFilter(roleRejectedFilter, fromBlock);
 
         // Crear un mapa de solicitudes pendientes
         const requestsMap = new Map<string, number>();
@@ -193,15 +196,22 @@ export function AdminRolePanel() {
                     const loadPendingRequests = async () => {
                       setIsLoadingRequests(true);
                       try {
+                        const fromBlock = await getReasonableFromBlock();
                         const roleRequestedFilter = roleManager.filters.RoleRequested();
-                        const roleRequestedEvents =
-                          await roleManager.queryFilter(roleRequestedFilter);
+                        const roleRequestedEvents = await roleManager.queryFilter(
+                          roleRequestedFilter,
+                          fromBlock
+                        );
                         const roleApprovedFilter = roleManager.filters.RoleApproved();
-                        const roleApprovedEvents =
-                          await roleManager.queryFilter(roleApprovedFilter);
+                        const roleApprovedEvents = await roleManager.queryFilter(
+                          roleApprovedFilter,
+                          fromBlock
+                        );
                         const roleRejectedFilter = roleManager.filters.RoleRejected();
-                        const roleRejectedEvents =
-                          await roleManager.queryFilter(roleRejectedFilter);
+                        const roleRejectedEvents = await roleManager.queryFilter(
+                          roleRejectedFilter,
+                          fromBlock
+                        );
 
                         const requestsMap = new Map<string, number>();
                         for (const event of roleRequestedEvents) {

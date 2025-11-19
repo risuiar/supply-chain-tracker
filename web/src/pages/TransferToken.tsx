@@ -15,7 +15,8 @@ type RecipientUser = {
 
 export function TransferToken() {
   const { id } = useParams<{ id: string }>();
-  const { account, user, roleManager, tokenFactory, transferManager } = useWeb3();
+  const { account, user, roleManager, tokenFactory, transferManager, getReasonableFromBlock } =
+    useWeb3();
   const navigate = useNavigate();
   const [token, setToken] = useState<TokenData | null>(null);
   const [balance, setBalance] = useState<bigint>(0n);
@@ -72,8 +73,9 @@ export function TransferToken() {
         }
 
         // Query RoleApproved events to find approved users with target role
+        const fromBlock = await getReasonableFromBlock();
         const filter = roleManager.filters.RoleApproved();
-        const events = await roleManager.queryFilter(filter);
+        const events = await roleManager.queryFilter(filter, fromBlock);
 
         const approvedUsers: RecipientUser[] = [];
         const seenAddresses = new Set<string>();

@@ -66,6 +66,26 @@ if not "%ETHERSCAN_API_KEY%"=="" (
 )
 echo.
 
+echo ========================================
+echo   Limpiando estados anteriores de Sepolia
+echo ========================================
+echo.
+echo Eliminando archivos de broadcast y cache anteriores...
+REM Limpiar broadcast de Sepolia (chain ID: 11155111)
+if exist "broadcast\DeploySupplyChainSystem.s.sol\11155111" (
+    echo Eliminando broadcast anterior de Sepolia...
+    rmdir /s /q "broadcast\DeploySupplyChainSystem.s.sol\11155111" 2>nul
+)
+
+REM Limpiar cache de Sepolia (chain ID: 11155111)
+if exist "cache\DeploySupplyChainSystem.s.sol\11155111" (
+    echo Eliminando cache anterior de Sepolia...
+    rmdir /s /q "cache\DeploySupplyChainSystem.s.sol\11155111" 2>nul
+)
+
+echo Estados anteriores eliminados. Iniciando deploy limpio...
+echo.
+
 echo Desplegando RoleManager, TokenFactory y TransferManager en Sepolia...
 echo.
 
@@ -84,6 +104,11 @@ echo.
 echo ========================================
 echo   Deployment Completado
 echo ========================================
+echo.
+echo NOTA: Si viste warnings sobre "Could not detect deployment" o
+echo "Verification is still pending", son NORMALES. Etherscan puede
+echo tardar unos segundos en procesar la verificacion. Si al final
+echo ves "All contracts were verified!", todo esta correcto.
 echo.
 echo IMPORTANTE: Copia las direcciones de arriba y actualiza:
 echo   web\.env

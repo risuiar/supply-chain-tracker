@@ -121,6 +121,37 @@ interface Web3ContextType {
   approveRole: (userAccount: string) => Promise<void>;
   rejectRole: (userAccount: string) => Promise<void>;
   revokeRole: (userAccount: string) => Promise<void>;
+  getReasonableFromBlock: () => Promise<number>;
+}
+
+// Helper function to get a reasonable fromBlock for event queries
+// This prevents querying from block 0 which can be too large for Sepolia
+export async function getReasonableFromBlock(provider: BrowserProvider | null): Promise<number> {
+  if (!provider) {
+    // Fallback: use a recent block number for Sepolia (approximately 1 month ago)
+    // Sepolia block time is ~12 seconds, so ~1 month = ~216,000 blocks
+    // Using a safe recent block: ~6,000,000 (Sepolia has been around for a while)
+    return 6000000;
+  }
+
+  try {
+    const currentBlock = await provider.getBlockNumber();
+    const configuredNetwork = import.meta.env.VITE_NETWORK?.toLowerCase().trim();
+
+    // For Sepolia, search from last 10,000 blocks (~33 hours ago)
+    // For Anvil (local), search from block 0 is fine
+    if (configuredNetwork === 'sepolia') {
+      const fromBlock = Math.max(0, currentBlock - 10000);
+      return fromBlock;
+    } else {
+      // For local networks, block 0 is fine
+      return 0;
+    }
+  } catch (error) {
+    console.warn('Error getting current block, using fallback:', error);
+    // Fallback to a recent block number
+    return 6000000;
+  }
 }
 
 const Web3Context = createContext<Web3ContextType | undefined>(undefined);
@@ -266,7 +297,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   const loadUserInfo = async (address: string, roleManagerContract: Contract) => {
     try {
       // Verificar si es admin primero con retry logic para manejar errores temporales de red
-      let adminAddress: string;
+      let adminAddress: string | undefined;
       let retries = 3;
       let lastError: unknown = null;
 
@@ -310,7 +341,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       }
 
       // Si después de todos los reintentos aún falla, verificar el tipo de error
-      if (lastError) {
+      if (lastError || !adminAddress) {
         const errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
 
         // Distinguir entre error de red temporal y contrato no desplegado
@@ -348,8 +379,14 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         }
       }
 
+      if (!adminAddress) {
+        setUser(null);
+        setIsAdmin(false);
+        return;
+      }
+
       const addrLower = address.toLowerCase();
-      const chainAdminLower = adminAddress?.toLowerCase?.() ?? '';
+      const chainAdminLower = adminAddress.toLowerCase();
       const envAdminLower = ADMIN_ADDRESS?.toLowerCase?.() ?? '';
       const adminCheck =
         addrLower === chainAdminLower || (!!envAdminLower && addrLower === envAdminLower);
@@ -829,6 +866,10 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     };
   }, [account, isConnected, manualDisconnect]);
 
+  const getReasonableFromBlockHelper = async (): Promise<number> => {
+    return await getReasonableFromBlock(provider);
+  };
+
   return (
     <Web3Context.Provider
       value={{
@@ -849,6 +890,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         approveRole,
         rejectRole,
         revokeRole,
+        getReasonableFromBlock: getReasonableFromBlockHelper,
       }}
     >
       {children}

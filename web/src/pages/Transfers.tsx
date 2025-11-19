@@ -8,7 +8,7 @@ import { Button } from '../components/Button';
 import type { TokenData, TransferData } from '../types';
 
 export function Transfers() {
-  const { account, user, tokenFactory, transferManager } = useWeb3();
+  const { account, user, tokenFactory, transferManager, getReasonableFromBlock } = useWeb3();
   const [transfers, setTransfers] = useState<TransferData[]>([]);
   const [tokens, setTokens] = useState<Record<string, TokenData>>({});
   const [loading, setLoading] = useState(true);
@@ -25,8 +25,9 @@ export function Transfers() {
       const transferIds = new Set<string>();
 
       // Get all TransferRequested events
+      const fromBlock = await getReasonableFromBlock();
       const filter = transferManager.filters.TransferRequested();
-      const events = await transferManager.queryFilter(filter);
+      const events = await transferManager.queryFilter(filter, fromBlock);
 
       for (const event of events) {
         if ('args' in event) {
