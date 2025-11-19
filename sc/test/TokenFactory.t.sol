@@ -5,13 +5,8 @@ import "forge-std/Test.sol";
 import "../src/RoleManager.sol";
 import "../src/TokenFactory.sol";
 
-<<<<<<< HEAD
-/// @title TokenFactory Test Suite
-/// @notice Comprehensive tests for the TokenFactory contract
-=======
 /// @title Suite de Pruebas de TokenFactory
 /// @notice Pruebas exhaustivas para el contrato TokenFactory
->>>>>>> dev
 contract TokenFactoryTest is Test {
     RoleManager public roleManager;
     TokenFactory public tokenFactory;
@@ -66,6 +61,12 @@ contract TokenFactoryTest is Test {
     
     // ============ Raw Token Creation Tests ============
     
+    /// @notice Verifica que un Productor puede crear un token de materia prima
+    /// @dev Al crear un token:
+    ///      - Se emite el evento TokenCreated
+    ///      - Se asigna un ID único al token
+    ///      - El token se crea con el tipo RawMaterial
+    ///      - El creador recibe el supply inicial
     function testProducerCanCreateRawToken() public {
         vm.expectEmit(true, false, false, true);
         emit TokenCreated(1, "Coffee Beans", TokenFactory.AssetType.RawMaterial, producer, "");
@@ -83,6 +84,8 @@ contract TokenFactoryTest is Test {
         assertTrue(token.exists);
     }
     
+    /// @notice Verifica que se puede crear un token de materia prima con metadata
+    /// @dev La metadata permite almacenar información adicional sobre el producto (origen, calidad, etc.)
     function testProducerCanCreateRawTokenWithMetadata() public {
         string memory metadata = '{"origin": "Colombia", "quality": "Premium"}';
         
@@ -93,6 +96,8 @@ contract TokenFactoryTest is Test {
         assertEq(token.metadataURI, metadata);
     }
     
+    /// @notice Verifica que el creador recibe el supply inicial del token
+    /// @dev Al crear un token, el balance del creador debe ser igual al totalSupply inicial
     function testCreatorReceivesInitialSupply() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee Beans", "", 1000);
@@ -101,24 +106,32 @@ contract TokenFactoryTest is Test {
         assertEq(balance, 1000);
     }
     
+    /// @notice Verifica que una Fábrica no puede crear tokens de materia prima
+    /// @dev Solo los Productores pueden crear materias primas, debe revertir
     function testFactoryCannotCreateRawToken() public {
         vm.expectRevert(TokenFactory.NotApproved.selector);
         vm.prank(factory);
         tokenFactory.createRawToken("Coffee Beans", "", 1000);
     }
     
+    /// @notice Verifica que un Minorista no puede crear tokens de materia prima
+    /// @dev Solo los Productores pueden crear materias primas, debe revertir
     function testRetailerCannotCreateRawToken() public {
         vm.expectRevert(TokenFactory.NotApproved.selector);
         vm.prank(retailer);
         tokenFactory.createRawToken("Coffee Beans", "", 1000);
     }
     
+    /// @notice Verifica que un Consumidor no puede crear tokens de materia prima
+    /// @dev Solo los Productores pueden crear materias primas, debe revertir
     function testConsumerCannotCreateRawToken() public {
         vm.expectRevert(TokenFactory.NotApproved.selector);
         vm.prank(consumer);
         tokenFactory.createRawToken("Coffee Beans", "", 1000);
     }
     
+    /// @notice Verifica que un usuario no aprobado no puede crear tokens
+    /// @dev Solo usuarios con roles aprobados pueden crear tokens, debe revertir
     function testUnapprovedUserCannotCreateToken() public {
         address unapproved = makeAddr("unapproved");
         
@@ -129,6 +142,11 @@ contract TokenFactoryTest is Test {
     
     // ============ Processed Token Creation Tests ============
     
+    /// @notice Verifica que una Fábrica puede crear un token procesado desde materia prima
+    /// @dev Al crear un token procesado:
+    ///      - Se emite el evento TokenCreated con tipo ProcessedGood
+    ///      - Se registran los parentIds (tokens de materia prima usados)
+    ///      - La fábrica debe tener balance de los tokens padre
     function testFactoryCanCreateProcessedToken() public {
         // Producer creates raw material
         vm.prank(producer);
@@ -157,6 +175,8 @@ contract TokenFactoryTest is Test {
         assertEq(token.parentIds[0], rawTokenId);
     }
     
+    /// @notice Verifica que una Fábrica puede crear un token procesado desde múltiples materias primas
+    /// @dev Permite crear productos complejos que requieren múltiples ingredientes/materias primas
     function testFactoryCanCreateTokenFromMultipleParents() public {
         // Create multiple raw materials
         vm.prank(producer);
@@ -186,6 +206,8 @@ contract TokenFactoryTest is Test {
         assertEq(token.parentIds[1], token2);
     }
     
+    /// @notice Verifica que no se puede crear un token procesado sin tokens padre
+    /// @dev Los tokens procesados deben tener al menos un token padre, debe revertir
     function testFactoryCannotCreateTokenWithoutParents() public {
         uint256[] memory emptyParents = new uint256[](0);
         
@@ -194,6 +216,8 @@ contract TokenFactoryTest is Test {
         tokenFactory.createProcessedToken("Wallet", "", 10, emptyParents);
     }
     
+    /// @notice Verifica que no se puede crear un token procesado desde un token inexistente
+    /// @dev Los tokens padre deben existir, debe revertir si se referencia un token que no existe
     function testFactoryCannotCreateTokenFromNonExistentParent() public {
         uint256[] memory parentIds = new uint256[](1);
         parentIds[0] = 999; // Non-existent token
@@ -203,6 +227,8 @@ contract TokenFactoryTest is Test {
         tokenFactory.createProcessedToken("Wallet", "", 10, parentIds);
     }
     
+    /// @notice Verifica que una Fábrica no puede crear un token procesado sin tener balance de los padres
+    /// @dev La fábrica debe poseer los tokens de materia prima antes de procesarlos, debe revertir
     function testFactoryCannotCreateTokenWithoutParentBalance() public {
         vm.prank(producer);
         uint256 rawTokenId = tokenFactory.createRawToken("Leather", "", 100);
@@ -216,6 +242,8 @@ contract TokenFactoryTest is Test {
         tokenFactory.createProcessedToken("Wallet", "", 10, parentIds);
     }
     
+    /// @notice Verifica que un Productor no puede crear tokens procesados
+    /// @dev Solo las Fábricas pueden crear tokens procesados, debe revertir
     function testProducerCannotCreateProcessedToken() public {
         vm.prank(producer);
         uint256 rawTokenId = tokenFactory.createRawToken("Leather", "", 100);
@@ -230,6 +258,8 @@ contract TokenFactoryTest is Test {
     
     // ============ Token Query Tests ============
     
+    /// @notice Verifica que getToken retorna todos los datos correctos del token
+    /// @dev Comprueba que todos los campos del token (id, nombre, metadata, supply, creador, holder) son correctos
     function testGetTokenReturnsCorrectData() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "metadata", 100);
@@ -244,11 +274,15 @@ contract TokenFactoryTest is Test {
         assertTrue(token.exists);
     }
     
+    /// @notice Verifica que obtener un token inexistente revierte
+    /// @dev Debe revertir con AssetDoesNotExist si se consulta un token que no existe
     function testGetNonExistentTokenReverts() public {
         vm.expectRevert(TokenFactory.AssetDoesNotExist.selector);
         tokenFactory.getToken(999);
     }
     
+    /// @notice Verifica que getUserTokens retorna todos los tokens de un usuario
+    /// @dev Retorna un array con los IDs de todos los tokens que el usuario posee (balance > 0)
     function testGetUserTokensReturnsCorrectTokens() public {
         vm.startPrank(producer);
         tokenFactory.createRawToken("Token1", "", 100);
@@ -263,6 +297,8 @@ contract TokenFactoryTest is Test {
         assertEq(userTokens[2], 3);
     }
     
+    /// @notice Verifica que balanceOf retorna el balance correcto de un usuario para un token
+    /// @dev El balance debe coincidir con la cantidad que el usuario posee del token
     function testBalanceOfReturnsCorrectBalance() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 1000);
@@ -274,11 +310,15 @@ contract TokenFactoryTest is Test {
         assertEq(tokenFactory.balanceOf(tokenId, factory), 0);
     }
     
+    /// @notice Verifica que consultar el balance de un token inexistente revierte
+    /// @dev Debe revertir con AssetDoesNotExist si el token no existe
     function testBalanceOfNonExistentTokenReverts() public {
         vm.expectRevert(TokenFactory.AssetDoesNotExist.selector);
         tokenFactory.balanceOf(999, producer);
     }
     
+    /// @notice Verifica que getTokenHolder retorna el holder correcto del token
+    /// @dev El holder es el usuario que posee todo el supply del token (balance == totalSupply)
     function testGetTokenHolderReturnsCorrectHolder() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 100);
@@ -289,6 +329,11 @@ contract TokenFactoryTest is Test {
     
     // ============ Transfer Tests ============
     
+    /// @notice Verifica que transferToken actualiza correctamente los balances
+    /// @dev Al transferir:
+    ///      - Se emite el evento TokenTransferred
+    ///      - El balance del remitente disminuye
+    ///      - El balance del destinatario aumenta
     function testTransferTokenUpdatesBalances() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 1000);
@@ -303,6 +348,8 @@ contract TokenFactoryTest is Test {
         assertEq(tokenFactory.balanceOf(tokenId, factory), 400);
     }
     
+    /// @notice Verifica que transferir el balance completo actualiza el holder del token
+    /// @dev Cuando se transfiere todo el supply, el holder cambia al destinatario
     function testTransferFullBalanceUpdatesHolder() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 1000);
@@ -314,6 +361,8 @@ contract TokenFactoryTest is Test {
         assertEq(holder, factory);
     }
     
+    /// @notice Verifica que transferir todo el balance remueve el token de la lista del remitente
+    /// @dev Si el remitente transfiere todo su balance, el token se elimina de su lista de tokens
     function testTransferRemovesTokenFromSenderList() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 100);
@@ -329,6 +378,8 @@ contract TokenFactoryTest is Test {
         assertEq(factoryTokens[0], tokenId);
     }
     
+    /// @notice Verifica que no se puede transferir más balance del que se posee
+    /// @dev Debe revertir con Unauthorized si se intenta transferir más de lo disponible
     function testTransferInsufficientBalanceReverts() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 100);
@@ -338,12 +389,16 @@ contract TokenFactoryTest is Test {
         tokenFactory.transferToken(tokenId, producer, factory, 200);
     }
     
+    /// @notice Verifica que no se puede transferir un token inexistente
+    /// @dev Debe revertir con AssetDoesNotExist si el token no existe
     function testTransferNonExistentTokenReverts() public {
         vm.expectRevert(TokenFactory.AssetDoesNotExist.selector);
         vm.prank(producer);
         tokenFactory.transferToken(999, producer, factory, 10);
     }
     
+    /// @notice Verifica que una transferencia parcial mantiene el token en ambas listas
+    /// @dev Si se transfiere parcialmente, tanto el remitente como el destinatario tienen el token en su lista
     function testPartialTransferKeepsTokenInBothLists() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 1000);
@@ -360,10 +415,14 @@ contract TokenFactoryTest is Test {
     
     // ============ Role Manager Integration Tests ============
     
+    /// @notice Verifica que la dirección del RoleManager es correcta
+    /// @dev Confirma que el TokenFactory tiene la referencia correcta al RoleManager
     function testRoleManagerAddressIsCorrect() public {
         assertEq(address(tokenFactory.roleManager()), address(roleManager));
     }
     
+    /// @notice Verifica que el rol del creador se registra en el token
+    /// @dev El currentRole del token debe coincidir con el rol del creador
     function testTokenCreatorRoleIsRecorded() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 100);
@@ -372,6 +431,8 @@ contract TokenFactoryTest is Test {
         assertEq(uint8(token.currentRole), uint8(RoleManager.Role.Producer));
     }
     
+    /// @notice Verifica que el currentRole se actualiza al transferir el token
+    /// @dev El currentRole debe cambiar al rol del nuevo holder cuando se transfiere todo el balance
     function testCurrentRoleUpdatesOnTransfer() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 100);
@@ -385,6 +446,8 @@ contract TokenFactoryTest is Test {
     
     // ============ Edge Cases and Complex Scenarios ============
     
+    /// @notice Verifica que se pueden crear múltiples tokens con diferentes supplies
+    /// @dev Confirma que el sistema maneja correctamente múltiples tokens simultáneamente
     function testMultipleTokensWithDifferentSupplies() public {
         vm.startPrank(producer);
         uint256 token1 = tokenFactory.createRawToken("Token1", "", 100);
@@ -397,6 +460,9 @@ contract TokenFactoryTest is Test {
         assertEq(tokenFactory.balanceOf(token3, producer), 300);
     }
     
+    /// @notice Verifica el flujo completo de la cadena de suministro
+    /// @dev Prueba el ciclo completo: Productor crea materia prima -> transfiere a Fábrica -> 
+    ///      Fábrica crea producto procesado -> verifica balances y relaciones padre-hijo
     function testCompleteSupplyChainFlow() public {
         // Producer creates raw material
         vm.prank(producer);
@@ -424,6 +490,8 @@ contract TokenFactoryTest is Test {
         assertEq(processed.parentIds[0], rawToken);
     }
     
+    /// @notice Verifica que múltiples transferencias actualizan los balances correctamente
+    /// @dev Confirma que se pueden hacer múltiples transferencias del mismo token a diferentes destinatarios
     function testMultipleTransfersUpdateBalancesCorrectly() public {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 1000);
@@ -439,4 +507,5 @@ contract TokenFactoryTest is Test {
         assertEq(tokenFactory.balanceOf(tokenId, retailer), 200);
     }
 }
+
 

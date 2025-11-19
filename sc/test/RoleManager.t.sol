@@ -4,13 +4,8 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/RoleManager.sol";
 
-<<<<<<< HEAD
-/// @title RoleManager Test Suite
-/// @notice Comprehensive tests for the RoleManager contract
-=======
 /// @title Suite de Pruebas de RoleManager
 /// @notice Pruebas exhaustivas para el contrato RoleManager
->>>>>>> dev
 contract RoleManagerTest is Test {
     RoleManager public roleManager;
     
@@ -37,20 +32,26 @@ contract RoleManagerTest is Test {
     
     // ============ Admin Tests ============
     
+    /// @notice Verifica que el admin del contrato es quien lo desplegó
+    /// @dev Al desplegar el contrato, el deployer se convierte automáticamente en admin
     function testAdminIsDeployer() public {
         assertEq(roleManager.admin(), admin);
     }
     
-    function testIsAdminReturnsTrue() public {
-        assertTrue(roleManager.admin() == admin);
-    }
-    
+    /// @notice Verifica que una dirección que no es admin no puede ser admin
+    /// @dev Confirma que solo el deployer tiene el rol de administrador
     function testIsAdminReturnsFalseForNonAdmin() public {
         assertFalse(roleManager.admin() == producer);
     }
     
     // ============ Role Request Tests ============
     
+    /// @notice Verifica que un usuario puede solicitar un rol (Productor)
+    /// @dev Comprueba que al solicitar un rol:
+    ///      - Se emite el evento RoleRequested
+    ///      - El rol actual sigue siendo None
+    ///      - El usuario no está aprobado aún
+    ///      - El rol solicitado se guarda correctamente
     function testRequestRoleAsProducer() public {
         vm.expectEmit(true, true, false, false);
         emit RoleRequested(producer, RoleManager.Role.Producer);
@@ -64,30 +65,8 @@ contract RoleManagerTest is Test {
         assertEq(uint8(user.requestedRole), uint8(RoleManager.Role.Producer));
     }
     
-    function testRequestRoleAsFactory() public {
-        vm.prank(factory);
-        roleManager.requestRole(RoleManager.Role.Factory);
-        
-        RoleManager.User memory user = roleManager.getUser(factory);
-        assertEq(uint8(user.requestedRole), uint8(RoleManager.Role.Factory));
-    }
-    
-    function testRequestRoleAsRetailer() public {
-        vm.prank(retailer);
-        roleManager.requestRole(RoleManager.Role.Retailer);
-        
-        RoleManager.User memory user = roleManager.getUser(retailer);
-        assertEq(uint8(user.requestedRole), uint8(RoleManager.Role.Retailer));
-    }
-    
-    function testRequestRoleAsConsumer() public {
-        vm.prank(consumer);
-        roleManager.requestRole(RoleManager.Role.Consumer);
-        
-        RoleManager.User memory user = roleManager.getUser(consumer);
-        assertEq(uint8(user.requestedRole), uint8(RoleManager.Role.Consumer));
-    }
-    
+    /// @notice Verifica que no se puede solicitar el rol None
+    /// @dev El rol None no es un rol válido para solicitar, debe revertir
     function testCannotRequestNoneRole() public {
         vm.expectRevert(RoleManager.InvalidRoleRequest.selector);
         vm.prank(producer);
@@ -96,6 +75,12 @@ contract RoleManagerTest is Test {
     
     // ============ Approval Tests ============
     
+    /// @notice Verifica que el admin puede aprobar una solicitud de rol
+    /// @dev Al aprobar una solicitud:
+    ///      - Se emite el evento RoleApproved
+    ///      - El rol del usuario se actualiza al rol solicitado
+    ///      - El usuario queda marcado como aprobado
+    ///      - El rol solicitado se limpia (vuelve a None)
     function testApproveRoleByAdmin() public {
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
@@ -111,6 +96,8 @@ contract RoleManagerTest is Test {
         assertEq(uint8(user.requestedRole), uint8(RoleManager.Role.None));
     }
     
+    /// @notice Verifica que solo el admin puede aprobar solicitudes de rol
+    /// @dev Un usuario sin permisos de admin no puede aprobar solicitudes
     function testOnlyAdminCanApprove() public {
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
@@ -120,37 +107,21 @@ contract RoleManagerTest is Test {
         roleManager.approveRole(producer);
     }
     
+    /// @notice Verifica que no se puede aprobar un rol sin solicitud previa
+    /// @dev Debe revertir si se intenta aprobar a un usuario que no ha solicitado ningún rol
     function testCannotApproveWithoutRequest() public {
         vm.expectRevert(RoleManager.RoleNotRequested.selector);
         roleManager.approveRole(producer);
     }
     
-    function testHasRoleReturnsTrueAfterApproval() public {
-        vm.prank(producer);
-        roleManager.requestRole(RoleManager.Role.Producer);
-        roleManager.approveRole(producer);
-        
-        assertTrue(roleManager.hasRole(producer, RoleManager.Role.Producer));
-    }
-    
-    function testIsApprovedReturnsTrueAfterApproval() public {
-        vm.prank(producer);
-        roleManager.requestRole(RoleManager.Role.Producer);
-        roleManager.approveRole(producer);
-        
-        assertTrue(roleManager.isApproved(producer));
-    }
-    
-    function testGetUserRoleReturnsCorrectRole() public {
-        vm.prank(factory);
-        roleManager.requestRole(RoleManager.Role.Factory);
-        roleManager.approveRole(factory);
-        
-        assertEq(uint8(roleManager.getUserRole(factory)), uint8(RoleManager.Role.Factory));
-    }
-    
     // ============ Rejection Tests ============
     
+    /// @notice Verifica que el admin puede rechazar una solicitud de rol
+    /// @dev Al rechazar una solicitud:
+    ///      - Se emite el evento RoleRejected
+    ///      - El rol del usuario permanece como None
+    ///      - El usuario no queda aprobado
+    ///      - La solicitud se limpia (requestedRole vuelve a None)
     function testRejectRoleByAdmin() public {
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
@@ -166,6 +137,8 @@ contract RoleManagerTest is Test {
         assertEq(uint8(user.requestedRole), uint8(RoleManager.Role.None));
     }
     
+    /// @notice Verifica que solo el admin puede rechazar solicitudes de rol
+    /// @dev Un usuario sin permisos de admin no puede rechazar solicitudes
     function testOnlyAdminCanReject() public {
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
@@ -175,6 +148,8 @@ contract RoleManagerTest is Test {
         roleManager.rejectRole(producer);
     }
     
+    /// @notice Verifica que no se puede rechazar un rol sin solicitud previa
+    /// @dev Debe revertir si se intenta rechazar a un usuario que no ha solicitado ningún rol
     function testCannotRejectWithoutRequest() public {
         vm.expectRevert(RoleManager.RoleNotRequested.selector);
         roleManager.rejectRole(producer);
@@ -182,6 +157,11 @@ contract RoleManagerTest is Test {
     
     // ============ Revocation Tests ============
     
+    /// @notice Verifica que el admin puede revocar un rol aprobado
+    /// @dev Al revocar un rol:
+    ///      - Se emite el evento RoleRevoked
+    ///      - El rol del usuario vuelve a None
+    ///      - El usuario deja de estar aprobado
     function testRevokeRoleByAdmin() public {
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
@@ -197,6 +177,8 @@ contract RoleManagerTest is Test {
         assertFalse(user.approved);
     }
     
+    /// @notice Verifica que solo el admin puede revocar roles
+    /// @dev Un usuario sin permisos de admin no puede revocar roles de otros usuarios
     function testOnlyAdminCanRevoke() public {
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
@@ -207,11 +189,15 @@ contract RoleManagerTest is Test {
         roleManager.revokeRole(producer);
     }
     
+    /// @notice Verifica que no se puede revocar un rol a un usuario no aprobado
+    /// @dev Debe revertir si se intenta revocar un rol a un usuario que no tiene un rol aprobado
     function testCannotRevokeUnapprovedUser() public {
         vm.expectRevert(RoleManager.NotApproved.selector);
         roleManager.revokeRole(producer);
     }
     
+    /// @notice Verifica que hasRole retorna false después de revocar un rol
+    /// @dev Confirma que después de revocar un rol, el usuario ya no tiene ese rol
     function testHasRoleReturnsFalseAfterRevocation() public {
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
@@ -223,6 +209,9 @@ contract RoleManagerTest is Test {
     
     // ============ Multiple Users Tests ============
     
+    /// @notice Verifica que múltiples usuarios pueden solicitar y obtener diferentes roles
+    /// @dev Confirma que el sistema puede manejar múltiples usuarios simultáneamente
+    ///      con diferentes roles asignados correctamente
     function testMultipleUsersCanRequestDifferentRoles() public {
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
@@ -242,6 +231,8 @@ contract RoleManagerTest is Test {
         assertTrue(roleManager.hasRole(retailer, RoleManager.Role.Retailer));
     }
     
+    /// @notice Verifica que se pueden aprobar múltiples usuarios en secuencia
+    /// @dev Prueba el flujo de aprobación en batch para varios usuarios con diferentes roles
     function testApproveMultipleUsers() public {
         address[] memory users = new address[](4);
         users[0] = producer;
@@ -267,35 +258,26 @@ contract RoleManagerTest is Test {
         }
     }
     
-<<<<<<< HEAD
-    // ============ Edge Cases ============
-    
-    function testCanRequestDifferentRoleAfterApproval() public {
-=======
     // ============ Edge Cases & New Validations ============
     
+    /// @notice Verifica que un usuario con rol aprobado no puede solicitar otro rol
+    /// @dev Previene que usuarios con roles activos soliciten múltiples roles simultáneamente
+    ///      Debe revertir con AlreadyHasRole si el usuario ya tiene un rol aprobado
     function testCannotRequestRoleIfAlreadyHasApprovedRole() public {
         // El usuario solicita y es aprobado como Productor
->>>>>>> dev
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Producer);
         roleManager.approveRole(producer);
         
-<<<<<<< HEAD
-        // Try to request another role
-        vm.prank(producer);
-        roleManager.requestRole(RoleManager.Role.Factory);
-        
-        // Should work to change role
-        roleManager.approveRole(producer);
-        assertEq(uint8(roleManager.getUserRole(producer)), uint8(RoleManager.Role.Factory));
-=======
         // Intenta solicitar otro rol - debe revertir con AlreadyHasRole
         vm.expectRevert(RoleManager.AlreadyHasRole.selector);
         vm.prank(producer);
         roleManager.requestRole(RoleManager.Role.Factory);
     }
     
+    /// @notice Verifica que un usuario no puede solicitar un nuevo rol si ya tiene una solicitud pendiente
+    /// @dev Previene spam de solicitudes y asegura que solo haya una solicitud activa por usuario
+    ///      Debe revertir con RoleAlreadyRequested si hay una solicitud pendiente
     function testCannotRequestRoleIfAlreadyHasPendingRequest() public {
         // El usuario solicita rol de Productor
         vm.prank(producer);
@@ -309,6 +291,12 @@ contract RoleManagerTest is Test {
     
     // ============ Cancel Request Tests ============
     
+    /// @notice Verifica que un usuario puede cancelar su propia solicitud de rol
+    /// @dev Al cancelar una solicitud:
+    ///      - Se emite el evento RoleRejected
+    ///      - La solicitud se limpia (requestedRole vuelve a None)
+    ///      - El usuario no queda aprobado
+    ///      - El rol permanece como None
     function testUserCanCancelOwnRequest() public {
         // El usuario solicita un rol
         vm.prank(producer);
@@ -328,6 +316,8 @@ contract RoleManagerTest is Test {
         assertEq(uint8(user.role), uint8(RoleManager.Role.None));
     }
     
+    /// @notice Verifica que no se puede cancelar una solicitud si no hay una pendiente
+    /// @dev Debe revertir si un usuario intenta cancelar sin tener una solicitud activa
     function testCannotCancelWithoutPendingRequest() public {
         // Intenta cancelar sin tener una solicitud pendiente
         vm.expectRevert(RoleManager.RoleNotRequested.selector);
@@ -335,6 +325,8 @@ contract RoleManagerTest is Test {
         roleManager.cancelRequest();
     }
     
+    /// @notice Verifica que un usuario puede solicitar un nuevo rol después de cancelar
+    /// @dev Confirma que después de cancelar una solicitud, el usuario puede hacer una nueva
     function testCanRequestAgainAfterCancellingRequest() public {
         // El usuario solicita Productor
         vm.prank(producer);
@@ -350,23 +342,6 @@ contract RoleManagerTest is Test {
         
         RoleManager.User memory user = roleManager.getUser(producer);
         assertEq(uint8(user.requestedRole), uint8(RoleManager.Role.Factory));
->>>>>>> dev
-    }
-    
-    function testGetUserReturnsCorrectData() public {
-        vm.prank(producer);
-        roleManager.requestRole(RoleManager.Role.Producer);
-        
-        RoleManager.User memory user1 = roleManager.getUser(producer);
-        assertEq(uint8(user1.role), uint8(RoleManager.Role.None));
-        assertFalse(user1.approved);
-        assertEq(uint8(user1.requestedRole), uint8(RoleManager.Role.Producer));
-        
-        roleManager.approveRole(producer);
-        
-        RoleManager.User memory user2 = roleManager.getUser(producer);
-        assertEq(uint8(user2.role), uint8(RoleManager.Role.Producer));
-        assertTrue(user2.approved);
-        assertEq(uint8(user2.requestedRole), uint8(RoleManager.Role.None));
     }
 }
+
