@@ -581,7 +581,7 @@ Para desplegar en una red de prueba real en lugar de local:
 Crea un archivo `sc/.env` con tu configuración:
 
 ```env
-SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/TU_INFURA_KEY
+SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/TU_ALCHEMY_KEY
 PRIVATE_KEY=tu_private_key_sin_0x
 ETHERSCAN_API_KEY=tu_api_key_opcional
 ```
@@ -637,7 +637,7 @@ VITE_ADMIN_ADDRESS_SEPOLIA=0x... # Tu cuenta que desplegó
 
 1. **Agregar Red Sepolia**:
    - Nombre: `Sepolia`
-   - RPC URL: `https://sepolia.infura.io/v3/TU_INFURA_KEY` (o usa una pública)
+   - RPC URL: `https://eth-sepolia.g.alchemy.com/v2/TU_ALCHEMY_KEY` (o usa una pública)
    - Chain ID: `11155111`
    - Moneda: `ETH`
 

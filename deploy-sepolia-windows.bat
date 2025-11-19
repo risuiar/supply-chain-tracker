@@ -10,7 +10,7 @@ if not exist "sc\.env" (
     echo ERROR: No se encontro el archivo sc\.env
     echo.
     echo Crea el archivo sc\.env con las siguientes variables:
-    echo   SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/TU_INFURA_KEY
+    echo   SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/TU_ALCHEMY_KEY
     echo   PRIVATE_KEY=tu_private_key_sin_0x
     echo   ETHERSCAN_API_KEY=tu_api_key_opcional
     echo.
