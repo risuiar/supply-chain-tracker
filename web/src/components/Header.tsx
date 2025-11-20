@@ -1,6 +1,7 @@
 import { LogOut, LayoutDashboard, Users, Package, Send, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWeb3 } from '../contexts/Web3Context';
+import { ROLE_NAMES } from '../constants/roles';
 
 export function Header() {
   const { account, isConnected, user, isAdmin, disconnectWallet } = useWeb3();
@@ -10,8 +11,7 @@ export function Header() {
   };
 
   const isApproved = !!(user && user.approved);
-  const roleName = (r: number) =>
-    ['Ninguno', 'Productor', 'Fábrica', 'Minorista', 'Consumidor'][r] || 'Desconocido';
+  const roleName = (r: number) => ROLE_NAMES[r] || 'Desconocido';
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">

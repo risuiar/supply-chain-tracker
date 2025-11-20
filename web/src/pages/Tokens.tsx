@@ -104,167 +104,242 @@ export function Tokens() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tokens.map((token) => {
-              const metadata = parseMetadata(token.metadataURI);
-              const balance = balances[token.id.toString()] || 0n;
+          <div className="space-y-8">
+            {(() => {
+              // Separar tokens por tipo
+              const rawMaterials = tokens.filter((token) => Number(token.assetType) === 0);
+              const processedGoods = tokens.filter((token) => Number(token.assetType) === 1);
 
               return (
-                <Card
-                  key={token.id.toString()}
-                  className="hover:shadow-lg transition-shadow duration-200"
-                >
-                  <CardContent className="p-3">
-                    <div className="space-y-2">
-                      {/* Token Name & Balance */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-base font-bold text-gray-900 truncate">
-                            {token.productName}
-                          </h3>
-                          <p className="text-xs text-gray-500">#{token.id.toString()}</p>
+                <>
+                  {/* Materias Primas */}
+                  {rawMaterials.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                          <h2 className="text-lg font-semibold text-gray-900">Materias Primas</h2>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-xl font-bold text-blue-600">
-                            {balance.toString()}
-                          </div>
-                          <div className="text-xs text-gray-500">Balance</div>
+                        <div className="text-sm text-gray-500">
+                          ({rawMaterials.length} {rawMaterials.length === 1 ? 'token' : 'tokens'})
                         </div>
                       </div>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {rawMaterials.map((token) => {
+                          const metadata = parseMetadata(token.metadataURI);
+                          const balance = balances[token.id.toString()] || 0n;
 
-                      {/* Info Grid */}
-                      <div className="grid grid-cols-2 gap-2 py-2 border-y border-gray-200">
-                        <div>
-                          <div className="text-xs text-gray-600">Total Supply</div>
-                          <div className="text-sm font-semibold text-gray-900">
-                            {token.totalSupply.toString()}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-600">Created</div>
-                          <div className="text-sm font-semibold text-gray-900">
-                            {new Date(Number(token.createdAt) * 1000).toLocaleDateString('en-GB')}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Creator */}
-                      <div>
-                        <div className="text-xs text-gray-600">Creator</div>
-                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                          <span className="text-xs font-mono text-gray-900">
-                            {token.creator.slice(0, 6)}...{token.creator.slice(-4)}
-                          </span>
-                          {token.creator.toLowerCase() === account?.toLowerCase() && (
-                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
-                              You
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Features */}
-                      {Object.keys(metadata).length > 0 && (
-                        <div>
-                          <div className="text-xs text-gray-600">Features</div>
-                          <div className="text-xs text-gray-900 italic line-clamp-1 mt-0.5">
-                            {Object.entries(metadata)
-                              .map(([, value]) => String(value))
-                              .join(', ')}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex gap-2">
-                        {EXPLORER_BASE_URL && (
-                          <a
-                            href={`${EXPLORER_BASE_URL}/token/${TOKEN_FACTORY_ADDRESS}?a=${token.id.toString()}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex-1"
-                          >
-                            <Button variant="secondary" className="w-full text-xs py-1.5">
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              Etherscan
-                            </Button>
-                          </a>
-                        )}
-                        <Link to={`/tokens/${token.id.toString()}`} className="flex-1">
-                          <Button variant="secondary" className="w-full text-xs py-1.5">
-                            <Package className="w-3.5 h-3.5" />
-                            Details
-                          </Button>
-                        </Link>
-                        {(() => {
-                          // Determine if transfer button should be shown
-                          const isCreator = token.creator.toLowerCase() === account?.toLowerCase();
-                          const hasBalance = balance > 0n;
-                          const isConsumer = user.role === 4;
-
-                          // Consumer cannot transfer
-                          if (isConsumer) return null;
-
-                          // Producer: Only transfer RawMaterial tokens they created
-                          if (user.role === 1) {
-                            if (hasBalance && isCreator && Number(token.assetType) === 0) {
-                              return (
-                                <Link
-                                  to={`/tokens/${token.id.toString()}/transfer`}
-                                  className="flex-1"
-                                >
-                                  <Button className="w-full text-xs py-1.5">
-                                    <ArrowRight className="w-3.5 h-3.5" />
-                                    Transfer
-                                  </Button>
-                                </Link>
-                              );
-                            }
-                          }
-
-                          // Factory: Only transfer ProcessedGood tokens they created
-                          if (user.role === 2) {
-                            if (hasBalance && isCreator && Number(token.assetType) === 1) {
-                              return (
-                                <Link
-                                  to={`/tokens/${token.id.toString()}/transfer`}
-                                  className="flex-1"
-                                >
-                                  <Button className="w-full text-xs py-1.5">
-                                    <ArrowRight className="w-3.5 h-3.5" />
-                                    Transfer
-                                  </Button>
-                                </Link>
-                              );
-                            }
-                          }
-
-                          // Retailer: Can transfer any token they have
-                          if (user.role === 3 && hasBalance) {
-                            return (
-                              <Link
-                                to={`/tokens/${token.id.toString()}/transfer`}
-                                className="flex-1"
-                              >
-                                <Button className="w-full text-xs py-1.5">
-                                  <ArrowRight className="w-3.5 h-3.5" />
-                                  Transfer
-                                </Button>
-                              </Link>
-                            );
-                          }
-
-                          return null;
-                        })()}
+                          return (
+                            <TokenCard
+                              key={token.id.toString()}
+                              token={token}
+                              metadata={metadata}
+                              balance={balance}
+                              account={account}
+                              user={user}
+                              typeColor="border-l-4 border-l-green-500"
+                            />
+                          );
+                        })}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  )}
+
+                  {/* Productos Procesados */}
+                  {processedGoods.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                          <h2 className="text-lg font-semibold text-gray-900">
+                            Productos Procesados
+                          </h2>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          ({processedGoods.length}{' '}
+                          {processedGoods.length === 1 ? 'token' : 'tokens'})
+                        </div>
+                      </div>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {processedGoods.map((token) => {
+                          const metadata = parseMetadata(token.metadataURI);
+                          const balance = balances[token.id.toString()] || 0n;
+
+                          return (
+                            <TokenCard
+                              key={token.id.toString()}
+                              token={token}
+                              metadata={metadata}
+                              balance={balance}
+                              account={account}
+                              user={user}
+                              typeColor="border-l-4 border-l-blue-500"
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
               );
-            })}
+            })()}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+// Componente separado para la tarjeta de token
+function TokenCard({
+  token,
+  metadata,
+  balance,
+  account,
+  user,
+  typeColor,
+}: {
+  token: TokenData;
+  metadata: any;
+  balance: bigint;
+  account: string | null;
+  user: any;
+  typeColor: string;
+}) {
+  return (
+    <Card className={`hover:shadow-lg transition-shadow duration-200 ${typeColor}`}>
+      <CardContent className="p-3">
+        <div className="space-y-2">
+          {/* Token Name & Balance */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-bold text-gray-900 truncate">{token.productName}</h3>
+              <p className="text-xs text-gray-500">#{token.id.toString()}</p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <div className="text-xl font-bold text-blue-600">{balance.toString()}</div>
+              <div className="text-xs text-gray-500">Balance</div>
+            </div>
+          </div>
+
+          {/* Info Grid */}
+          <div className="grid grid-cols-2 gap-2 py-2 border-y border-gray-200">
+            <div>
+              <div className="text-xs text-gray-600">Total Supply</div>
+              <div className="text-sm font-semibold text-gray-900">
+                {token.totalSupply.toString()}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-600">Created</div>
+              <div className="text-sm font-semibold text-gray-900">
+                {new Date(Number(token.createdAt) * 1000).toLocaleDateString('en-GB')}
+              </div>
+            </div>
+          </div>
+
+          {/* Creator */}
+          <div>
+            <div className="text-xs text-gray-600">Creator</div>
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+              <span className="text-xs font-mono text-gray-900">
+                {token.creator.slice(0, 6)}...{token.creator.slice(-4)}
+              </span>
+              {token.creator.toLowerCase() === account?.toLowerCase() && (
+                <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                  You
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Features */}
+          {Object.keys(metadata).length > 0 && (
+            <div>
+              <div className="text-xs text-gray-600">Features</div>
+              <div className="text-xs text-gray-900 italic line-clamp-1 mt-0.5">
+                {Object.entries(metadata)
+                  .map(([, value]) => String(value))
+                  .join(', ')}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2">
+            {EXPLORER_BASE_URL && (
+              <a
+                href={`${EXPLORER_BASE_URL}/token/${TOKEN_FACTORY_ADDRESS}?a=${token.id.toString()}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1"
+              >
+                <Button variant="secondary" className="w-full text-xs py-1.5">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Etherscan
+                </Button>
+              </a>
+            )}
+            <Link to={`/tokens/${token.id.toString()}`} className="flex-1">
+              <Button variant="secondary" className="w-full text-xs py-1.5">
+                <Package className="w-3.5 h-3.5" />
+                Details
+              </Button>
+            </Link>
+            {(() => {
+              // Determine if transfer button should be shown
+              const isCreator = token.creator.toLowerCase() === account?.toLowerCase();
+              const hasBalance = balance > 0n;
+              const isConsumer = user.role === 4;
+
+              // Consumer cannot transfer
+              if (isConsumer) return null;
+
+              // Producer: Only transfer RawMaterial tokens they created
+              if (user.role === 1) {
+                if (hasBalance && isCreator && Number(token.assetType) === 0) {
+                  return (
+                    <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
+                      <Button className="w-full text-xs py-1.5">
+                        <ArrowRight className="w-3.5 h-3.5" />
+                        Transfer
+                      </Button>
+                    </Link>
+                  );
+                }
+              }
+
+              // Factory: Only transfer ProcessedGood tokens they created
+              if (user.role === 2) {
+                if (hasBalance && isCreator && Number(token.assetType) === 1) {
+                  return (
+                    <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
+                      <Button className="w-full text-xs py-1.5">
+                        <ArrowRight className="w-3.5 h-3.5" />
+                        Transfer
+                      </Button>
+                    </Link>
+                  );
+                }
+              }
+
+              // Retailer: Can transfer any token they have
+              if (user.role === 3 && hasBalance) {
+                return (
+                  <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
+                    <Button className="w-full text-xs py-1.5">
+                      <ArrowRight className="w-3.5 h-3.5" />
+                      Transfer
+                    </Button>
+                  </Link>
+                );
+              }
+
+              return null;
+            })()}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
