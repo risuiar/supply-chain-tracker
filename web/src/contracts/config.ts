@@ -9,36 +9,26 @@ if (!NETWORK || (NETWORK !== 'anvil' && NETWORK !== 'sepolia')) {
 
 // Contract addresses from environment variables
 // Selected based on VITE_NETWORK (anvil or sepolia)
-const getAddress = (envVar: string, fallback: string): string => {
+const getAddress = (envVar: string): string => {
   if (!NETWORK) {
-    console.warn(`⚠️ VITE_NETWORK no configurado. Usando fallback para ${envVar}`);
-    return fallback;
+    throw new Error(
+      `❌ VITE_NETWORK no está configurado. Configura VITE_NETWORK en tu archivo .env (debe ser "anvil" o "sepolia")`
+    );
   }
 
   const networkSpecific = import.meta.env[`${envVar}_${NETWORK.toUpperCase()}`];
   if (!networkSpecific) {
-    console.warn(`⚠️ ${envVar}_${NETWORK.toUpperCase()} no está configurado. Usando fallback.`);
-    return fallback;
+    throw new Error(
+      `❌ ${envVar}_${NETWORK.toUpperCase()} no está configurado en .env. Por favor, configura esta variable de entorno.`
+    );
   }
   return networkSpecific;
 };
 
-export const ROLE_MANAGER_ADDRESS = getAddress(
-  'VITE_ROLE_MANAGER_ADDRESS',
-  '0x5FbDB2315678afecb367f032d93F642f64180aa3'
-);
-export const TOKEN_FACTORY_ADDRESS = getAddress(
-  'VITE_TOKEN_FACTORY_ADDRESS',
-  '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'
-);
-export const TRANSFER_MANAGER_ADDRESS = getAddress(
-  'VITE_TRANSFER_MANAGER_ADDRESS',
-  '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0'
-);
-export const ADMIN_ADDRESS = getAddress(
-  'VITE_ADMIN_ADDRESS',
-  '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
-);
+export const ROLE_MANAGER_ADDRESS = getAddress('VITE_ROLE_MANAGER_ADDRESS');
+export const TOKEN_FACTORY_ADDRESS = getAddress('VITE_TOKEN_FACTORY_ADDRESS');
+export const TRANSFER_MANAGER_ADDRESS = getAddress('VITE_TRANSFER_MANAGER_ADDRESS');
+export const ADMIN_ADDRESS = getAddress('VITE_ADMIN_ADDRESS');
 
 // Explorer base URL (only available on public networks)
 export const EXPLORER_BASE_URL = NETWORK === 'sepolia' ? 'https://sepolia.etherscan.io' : null;

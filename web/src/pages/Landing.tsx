@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { Wallet } from 'lucide-react';
+import { Wallet, ArrowRight } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader } from '../components/Card';
@@ -57,35 +57,92 @@ export function Landing() {
           </div>
         )}
 
-        <div className="mt-16 grid md:grid-cols-4 gap-6 max-w-5xl mx-auto">
-          <Card className="text-center">
-            <CardContent className="py-6">
-              <div className="text-3xl mb-2">🌾</div>
-              <h3 className="font-semibold text-gray-900 mb-1">Productor</h3>
-              <p className="text-sm text-gray-600">Registra materias primas</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="py-6">
-              <div className="text-3xl mb-2">🏭</div>
-              <h3 className="font-semibold text-gray-900 mb-1">Fábrica</h3>
-              <p className="text-sm text-gray-600">Transforma en productos</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="py-6">
-              <div className="text-3xl mb-2">🏪</div>
-              <h3 className="font-semibold text-gray-900 mb-1">Minorista</h3>
-              <p className="text-sm text-gray-600">Distribuye a consumidores</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="py-6">
-              <div className="text-3xl mb-2">🛒</div>
-              <h3 className="font-semibold text-gray-900 mb-1">Consumidor</h3>
-              <p className="text-sm text-gray-600">Destino final</p>
-            </CardContent>
-          </Card>
+        <div className="mt-16 max-w-5xl mx-auto">
+          <style>{`
+            @keyframes slideRight {
+              0%, 100% { transform: translateX(0); opacity: 0.7; }
+              50% { transform: translateX(8px); opacity: 1; }
+            }
+            .arrow-animate {
+              animation: slideRight 2s ease-in-out infinite;
+            }
+            .arrow-animate-delay-1 {
+              animation: slideRight 2s ease-in-out infinite;
+              animation-delay: 0.3s;
+            }
+            .arrow-animate-delay-2 {
+              animation: slideRight 2s ease-in-out infinite;
+              animation-delay: 0.6s;
+            }
+            @keyframes slideDown {
+              0%, 100% { transform: translateY(0) rotate(90deg); opacity: 0.7; }
+              50% { transform: translateY(8px) rotate(90deg); opacity: 1; }
+            }
+            .arrow-vertical {
+              animation: slideDown 2s ease-in-out infinite;
+            }
+            .arrow-vertical-delay-1 {
+              animation: slideDown 2s ease-in-out infinite;
+              animation-delay: 0.3s;
+            }
+            .arrow-vertical-delay-2 {
+              animation: slideDown 2s ease-in-out infinite;
+              animation-delay: 0.6s;
+            }
+          `}</style>
+
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-2">
+            <Card className="text-center flex-1 max-w-[200px] w-full">
+              <CardContent className="py-6">
+                <div className="text-3xl mb-2">🌾</div>
+                <h3 className="font-semibold text-gray-900 mb-1">Productor</h3>
+                <p className="text-sm text-gray-600">Registra materias primas</p>
+              </CardContent>
+            </Card>
+
+            <div className="hidden md:flex items-center justify-center px-2">
+              <ArrowRight className="w-8 h-8 text-blue-600 arrow-animate" />
+            </div>
+
+            <Card className="text-center flex-1 max-w-[200px] w-full">
+              <CardContent className="py-6">
+                <div className="text-3xl mb-2">🏭</div>
+                <h3 className="font-semibold text-gray-900 mb-1">Fábrica</h3>
+                <p className="text-sm text-gray-600">Transforma en productos</p>
+              </CardContent>
+            </Card>
+
+            <div className="hidden md:flex items-center justify-center px-2">
+              <ArrowRight className="w-8 h-8 text-blue-600 arrow-animate-delay-1" />
+            </div>
+
+            <Card className="text-center flex-1 max-w-[200px] w-full">
+              <CardContent className="py-6">
+                <div className="text-3xl mb-2">🏪</div>
+                <h3 className="font-semibold text-gray-900 mb-1">Minorista</h3>
+                <p className="text-sm text-gray-600">Distribuye a consumidores</p>
+              </CardContent>
+            </Card>
+
+            <div className="hidden md:flex items-center justify-center px-2">
+              <ArrowRight className="w-8 h-8 text-blue-600 arrow-animate-delay-2" />
+            </div>
+
+            <Card className="text-center flex-1 max-w-[200px] w-full">
+              <CardContent className="py-6">
+                <div className="text-3xl mb-2">🛒</div>
+                <h3 className="font-semibold text-gray-900 mb-1">Consumidor</h3>
+                <p className="text-sm text-gray-600">Destino final</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Flechas verticales para móvil */}
+          <div className="md:hidden flex flex-col items-center gap-4 mt-4">
+            <ArrowRight className="w-6 h-6 text-blue-600 arrow-vertical" />
+            <ArrowRight className="w-6 h-6 text-blue-600 arrow-vertical-delay-1" />
+            <ArrowRight className="w-6 h-6 text-blue-600 arrow-vertical-delay-2" />
+          </div>
         </div>
       </div>
     </div>

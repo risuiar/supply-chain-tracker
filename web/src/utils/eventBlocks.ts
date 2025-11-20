@@ -15,38 +15,60 @@ const DEFAULT_FALLBACK_OFFSET = 20_000;
 const STATIC_FALLBACK_BLOCK = 7_000_000;
 const MIN_BLOCK = 1;
 
+// Helper to get deployment metadata from environment variables
+const getDeploymentMetadata = (
+  network: Network
+): Partial<Record<ContractKey, DeploymentMetadata>> => {
+  const metadata: Partial<Record<ContractKey, DeploymentMetadata>> = {};
+
+  const getEnvValue = (key: string): string | undefined => {
+    return import.meta.env[key];
+  };
+
+  const getEnvNumber = (key: string): number | undefined => {
+    const value = getEnvValue(key);
+    if (!value) return undefined;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? undefined : parsed;
+  };
+
+  const networkUpper = network.toUpperCase();
+
+  // Map contract names to env variable prefixes
+  const envContractMap: Record<ContractKey, string> = {
+    roleManager: 'ROLE_MANAGER',
+    tokenFactory: 'TOKEN_FACTORY',
+    transferManager: 'TRANSFER_MANAGER',
+  };
+
+  const contracts: ContractKey[] = ['roleManager', 'tokenFactory', 'transferManager'];
+
+  for (const contract of contracts) {
+    const envPrefix = `VITE_${envContractMap[contract]}`;
+    const deployBlock = getEnvNumber(`${envPrefix}_DEPLOY_BLOCK_${networkUpper}`);
+    const deployTxHash = getEnvValue(`${envPrefix}_DEPLOY_TX_HASH_${networkUpper}`);
+    const fallbackOffset = getEnvNumber(`${envPrefix}_FALLBACK_OFFSET_${networkUpper}`);
+
+    if (deployBlock !== undefined || deployTxHash !== undefined || fallbackOffset !== undefined) {
+      metadata[contract] = {};
+      if (deployBlock !== undefined) {
+        metadata[contract]!.deployBlock = deployBlock;
+      }
+      if (deployTxHash) {
+        metadata[contract]!.deployTxHash = deployTxHash;
+      }
+      if (fallbackOffset !== undefined) {
+        metadata[contract]!.fallbackOffset = fallbackOffset;
+      }
+    }
+  }
+
+  return metadata;
+};
+
 const deploymentMetadata: Record<Network, Partial<Record<ContractKey, DeploymentMetadata>>> = {
-  sepolia: {
-    roleManager: {
-      deployBlock: 9_664_166,
-      deployTxHash: '0x10a0dffc448f8ea0f36ae567842882b98ca175a8969e33e18725d34a737c203f',
-    },
-    tokenFactory: {
-      deployBlock: 9_664_166,
-      deployTxHash: '0x32ff58769035cf9f713755f05c2ca9e59c7baaa1d3444240d0c48a4d72d42ba3',
-    },
-    transferManager: {
-      deployBlock: 9_664_166,
-      deployTxHash: '0x937a1244917b10c3078370a7e94b83456cd1d2b468fc797573347b3967137401',
-    },
-  },
-  anvil: {
-    roleManager: {
-      deployBlock: 39,
-      deployTxHash: '0x00a7af61eb13459ad1e2b8916b9dcf7dd65aa8371fd70b257d9f4cd7f65c9079',
-      fallbackOffset: 500,
-    },
-    tokenFactory: {
-      deployBlock: 40,
-      deployTxHash: '0x1f68a156ac806744ba18aa50a17e4088349543da3cc7e7b1df0848b91f23c86a',
-      fallbackOffset: 500,
-    },
-    transferManager: {
-      deployBlock: 40,
-      deployTxHash: '0xc3f7981a7e78627cff010337c05b6ab59e32d2043af1343c05d872f32b318ef8',
-      fallbackOffset: 500,
-    },
-  },
+  sepolia: getDeploymentMetadata('sepolia'),
+  anvil: getDeploymentMetadata('anvil'),
   unknown: {},
 };
 
