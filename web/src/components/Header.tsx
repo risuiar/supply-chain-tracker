@@ -1,4 +1,4 @@
-import { Shield, LogOut, LayoutDashboard, Users, Package, Send, User } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, Package, Send, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWeb3 } from '../contexts/Web3Context';
 
@@ -18,7 +18,7 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
-            <Shield className="w-6 h-6 text-blue-600" />
+            <img src="/favicon.svg" alt="Logo" className="w-6 h-6" />
             <span className="text-gray-900">Trazabilidad de Productos</span>
           </Link>
 

@@ -213,7 +213,7 @@ contract TransferManagerTest is Test {
         vm.prank(producer);
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 1000);
         
-
+        vm.expectRevert(TransferManager.InvalidAmount.selector);
         vm.prank(producer);
         transferManager.requestTransfer(tokenId, factory, 0);
     }
@@ -259,7 +259,7 @@ contract TransferManagerTest is Test {
         uint256 tokenId = tokenFactory.createRawToken("Coffee", "", 1000);
         
 
-        vm.expectRevert(TransferManager.NotTokenCreator.selector);
+        vm.expectRevert(TransferManager.Unauthorized.selector);
         vm.prank(producer2);
         transferManager.requestTransfer(tokenId, factory, 50);
     }
@@ -281,7 +281,7 @@ contract TransferManagerTest is Test {
         uint256 processedToken = tokenFactory.createProcessedToken("Wallet", "", 10, parentIds);
         
 
-        vm.expectRevert(TransferManager.NotTokenCreator.selector);
+        vm.expectRevert(TransferManager.Unauthorized.selector);
         vm.prank(producer);
         transferManager.requestTransfer(processedToken, factory, 2);
     }

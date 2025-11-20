@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { Shield, Wallet } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader } from '../components/Card';
@@ -23,7 +23,7 @@ export function Landing() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <div className="flex justify-center mb-4">
-            <Shield className="w-16 h-16 text-blue-600" />
+            <img src="/favicon.svg" alt="Logo" className="w-16 h-16" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Trazabilidad de Productos</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">

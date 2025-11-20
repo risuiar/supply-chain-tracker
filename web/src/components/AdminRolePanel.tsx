@@ -265,7 +265,7 @@ export function AdminRolePanel() {
         <CardContent>
           {pendingRequests.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <p className="text-lg">✓ No hay solicitudes pendientes</p>
+              <p className="text-lg">No hay solicitudes pendientes</p>
               <p className="text-sm mt-1">Las nuevas solicitudes aparecerán aquí</p>
             </div>
           ) : (
