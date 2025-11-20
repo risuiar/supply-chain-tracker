@@ -97,9 +97,6 @@ graph TD
     K --> N[Puede Solicitar Otro Rol]
     L --> N
     
-    style E fill:#90EE90
-    style M fill:#90EE90
-    style N fill:#FFB6C1
 ```
 
 ### 2. **Creación de Token con Múltiples Productores**
@@ -131,11 +128,6 @@ graph TD
     
     B -->|Retailer| J[Puede transferir cualquier token recibido]
     
-    style D fill:#98FB98
-    style E fill:#98FB98
-    style F fill:#98FB98
-    style I1 fill:#87CEEB
-    style I2 fill:#87CEEB
 ```
 
 ### 3. **Transferencia en Cadena Multi-Actor**
@@ -168,17 +160,6 @@ graph TD
         H --> K[Historial Registrado]
     end
     
-    style A1 fill:#90EE90
-    style A2 fill:#90EE90
-    style A3 fill:#90EE90
-    style B1 fill:#87CEEB
-    style B2 fill:#87CEEB
-    style C1 fill:#DDA0DD
-    style C2 fill:#DDA0DD
-    style D1 fill:#F0E68C
-    style D2 fill:#F0E68C
-    style D3 fill:#F0E68C
-    style D4 fill:#F0E68C
 ```
 
 ### 4. **Trazabilidad Completa (Bidireccional)**
@@ -215,33 +196,26 @@ graph TD
         I4[Metadatos de Cada Etapa]
     end
     
-    style P1 fill:#FFB6C1
-    style O1 fill:#90EE90
-    style O2 fill:#90EE90
-    style O3 fill:#90EE90
-    style C1 fill:#F0E68C
-    style C2 fill:#F0E68C
-    style C3 fill:#F0E68C
 ```
 
 ### 5. **Gestión de Admin Dinámico**
 
 ```mermaid
 graph TD
-    A[Sistema Inicia] --> B[admin = address(0)]
+    A[Sistema Inicia] --> B["admin = address(0)"]
     B --> C[Primer Usuario Solicita Admin]
     C --> D[Auto-aprobación]
-    D --> E[admin = usuario1]
+    D --> E["admin = usuario1"]
     E --> F[Admin Gestiona Sistema]
     
     F --> G{Admin se Revoca?}
     G -->|No| F
-    G -->|Sí| H[admin = address(0)]
+    G -->|Sí| H["admin = address(0)"]
     H --> I[Siguiente Usuario Puede Ser Admin]
     I --> J[Nuevo Admin Auto-aprobado]
     J --> F
     
-    subgraph "Funciones de Admin"
+    subgraph AdminFunctions ["Funciones de Admin"]
         K[Aprobar Solicitudes]
         L[Rechazar Solicitudes]
         M[Revocar Usuarios]
@@ -253,9 +227,6 @@ graph TD
     F --> M
     F --> N
     
-    style D fill:#90EE90
-    style J fill:#90EE90
-    style H fill:#FFB6C1
 ```
 
 ## 🚀 Inicio Rápido
