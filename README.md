@@ -242,7 +242,7 @@ graph TD
 ```bash
 # 1. Clonar el repositorio
 git clone <repo-url>
-cd 98_pfm_traza_2025
+cd supply-chain-tracker
 
 # 2. Instalar dependencias del frontend
 cd web
