@@ -73,27 +73,12 @@ export function Header() {
               <div className="flex items-center gap-4 pl-6 border-l border-gray-200">
                 {user && (
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${user.approved ? 'bg-green-100 text-green-800' : user.requestedRole !== 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}
-                    >
-                      {user.approved
-                        ? 'Aprobado'
-                        : user.requestedRole !== 0
-                          ? `Pendiente (${roleName(user.requestedRole)})`
-                          : 'Sin registrar'}
-                    </span>
                     {user.approved && (
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {roleName(user.role)}
                       </span>
                     )}
                   </div>
-                )}
-
-                {isAdmin && (
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                    Admin
-                  </span>
                 )}
 
                 <span className="text-sm text-gray-600 font-mono">
