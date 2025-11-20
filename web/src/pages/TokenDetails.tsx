@@ -8,6 +8,10 @@ import {
   User,
   ArrowRightLeft,
   ExternalLink,
+  Factory,
+  ShoppingCart,
+  Sprout,
+  Store,
 } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
@@ -19,25 +23,366 @@ import {
   TRANSFER_MANAGER_ADDRESS,
 } from '../contracts/config';
 
+type TraceabilityNode = {
+  token: TokenData;
+  transfers: TransferData[];
+  children: TraceabilityNode[];
+};
+
+// Componente para renderizar el árbol de trazabilidad
+function TraceabilityTree({
+  node,
+  account,
+  level = 0,
+}: {
+  node: TraceabilityNode;
+  account: string | null;
+  level?: number;
+}) {
+  const getRoleIcon = (role: number) => {
+    switch (role) {
+      case 1: // Producer
+        return <Sprout className="w-4 h-4 text-green-600" />;
+      case 2: // Factory
+        return <Factory className="w-4 h-4 text-blue-600" />;
+      case 3: // Retailer
+        return <Store className="w-4 h-4 text-purple-600" />;
+      case 4: // Consumer
+        return <ShoppingCart className="w-4 h-4 text-orange-600" />;
+      default:
+        return <Package className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const getRoleName = (role: number) => {
+    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer'];
+    return roles[role] || 'Unknown';
+  };
+
+  const getAssetTypeName = (assetType: number) => {
+    return assetType === 0 ? 'Raw Material' : 'Processed Good';
+  };
+
+  const isRawMaterial = Number(node.token.assetType) === 0;
+  const isRoot = level === 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Token actual */}
+      <div className="relative">
+        {level > 0 && <div className="absolute -left-6 top-0 bottom-0 w-0.5 bg-gray-300" />}
+        <div className="flex gap-3">
+          <div className="flex flex-col items-center">
+            <div
+              className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                isRawMaterial
+                  ? 'bg-green-50 border-green-300 text-green-700'
+                  : 'bg-blue-50 border-blue-300 text-blue-700'
+              }`}
+            >
+              {getRoleIcon(Number(node.token.currentRole))}
+            </div>
+            {node.children.length > 0 && (
+              <div className="w-0.5 bg-gray-300 flex-1 min-h-[20px] mt-2" />
+            )}
+          </div>
+          <div className="flex-1 pb-4">
+            <div
+              className={`p-4 rounded-lg border-2 ${
+                isRawMaterial
+                  ? 'bg-green-50 border-green-200'
+                  : isRoot
+                    ? 'bg-blue-50 border-blue-200'
+                    : 'bg-gray-50 border-gray-200'
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Link
+                      to={`/tokens/${node.token.id.toString()}`}
+                      className="font-semibold text-gray-900 hover:text-blue-600"
+                    >
+                      {node.token.productName}
+                    </Link>
+                    <span
+                      className={`px-2 py-0.5 text-xs rounded-full ${
+                        isRawMaterial ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                      }`}
+                    >
+                      {getAssetTypeName(Number(node.token.assetType))}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-2">Token #{node.token.id.toString()}</p>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600">Created by:</span>
+                      <span className="font-mono text-gray-900">
+                        {node.token.creator.slice(0, 6)}...{node.token.creator.slice(-4)}
+                      </span>
+                      {node.token.creator.toLowerCase() === account?.toLowerCase() && (
+                        <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">
+                          You
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600">Current holder:</span>
+                      <span className="font-mono text-gray-900">
+                        {node.token.currentHolder.slice(0, 6)}...
+                        {node.token.currentHolder.slice(-4)}
+                      </span>
+                      <span className="text-gray-500">
+                        ({getRoleName(Number(node.token.currentRole))})
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600">Supply:</span>
+                      <span className="font-semibold text-gray-900">
+                        {node.token.totalSupply.toString()} units
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Transferencias de este token */}
+              {node.transfers.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <p className="text-xs font-medium text-gray-700 mb-2">
+                    Transfers ({node.transfers.length}):
+                  </p>
+                  <div className="space-y-2">
+                    {node.transfers.map((transfer) => {
+                      const date = new Date(Number(transfer.requestedAt) * 1000);
+                      return (
+                        <div
+                          key={transfer.id.toString()}
+                          className="p-2 bg-white rounded border border-gray-200"
+                        >
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-600">
+                              {getRoleName(Number(transfer.fromRole))} →{' '}
+                              {getRoleName(Number(transfer.toRole))}
+                            </span>
+                            <span className="text-gray-500">{date.toLocaleDateString()}</span>
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Amount: {transfer.amount.toString()} units
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tokens relacionados (padres o hijos según la dirección) */}
+      {node.children.length > 0 && (
+        <div className="ml-6 space-y-4 border-l-2 border-gray-300 pl-4">
+          <p className="text-xs font-medium text-gray-600 mb-2">
+            {(() => {
+              // Detectar dirección basándose en los tipos de activos
+              const currentIsRaw = Number(node.token.assetType) === 0;
+              const hasProcessedChildren = node.children.some(
+                (child) => Number(child.token.assetType) === 1
+              );
+
+              // Si es materia prima y tiene hijos procesados, es trazabilidad hacia adelante
+              if (currentIsRaw && hasProcessedChildren) {
+                return `Used to create ${node.children.length} product${node.children.length !== 1 ? 's' : ''}:`;
+              }
+              // Si es producto procesado y tiene hijos materias primas, es trazabilidad hacia atrás
+              return `Made from ${node.children.length} material${node.children.length !== 1 ? 's' : ''}:`;
+            })()}
+          </p>
+          {node.children.map((child, index) => (
+            <TraceabilityTree
+              key={child.token.id.toString()}
+              node={child}
+              account={account}
+              level={level + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TokenDetails() {
   const { id } = useParams<{ id: string }>();
-  const { account, user, tokenFactory, transferManager } = useWeb3();
+  const { account, user, tokenFactory, transferManager, getReasonableFromBlock } = useWeb3();
   const navigate = useNavigate();
   const [token, setToken] = useState<TokenData | null>(null);
   const [balance, setBalance] = useState<bigint>(0n);
   const [parentTokens, setParentTokens] = useState<TokenData[]>([]);
   const [transferHistory, setTransferHistory] = useState<TransferData[]>([]);
+  const [fullTraceability, setFullTraceability] = useState<TraceabilityNode | null>(null);
+  const [forwardTraceability, setForwardTraceability] = useState<TraceabilityNode | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Función optimizada para encontrar tokens hijos usando eventos
+  const findChildTokens = async (parentTokenId: bigint): Promise<TokenData[]> => {
+    if (!tokenFactory || !getReasonableFromBlock) return [];
+
+    try {
+      const children: TokenData[] = [];
+      const parentTokenIdStr = parentTokenId.toString();
+
+      // Obtener todos los eventos TokenCreated desde un bloque razonable
+      const fromBlock = await getReasonableFromBlock();
+      const filter = tokenFactory.filters.TokenCreated();
+      const events = await tokenFactory.queryFilter(filter, fromBlock);
+
+      // Para cada token creado, verificar si tiene el parentTokenId en sus parentIds
+      const tokenPromises = events.map(async (event) => {
+        if ('args' in event && event.args) {
+          const tokenId = event.args[0];
+          if (!tokenId) return null;
+
+          try {
+            const tokenData = await tokenFactory.getToken(tokenId);
+
+            // Verificar si este token tiene el parentTokenId en sus parentIds
+            if (tokenData.parentIds && tokenData.parentIds.length > 0) {
+              const hasParent = tokenData.parentIds.some(
+                (pid: bigint) => pid.toString() === parentTokenIdStr
+              );
+              if (hasParent) {
+                return tokenData;
+              }
+            }
+          } catch (error) {
+            // Token no existe o error al obtenerlo, ignorar
+            return null;
+          }
+        }
+        return null;
+      });
+
+      const results = await Promise.all(tokenPromises);
+      children.push(...results.filter((token): token is TokenData => token !== null));
+
+      return children;
+    } catch (error) {
+      console.error('Error finding child tokens:', error);
+      return [];
+    }
+  };
+
+  // Función recursiva para obtener toda la trazabilidad hacia atrás (padres)
+  const buildTraceabilityTree = async (
+    tokenId: bigint,
+    visited: Set<string> = new Set()
+  ): Promise<TraceabilityNode | null> => {
+    const tokenIdStr = tokenId.toString();
+    if (visited.has(tokenIdStr)) {
+      return null; // Evitar ciclos
+    }
+    visited.add(tokenIdStr);
+
+    try {
+      const tokenData = await tokenFactory.getToken(tokenId);
+
+      // Obtener historial de transferencias
+      let transfers: TransferData[] = [];
+      try {
+        const history = await transferManager.getTokenTransfers(tokenId);
+        const historyArray = Array.from(history) as TransferData[];
+        transfers = historyArray.filter((t: TransferData) => Number(t.status) === 2);
+        // Ordenar por fecha
+        transfers.sort((a, b) => Number(a.requestedAt) - Number(b.requestedAt));
+      } catch (error) {
+        console.error(`Error loading transfers for token ${tokenIdStr}:`, error);
+      }
+
+      // Obtener tokens padre recursivamente
+      const children: TraceabilityNode[] = [];
+      if (tokenData.parentIds && tokenData.parentIds.length > 0) {
+        const parentNodes = await Promise.all(
+          tokenData.parentIds.map((parentId: bigint) =>
+            buildTraceabilityTree(parentId, new Set(visited))
+          )
+        );
+        children.push(...parentNodes.filter((node): node is TraceabilityNode => node !== null));
+      }
+
+      return {
+        token: tokenData,
+        transfers,
+        children,
+      };
+    } catch (error) {
+      console.error(`Error loading token ${tokenIdStr}:`, error);
+      return null;
+    }
+  };
+
+  // Función recursiva para obtener trazabilidad hacia adelante (hijos)
+  const buildForwardTraceabilityTree = async (
+    tokenId: bigint,
+    visited: Set<string> = new Set()
+  ): Promise<TraceabilityNode | null> => {
+    const tokenIdStr = tokenId.toString();
+    if (visited.has(tokenIdStr)) {
+      return null; // Evitar ciclos
+    }
+    visited.add(tokenIdStr);
+
+    try {
+      const tokenData = await tokenFactory.getToken(tokenId);
+
+      // Obtener historial de transferencias
+      let transfers: TransferData[] = [];
+      try {
+        const history = await transferManager.getTokenTransfers(tokenId);
+        const historyArray = Array.from(history) as TransferData[];
+        transfers = historyArray.filter((t: TransferData) => Number(t.status) === 2);
+        // Ordenar por fecha
+        transfers.sort((a, b) => Number(a.requestedAt) - Number(b.requestedAt));
+      } catch (error) {
+        console.error(`Error loading transfers for token ${tokenIdStr}:`, error);
+      }
+
+      // Buscar tokens hijos (productos creados a partir de este token)
+      const children: TraceabilityNode[] = [];
+      const childTokens = await findChildTokens(tokenId);
+
+      if (childTokens.length > 0) {
+        const childNodes = await Promise.all(
+          childTokens.map((childToken) =>
+            buildForwardTraceabilityTree(childToken.id, new Set(visited))
+          )
+        );
+        children.push(...childNodes.filter((node): node is TraceabilityNode => node !== null));
+      }
+
+      return {
+        token: tokenData,
+        transfers,
+        children,
+      };
+    } catch (error) {
+      console.error(`Error loading token ${tokenIdStr}:`, error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     if (!tokenFactory || !transferManager || !account || !id) return;
 
     const loadToken = async () => {
       try {
-        const tokenData = await tokenFactory.getToken(id);
+        const tokenId = BigInt(id);
+        const tokenData = await tokenFactory.getToken(tokenId);
         setToken(tokenData);
 
-        const userBalance = await tokenFactory.balanceOf(id, account);
+        const userBalance = await tokenFactory.balanceOf(tokenId, account);
         setBalance(userBalance);
 
         // Load parent tokens if any
@@ -48,16 +393,27 @@ export function TokenDetails() {
           setParentTokens(parents);
         }
 
-        // Load transfer history
+        // Load transfer history for current token
         try {
-          const history = await transferManager.getTokenTransfers(id);
+          const history = await transferManager.getTokenTransfers(tokenId);
           const historyArray = Array.from(history) as TransferData[];
           const approvedTransfers = historyArray.filter(
             (t: TransferData) => Number(t.status) === 2
           );
+          approvedTransfers.sort((a, b) => Number(a.requestedAt) - Number(b.requestedAt));
           setTransferHistory(approvedTransfers);
         } catch (error) {
           console.error('Error loading transfer history:', error);
+        }
+
+        // Build full traceability tree (hacia atrás - padres)
+        const traceabilityTree = await buildTraceabilityTree(tokenId);
+        setFullTraceability(traceabilityTree);
+
+        // Build forward traceability tree (hacia adelante - hijos) solo para materias primas
+        if (Number(tokenData.assetType) === 0) {
+          const forwardTree = await buildForwardTraceabilityTree(tokenId);
+          setForwardTraceability(forwardTree);
         }
       } catch (error) {
         console.error('Error loading token:', error);
@@ -268,6 +624,66 @@ export function TokenDetails() {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Full Traceability Chain (Backward - Parents) */}
+          {fullTraceability && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Package className="w-5 h-5 text-green-600" />
+                  <h2 className="text-base font-semibold text-gray-900">
+                    Complete Supply Chain Traceability (Origin)
+                  </h2>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">
+                  Full traceability from producer to consumer, including all parent materials
+                </p>
+              </CardHeader>
+              <CardContent>
+                <TraceabilityTree node={fullTraceability} account={account} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Forward Traceability (Products Created from This Material) - Solo para materias primas */}
+          {token && Number(token.assetType) === 0 && forwardTraceability && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Sprout className="w-5 h-5 text-green-600" />
+                  <h2 className="text-base font-semibold text-gray-900">
+                    Products Created from This Material
+                  </h2>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">
+                  {user.role === 1 ? (
+                    <>
+                      Forward traceability: see all products created with your raw material and
+                      their current status.
+                      <span className="block mt-1 text-gray-500 italic">
+                        Note: Full transfer details are visible to maintain blockchain transparency.
+                      </span>
+                    </>
+                  ) : (
+                    'Forward traceability: see all products created with this raw material and their journey to consumers'
+                  )}
+                </p>
+              </CardHeader>
+              <CardContent>
+                {forwardTraceability.children.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Factory className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 mb-1">No products created yet</p>
+                    <p className="text-xs text-gray-500">
+                      This raw material has not been used to create any processed products yet.
+                    </p>
+                  </div>
+                ) : (
+                  <TraceabilityTree node={forwardTraceability} account={account} />
+                )}
               </CardContent>
             </Card>
           )}
