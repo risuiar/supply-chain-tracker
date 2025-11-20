@@ -28,7 +28,7 @@ const getAddress = (envVar: string): string => {
 export const ROLE_MANAGER_ADDRESS = getAddress('VITE_ROLE_MANAGER_ADDRESS');
 export const TOKEN_FACTORY_ADDRESS = getAddress('VITE_TOKEN_FACTORY_ADDRESS');
 export const TRANSFER_MANAGER_ADDRESS = getAddress('VITE_TRANSFER_MANAGER_ADDRESS');
-export const ADMIN_ADDRESS = getAddress('VITE_ADMIN_ADDRESS');
+// ADMIN_ADDRESS ya no es necesario - el admin se asigna dinámicamente al primer usuario que solicite Admin
 
 // Explorer base URL (only available on public networks)
 export const EXPLORER_BASE_URL = NETWORK === 'sepolia' ? 'https://sepolia.etherscan.io' : null;
@@ -48,6 +48,7 @@ export const ROLE_MANAGER_ABI = [
   'function hasRole(address account, uint8 expectedRole) view returns (bool)',
   'function getUserRole(address account) view returns (uint8)',
   'function isApproved(address account) view returns (bool)',
+  'function isAdmin(address account) view returns (bool)',
   'event RoleRequested(address indexed account, uint8 indexed requestedRole)',
   'event RoleApproved(address indexed account, uint8 indexed role)',
   'event RoleRejected(address indexed account, uint8 indexed requestedRole)',
@@ -90,6 +91,7 @@ export const TRANSFER_MANAGER_ABI = [
   'function getTransfer(uint256 transferId) view returns (tuple(uint256 id, uint256 tokenId, address from, address to, uint256 amount, uint8 fromRole, uint8 toRole, uint8 status, uint64 requestedAt, uint64 resolvedAt))',
   'function getTokenTransfers(uint256 tokenId) view returns (tuple(uint256 id, uint256 tokenId, address from, address to, uint256 amount, uint8 fromRole, uint8 toRole, uint8 status, uint64 requestedAt, uint64 resolvedAt)[])',
   'function getPendingTransfer(uint256 tokenId) view returns (uint256)',
+  'function getUserTransfers(address userAddress) view returns (uint256[])',
   'event TransferRequested(uint256 indexed tokenId, uint256 indexed transferId, address indexed to)',
   'event TransferResolved(uint256 indexed transferId, uint8 status)',
   'error NotTokenCreator()',

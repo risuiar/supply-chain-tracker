@@ -1,9 +1,7 @@
 # 🔗 Trazabilidad de Productos con Blockchain
-<<<<<<< HEAD
-=======
+
 **Proyecto de Ricardo Vögeli – GitHub: [@risuiar](https://github.com/risuiar)**  
 **Sitio:** <codecrypto.academy/>
->>>>>>> dev
 
 Aplicación descentralizada para rastrear productos desde su origen hasta el consumidor final, garantizando transparencia y trazabilidad completa en toda la cadena de suministro.
 
@@ -26,6 +24,8 @@ Permite que diferentes actores de una cadena de suministro (productores, fábric
 ### 🆕 Sistema de Roles con Control Total
 
 - **Solicitud de Roles**: Cualquier usuario puede solicitar un rol en el sistema
+- **Múltiples Usuarios por Rol**: Soporte para múltiples productores, fábricas, minoristas y consumidores
+- **Admin Dinámico**: El primer usuario en solicitar Admin se convierte en administrador
 - **Gestión Independiente**: Los usuarios pueden cancelar sus propias solicitudes pendientes
 - **Validaciones Inteligentes**: 
   - No puedes solicitar otro rol si ya tienes uno aprobado
@@ -34,39 +34,33 @@ Permite que diferentes actores de una cadena de suministro (productores, fábric
 - **Panel de Administración**: Gestión completa de solicitudes y usuarios
 - **Actualizaciones en Tiempo Real**: Los cambios se reflejan automáticamente en la interfaz
 
-### 📦 Gestión de Productos
+### 📦 Gestión de Productos con Trazabilidad Completa
 
 - **Creación de Productos**: Cada producto es un token con información detallada
-- **Trazabilidad Completa**: Historial inmutable de cada movimiento
+- **Trazabilidad Bidireccional**: 
+  - **Hacia atrás**: Desde cualquier producto hasta sus materias primas originales
+  - **Hacia adelante**: Desde materias primas hasta todos los productos derivados
 - **Metadatos Flexibles**: Guarda información personalizada de cada producto
-- **Relaciones**: Los productos procesados mantienen referencia a sus materias primas
+- **Relaciones de Parentesco**: Los productos procesados mantienen referencia completa a sus materias primas
+- **Historial Inmutable**: Cada movimiento queda registrado permanentemente
 
-### 🔄 Sistema de Transferencias
+### 🔄 Sistema de Transferencias Inteligente
 
 - **Solicitud de Transferencia**: Envía productos a otros actores
 - **Aprobación Requerida**: El receptor debe aceptar la transferencia
-- **Control de Roles**: Solo se pueden hacer transferencias válidas según tu rol
-- **Seguimiento**: Ve todas tus transferencias pendientes y completadas
+- **Control de Roles Estricto**: Solo se pueden hacer transferencias válidas según tu rol
+- **Flujo Dirigido**: Producer → Factory → Retailer → Consumer
+- **Seguimiento Completo**: Ve todas tus transferencias pendientes y completadas
+- **Validaciones de Negocio**: Solo el creador puede transferir sus productos (Producer/Factory)
 
 ### 🛡️ Seguridad y Transparencia
 
 - **Blockchain Inmutable**: Ningún dato puede ser alterado una vez registrado
 - **Smart Contracts Auditables**: Código verificable y transparente
-- **Permisos Claros**: Cada rol tiene permisos específicos y limitados
+- **Permisos Granulares**: Cada rol tiene permisos específicos y limitados
 - **Sin Intermediarios**: Las transacciones son directas entre las partes
+- **Eventos Completos**: Todos los cambios emiten eventos para trazabilidad
 
-<<<<<<< HEAD
-## 🚀 Inicio Rápido
-
-### Requisitos Previos
-
-- **Node.js** v18 o superior ([Descargar](https://nodejs.org/))
-- **Foundry** (herramientas blockchain) ([Instalación](https://book.getfoundry.sh/getting-started/installation))
-- **MetaMask** (extensión de navegador) ([Descargar](https://metamask.io/))
-
-### Instalación
-
-=======
 ### 🔐 Autenticación y Persistencia de Sesión
 
 - **Conexión con MetaMask**: Integración completa con MetaMask para autenticación Web3
@@ -79,6 +73,191 @@ Permite que diferentes actores de una cadena de suministro (productores, fábric
   - Si desconectas en MetaMask, la aplicación también se desconecta
   - Cambios de red detectados y manejo automático
 
+## 🔄 Flujos de Trabajo Mejorados
+
+### 1. **Registro de Usuario (Soporte Múltiple)**
+
+```mermaid
+graph TD
+    A[Usuario Conecta MetaMask] --> B{¿Primer Admin?}
+    B -->|Sí| C[Solicita Admin]
+    B -->|No| D[Solicita Rol: Producer/Factory/Retailer/Consumer]
+    
+    C --> E[Auto-aprobado como Admin]
+    E --> F[Acceso Completo al Sistema]
+    
+    D --> G[Estado: Pending]
+    G --> H[Admin Revisa Solicitud]
+    H --> I{Decisión del Admin}
+    I -->|Aprobar| J[Estado: Approved]
+    I -->|Rechazar| K[Estado: Rejected]
+    I -->|Revocar| L[Estado: Revoked]
+    
+    J --> M[Acceso según Rol]
+    K --> N[Puede Solicitar Otro Rol]
+    L --> N
+    
+    style E fill:#90EE90
+    style M fill:#90EE90
+    style N fill:#FFB6C1
+```
+
+### 2. **Creación de Token con Múltiples Productores**
+
+```mermaid
+graph TD
+    A[Múltiples Usuarios Aprobados] --> B{Rol del Usuario}
+    
+    B -->|Producer 1| C1[Crea Materia Prima A]
+    B -->|Producer 2| C2[Crea Materia Prima B]
+    B -->|Producer N| C3[Crea Materia Prima N]
+    
+    C1 --> D[Token RawMaterial A]
+    C2 --> E[Token RawMaterial B]
+    C3 --> F[Token RawMaterial N]
+    
+    B -->|Factory 1| G1[Selecciona Materias Primas]
+    B -->|Factory 2| G2[Selecciona Materias Primas]
+    
+    G1 --> H1[Crea Producto Procesado X]
+    G2 --> H2[Crea Producto Procesado Y]
+    
+    D --> G1
+    E --> G1
+    F --> G2
+    
+    H1 --> I1[Token ProcessedGood X con parentIds]
+    H2 --> I2[Token ProcessedGood Y con parentIds]
+    
+    B -->|Retailer| J[Puede transferir cualquier token recibido]
+    
+    style D fill:#98FB98
+    style E fill:#98FB98
+    style F fill:#98FB98
+    style I1 fill:#87CEEB
+    style I2 fill:#87CEEB
+```
+
+### 3. **Transferencia en Cadena Multi-Actor**
+
+```mermaid
+graph TD
+    A[Múltiples Productores] --> B[Múltiples Fábricas]
+    B --> C[Múltiples Minoristas]
+    C --> D[Múltiples Consumidores]
+    
+    A1[Producer 1: Café] --> B1[Factory 1: Tostado]
+    A2[Producer 2: Azúcar] --> B1
+    A3[Producer 3: Leche] --> B2[Factory 2: Lácteos]
+    
+    B1 --> C1[Retailer 1: Café Premium]
+    B2 --> C1
+    B1 --> C2[Retailer 2: Café Express]
+    
+    C1 --> D1[Consumer 1]
+    C1 --> D2[Consumer 2]
+    C2 --> D3[Consumer 3]
+    C2 --> D4[Consumer 4]
+    
+    subgraph "Flujo de Transferencia"
+        E[Propietario Solicita] --> F[Destinatario Recibe Notificación]
+        F --> G{Decisión}
+        G -->|Aceptar| H[Transferencia Completada]
+        G -->|Rechazar| I[Transferencia Rechazada]
+        H --> J[Balance Actualizado]
+        H --> K[Historial Registrado]
+    end
+    
+    style A1 fill:#90EE90
+    style A2 fill:#90EE90
+    style A3 fill:#90EE90
+    style B1 fill:#87CEEB
+    style B2 fill:#87CEEB
+    style C1 fill:#DDA0DD
+    style C2 fill:#DDA0DD
+    style D1 fill:#F0E68C
+    style D2 fill:#F0E68C
+    style D3 fill:#F0E68C
+    style D4 fill:#F0E68C
+```
+
+### 4. **Trazabilidad Completa (Bidireccional)**
+
+```mermaid
+graph TD
+    subgraph "Trazabilidad Hacia Atrás (Backward)"
+        P1[Producto Final] --> M1[Materia Prima 1]
+        P1 --> M2[Materia Prima 2]
+        P1 --> M3[Materia Prima 3]
+        
+        M1 --> O1[Origen: Producer A]
+        M2 --> O2[Origen: Producer B]
+        M3 --> O3[Origen: Producer C]
+    end
+    
+    subgraph "Trazabilidad Hacia Adelante (Forward)"
+        O1 --> D1[Derivado 1: Café Tostado]
+        O1 --> D2[Derivado 2: Café Molido]
+        
+        D1 --> F1[Final 1: Café Premium]
+        D1 --> F2[Final 2: Café Gourmet]
+        D2 --> F3[Final 3: Café Instantáneo]
+        
+        F1 --> C1[Consumer 1]
+        F2 --> C2[Consumer 2]
+        F3 --> C3[Consumer 3]
+    end
+    
+    subgraph "Información Disponible"
+        I1[Historial Completo de Transferencias]
+        I2[Roles de Cada Participante]
+        I3[Timestamps Inmutables]
+        I4[Metadatos de Cada Etapa]
+    end
+    
+    style P1 fill:#FFB6C1
+    style O1 fill:#90EE90
+    style O2 fill:#90EE90
+    style O3 fill:#90EE90
+    style C1 fill:#F0E68C
+    style C2 fill:#F0E68C
+    style C3 fill:#F0E68C
+```
+
+### 5. **Gestión de Admin Dinámico**
+
+```mermaid
+graph TD
+    A[Sistema Inicia] --> B[admin = address(0)]
+    B --> C[Primer Usuario Solicita Admin]
+    C --> D[Auto-aprobación]
+    D --> E[admin = usuario1]
+    E --> F[Admin Gestiona Sistema]
+    
+    F --> G{Admin se Revoca?}
+    G -->|No| F
+    G -->|Sí| H[admin = address(0)]
+    H --> I[Siguiente Usuario Puede Ser Admin]
+    I --> J[Nuevo Admin Auto-aprobado]
+    J --> F
+    
+    subgraph "Funciones de Admin"
+        K[Aprobar Solicitudes]
+        L[Rechazar Solicitudes]
+        M[Revocar Usuarios]
+        N[Ver Todos los Usuarios]
+    end
+    
+    F --> K
+    F --> L
+    F --> M
+    F --> N
+    
+    style D fill:#90EE90
+    style J fill:#90EE90
+    style H fill:#FFB6C1
+```
+
 ## 🚀 Inicio Rápido
 
 ### Requisitos Previos
@@ -89,7 +268,6 @@ Permite que diferentes actores de una cadena de suministro (productores, fábric
 
 ### Instalación
 
->>>>>>> dev
 ```bash
 # 1. Clonar el repositorio
 git clone <repo-url>
@@ -135,11 +313,7 @@ O manualmente:
 
 ```bash
 cd sc
-<<<<<<< HEAD
-forge script script/DeploySupplyChain.s.sol:DeploySupplyChain \
-=======
 forge script script/DeploySupplyChainSystem.s.sol:DeploySupplyChain \
->>>>>>> dev
   --rpc-url http://localhost:8545 \
   --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
   --broadcast
@@ -152,216 +326,6 @@ RoleManager:      0x5FbDB2315678afecb367f032d93F642f64180aa3
 TokenFactory:     0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
 TransferManager:  0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
 ```
-<<<<<<< HEAD
-
-Actualiza estas direcciones en `web/src/contracts/config.ts`:
-
-```typescript
-export const ROLE_MANAGER_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-export const TOKEN_FACTORY_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
-export const TRANSFER_MANAGER_ADDRESS = '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0';
-```
-
-#### Paso 3: Iniciar Frontend
-
-```bash
-cd web
-npm run dev
-```
-
-Abre en tu navegador: **http://localhost:5173**
-
-### Configurar MetaMask
-
-1. **Agregar Red Local**:
-   - Nombre: Localhost 8545
-   - RPC URL: `http://127.0.0.1:8545`
-   - Chain ID: `31337`
-   - Moneda: `ETH`
-
-2. **Importar Cuenta Admin** (para aprobar usuarios):
-   - Private Key: `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80`
-   - Dirección: `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
-
-## 🎮 Cómo Usar la Aplicación
-
-### Para Usuarios Nuevos
-
-1. **Conecta tu Wallet** → Click en "Conectar MetaMask"
-2. **Solicita un Rol** → Elige entre Productor, Fábrica, Minorista o Consumidor
-3. **Espera Aprobación** → El administrador revisará tu solicitud
-4. **Accede al Sistema** → Una vez aprobado, puedes usar todas las funciones
-
-### Para el Administrador
-
-1. **Conecta con la Cuenta Admin** → Serás redirigido automáticamente al panel de administración
-2. **Revisa Solicitudes** → Ve todas las solicitudes pendientes en tiempo real
-3. **Aprueba o Rechaza** → Click en los botones según corresponda
-4. **Gestiona Usuarios** → Revoca accesos si es necesario
-
-### Crear tu Primer Producto (Como Productor o Fábrica)
-
-1. Ve a **"Productos"** → Click en "Crear Producto"
-2. Completa la información:
-   - Nombre del producto (ej: "Café Premium")
-   - Cantidad total (ej: 1000)
-   - Metadatos opcionales (ej: origen, características)
-3. Confirma la transacción en MetaMask
-4. ¡Listo! Tu producto aparecerá en "Mis Productos"
-
-### Transferir Productos
-
-1. Ve a **"Productos"** → Selecciona un producto
-2. Click en **"Transferir"**
-3. Selecciona:
-   - Destinatario (debe tener el rol correcto)
-   - Cantidad a transferir
-4. El destinatario debe **aceptar** la transferencia en su panel
-
-## 💡 Ventajas de Usar Blockchain
-
-### Para Productores y Fabricantes
-
-- ✅ **Certificación de Origen**: Prueba verificable del origen de tus productos
-- ✅ **Protección de Marca**: Registro inmutable de tus productos
-- ✅ **Trazabilidad**: Sigue tus productos en toda la cadena
-
-### Para Minoristas
-
-- ✅ **Verificación de Autenticidad**: Confirma el origen real de los productos
-- ✅ **Transparencia**: Muestra la trazabilidad completa a tus clientes
-- ✅ **Confianza**: Productos con historial verificable
-
-### Para Consumidores
-
-- ✅ **Información Completa**: Ve el recorrido completo de tu producto
-- ✅ **Garantía de Autenticidad**: Productos verificados en blockchain
-- ✅ **Transparencia Total**: Información inmutable y verificable
-
-### Para Todos
-
-- 🔒 **Seguridad**: Datos inmutables y a prueba de fraudes
-- 🌐 **Descentralizado**: Sin intermediarios que controlen la información
-- 📊 **Transparente**: Toda la información es verificable públicamente
-- 💰 **Eficiente**: Reduce costos de verificación y auditorías
-
-## 🔑 Cuentas de Prueba (Anvil)
-
-Para pruebas locales, Anvil proporciona cuentas pre-financiadas. Usa estas para probar diferentes roles:
-
-| Rol Sugerido | Dirección | Private Key |
-|--------------|-----------|-------------|
-| **Admin** | `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` | `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80` |
-| **Productor** | `0x70997970C51812dc3A010C7d01b50e0d17dc79C8` | `0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d` |
-| **Fábrica** | `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC` | `0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a` |
-| **Minorista** | `0x90F79bf6EB2c4f870365E785982E1f101E93b906` | `0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6` |
-| **Consumidor** | `0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65` | `0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a` |
-
-### Cómo Importar Cuentas en MetaMask
-
-1. Abre MetaMask → Click en el ícono de cuenta (arriba derecha)
-2. Click en **"Importar cuenta"** o **"Import Account"**
-3. Pega la **Private Key** de la tabla
-4. Click en **"Importar"**
-
-### Cómo Cambiar de Cuenta
-
-**⚠️ IMPORTANTE:** Para cambiar de cuenta correctamente:
-
-1. Click en **"Desconectar"** en la aplicación
-2. Cambia a la cuenta deseada en MetaMask
-3. Click en **"Conectar MetaMask"** nuevamente
-
-Esto asegura que la aplicación se conecte con la cuenta correcta.
-
-## 🐛 Problemas Comunes y Soluciones
-
-### ❌ "Error: El contrato no está desplegado en esta red"
-
-**Solución:**
-1. Verifica que Anvil esté corriendo
-2. Vuelve a desplegar los contratos:
-   - Windows: `deploy-windows.bat`
-   - Mac/Linux: `./deploy-mac.sh`
-3. Actualiza las direcciones en `web/src/contracts/config.ts`
-4. Reinicia el frontend
-
-### ❌ "Ya tienes un rol aprobado"
-
-**Explicación:** No puedes solicitar otro rol si ya tienes uno aprobado. Esto es por diseño para mantener la integridad de la cadena de suministro.
-
-### ❌ "Ya tienes una solicitud pendiente"
-
-**Solución:** Puedes cancelar tu solicitud pendiente usando el botón "Cancelar Solicitud" y luego solicitar otro rol.
-
-### ❌ MetaMask no muestra las transacciones
-
-**Solución:**
-1. En MetaMask → Configuración → Avanzado
-2. Click en "Clear activity tab data" o "Reset account"
-3. Esto limpiará el cache de transacciones
-
-### ❌ "Nonce too high"
-
-**Solución:** Reset MetaMask (Configuración → Avanzado → Clear activity tab data)
-
-## 🛠️ Tecnologías Utilizadas
-
-- **Blockchain**: Solidity 0.8.20 con Foundry
-- **Frontend**: React 18 + TypeScript + Vite
-- **Estilos**: Tailwind CSS
-- **Web3**: ethers.js v6
-- **Notificaciones**: react-hot-toast
-
-## 📚 Documentación Técnica
-
-Para desarrolladores que quieran entender el código en detalle:
-
-- **[README_SPECS.md](./README_SPECS.md)**: Especificaciones técnicas completas de los contratos, arquitectura y decisiones de diseño
-
-## 🎯 Flujo de Prueba Completo
-
-Sigue estos pasos para probar todas las funcionalidades:
-
-### 1. Configura el Sistema
-
-1. **Inicia Anvil** → Terminal 1: `anvil`
-2. **Despliega Contratos** → Terminal 2: Script según tu sistema operativo
-3. **Actualiza Direcciones** → En `web/src/contracts/config.ts`
-4. **Inicia Frontend** → Terminal 3: `cd web && npm run dev`
-
-### 2. Como Administrador
-
-1. **Conecta con cuenta Admin** → Automáticamente vas al panel de administración
-2. **Espera solicitudes** → Otros usuarios deben solicitar roles primero
-
-### 3. Como Productor (Cuenta 2)
-
-1. **Importa la cuenta** en MetaMask
-2. **Conecta y solicita rol** → Selecciona "Productor"
-3. **Admin aprueba** → Cambia a cuenta Admin y aprueba
-4. **Crea un producto** → "Café Premium, 1000 unidades"
-5. **Transfiere a Fábrica** → Envía 500 unidades a la cuenta 3
-
-### 4. Como Fábrica (Cuenta 3)
-
-1. **Solicita rol "Fábrica"** → Admin aprueba
-2. **Acepta la transferencia** → En panel de transferencias
-3. **Crea producto procesado** → "Café Tostado" usando el café recibido
-4. **Transfiere a Minorista** → Envía a cuenta 4
-
-### 5. Como Minorista (Cuenta 4)
-
-1. **Solicita rol "Minorista"** → Admin aprueba
-2. **Acepta transferencia** → Recibe el café tostado
-3. **Transfiere a Consumidor** → Envía a cuenta 5
-
-### 6. Como Consumidor (Cuenta 5)
-
-1. **Solicita rol "Consumidor"** → Admin aprueba
-2. **Acepta transferencia** → Recibe el producto final
-3. **Verifica trazabilidad** → Ve todo el historial desde el origen
-=======
 
 #### Paso 2.1: Configurar Variables de Entorno
 
@@ -375,14 +339,12 @@ VITE_NETWORK=anvil
 VITE_ROLE_MANAGER_ADDRESS_ANVIL=0x5FbDB2315678afecb367f032d93F642f64180aa3
 VITE_TOKEN_FACTORY_ADDRESS_ANVIL=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
 VITE_TRANSFER_MANAGER_ADDRESS_ANVIL=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
-VITE_ADMIN_ADDRESS_ANVIL=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
 # Direcciones para Sepolia (testnet)
 # Actualiza estas después de desplegar en Sepolia
 VITE_ROLE_MANAGER_ADDRESS_SEPOLIA=0x0000000000000000000000000000000000000000
 VITE_TOKEN_FACTORY_ADDRESS_SEPOLIA=0x0000000000000000000000000000000000000000
 VITE_TRANSFER_MANAGER_ADDRESS_SEPOLIA=0x0000000000000000000000000000000000000000
-VITE_ADMIN_ADDRESS_SEPOLIA=0x0000000000000000000000000000000000000000
 ```
 
 **💡 Tip:** Puedes copiar desde el template: `cp web/env.local.template web/.env`
@@ -407,17 +369,9 @@ VITE_NETWORK=sepolia  # Para testnet
 cd web
 npm run dev
 ```
->>>>>>> dev
 
 Abre en tu navegador: **http://localhost:5173**
 
-<<<<<<< HEAD
-**¡Has completado el flujo completo de la cadena de suministro!** 🎉
-
-## 🤝 Contribuir
-
-¿Encontraste un bug o tienes una sugerencia? ¡Abre un issue o envía un pull request!
-=======
 ### Configurar MetaMask
 
 1. **Agregar Red Local**:
@@ -426,11 +380,18 @@ Abre en tu navegador: **http://localhost:5173**
    - Chain ID: `31337`
    - Moneda: `ETH`
 
-2. **Importar Cuenta Admin** (para aprobar usuarios):
+2. **Importar Cuenta para ser Admin**:
    - Private Key: `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80`
    - Dirección: `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
 
 ## 🎮 Cómo Usar la Aplicación
+
+### Para el Primer Usuario (Convertirse en Admin)
+
+1. **Conecta tu Wallet** → Click en "Conectar MetaMask"
+2. **Solicita rol Admin** → Selecciona "Administrador" (solo disponible si no hay admin)
+3. **Auto-aprobación** → Te conviertes automáticamente en administrador
+4. **Acceso Completo** → Serás redirigido al panel de administración
 
 ### Para Usuarios Nuevos
 
@@ -438,16 +399,13 @@ Abre en tu navegador: **http://localhost:5173**
 2. **Solicita un Rol** → Elige entre Productor, Fábrica, Minorista o Consumidor
 3. **Espera Aprobación** → El administrador revisará tu solicitud
 4. **Accede al Sistema** → Una vez aprobado, puedes usar todas las funciones
->>>>>>> dev
 
 ### Para el Administrador
 
-<<<<<<< HEAD
-=======
-1. **Conecta con la Cuenta Admin** → Serás redirigido automáticamente al panel de administración
-2. **Revisa Solicitudes** → Ve todas las solicitudes pendientes en tiempo real
-3. **Aprueba o Rechaza** → Click en los botones según corresponda
-4. **Gestiona Usuarios** → Revoca accesos si es necesario
+1. **Revisa Solicitudes** → Ve todas las solicitudes pendientes en tiempo real
+2. **Aprueba o Rechaza** → Click en los botones según corresponda
+3. **Gestiona Usuarios** → Revoca accesos si es necesario
+4. **Nota**: Si te revocas a ti mismo, pierdes permisos de admin y otro usuario puede convertirse en admin
 
 ### Crear tu Primer Producto (Como Productor o Fábrica)
 
@@ -468,25 +426,35 @@ Abre en tu navegador: **http://localhost:5173**
    - Cantidad a transferir
 4. El destinatario debe **aceptar** la transferencia en su panel
 
+### Ver Trazabilidad Completa
+
+1. Ve a **"Productos"** → Selecciona cualquier producto
+2. **Trazabilidad Hacia Atrás**: Ve todas las materias primas utilizadas hasta el origen
+3. **Trazabilidad Hacia Adelante**: (Solo materias primas) Ve todos los productos derivados y su destino final
+4. **Historial Completo**: Ve todas las transferencias con timestamps y roles
+
 ## 💡 Ventajas de Usar Blockchain
 
 ### Para Productores y Fabricantes
 
 - ✅ **Certificación de Origen**: Prueba verificable del origen de tus productos
 - ✅ **Protección de Marca**: Registro inmutable de tus productos
-- ✅ **Trazabilidad**: Sigue tus productos en toda la cadena
+- ✅ **Trazabilidad Completa**: Sigue tus productos en toda la cadena
+- ✅ **Visibilidad Forward**: Ve qué productos se crean con tus materias primas
 
 ### Para Minoristas
 
 - ✅ **Verificación de Autenticidad**: Confirma el origen real de los productos
 - ✅ **Transparencia**: Muestra la trazabilidad completa a tus clientes
 - ✅ **Confianza**: Productos con historial verificable
+- ✅ **Flexibilidad**: Puede manejar productos de múltiples fábricas
 
 ### Para Consumidores
 
 - ✅ **Información Completa**: Ve el recorrido completo de tu producto
 - ✅ **Garantía de Autenticidad**: Productos verificados en blockchain
 - ✅ **Transparencia Total**: Información inmutable y verificable
+- ✅ **Trazabilidad hasta el Origen**: Conoce exactamente de dónde viene tu producto
 
 ### Para Todos
 
@@ -494,6 +462,7 @@ Abre en tu navegador: **http://localhost:5173**
 - 🌐 **Descentralizado**: Sin intermediarios que controlen la información
 - 📊 **Transparente**: Toda la información es verificable públicamente
 - 💰 **Eficiente**: Reduce costos de verificación y auditorías
+- 🏢 **Escalable**: Soporte para múltiples actores por rol
 
 ## 🔑 Cuentas de Prueba (Anvil)
 
@@ -630,7 +599,6 @@ VITE_NETWORK=sepolia
 VITE_ROLE_MANAGER_ADDRESS_SEPOLIA=0x... # Dirección de Sepolia
 VITE_TOKEN_FACTORY_ADDRESS_SEPOLIA=0x... # Dirección de Sepolia
 VITE_TRANSFER_MANAGER_ADDRESS_SEPOLIA=0x... # Dirección de Sepolia
-VITE_ADMIN_ADDRESS_SEPOLIA=0x... # Tu cuenta que desplegó
 ```
 
 ### 4. Configurar MetaMask
@@ -649,58 +617,15 @@ VITE_ADMIN_ADDRESS_SEPOLIA=0x... # Tu cuenta que desplegó
    - Cambia a la red Sepolia en MetaMask
    - Conecta tu wallet en la aplicación
 
-### 5. Desplegar Frontend (Opcional)
-
-Si quieres desplegar el frontend en un servidor:
-
-#### Opción A: Coolify (Recomendado)
-
-1. **Conectar repositorio** en Coolify
-2. **Configurar variables de entorno** en Coolify:
-   ```
-   VITE_NETWORK=sepolia
-   VITE_ROLE_MANAGER_ADDRESS_ANVIL=0x...
-   VITE_TOKEN_FACTORY_ADDRESS_ANVIL=0x...
-   VITE_TRANSFER_MANAGER_ADDRESS_ANVIL=0x...
-   VITE_ADMIN_ADDRESS_ANVIL=0x...
-   VITE_ROLE_MANAGER_ADDRESS_SEPOLIA=0x...
-   VITE_TOKEN_FACTORY_ADDRESS_SEPOLIA=0x...
-   VITE_TRANSFER_MANAGER_ADDRESS_SEPOLIA=0x...
-   VITE_ADMIN_ADDRESS_SEPOLIA=0x...
-   ```
-3. **Configurar build en Coolify**:
-   - **Base Directory**: `/web`
-   - **Publish Directory**: `/dist`
-   - **Build Command**: `npm run build`
-   - **Is it a static site?**: ✅ Sí (marcar esta opción)
-4. **Configurar Nginx (importante para evitar 404 al refrescar)**:
-   - Coolify debería usar automáticamente el archivo `web/nginx.conf` que está en el repositorio
-   - Si no funciona automáticamente, en la configuración avanzada de Coolify, puedes especificar el archivo de configuración de Nginx
-5. **Deploy!** 🚀
-
-**Nota**: El archivo `web/nginx.conf` está configurado para que todas las rutas redirijan a `index.html`, evitando errores 404 al refrescar la página en rutas como `/tokens`, `/dashboard`, etc.
-
-#### Opción B: Servidor tradicional
-
-```bash
-# Compilar frontend
-cd web
-npm run build
-
-# Subir carpeta dist/ a tu servidor
-# Configurar Nginx para servir los archivos estáticos
-```
-
-
 ## 📚 Documentación Técnica
 
 Para desarrolladores que quieran entender el código en detalle:
 
 - **[README_SPECS.md](./README_SPECS.md)**: Especificaciones técnicas completas de los contratos, arquitectura y decisiones de diseño
 
-## 🎯 Flujo de Prueba Completo
+## 🎯 Flujo de Prueba Completo Multi-Usuario
 
-Sigue estos pasos para probar todas las funcionalidades:
+Sigue estos pasos para probar todas las funcionalidades con múltiples usuarios:
 
 ### 1. Configura el Sistema
 
@@ -709,41 +634,86 @@ Sigue estos pasos para probar todas las funcionalidades:
 3. **Actualiza Direcciones** → En `web/.env`
 4. **Inicia Frontend** → Terminal 3: `cd web && npm run dev`
 
-### 2. Como Administrador
+### 2. Como Primer Usuario (Admin)
 
-1. **Conecta con cuenta Admin** → Automáticamente vas al panel de administración
-2. **Espera solicitudes** → Otros usuarios deben solicitar roles primero
+1. **Conecta con cualquier cuenta** → Solicita rol "Administrador"
+2. **Auto-aprobación** → Te conviertes automáticamente en admin
+3. **Panel de Administración** → Acceso completo al sistema
 
-### 3. Como Productor (Cuenta 2)
+### 3. Como Múltiples Productores (Cuentas 2, 3, 4)
 
-1. **Importa la cuenta** en MetaMask
-2. **Conecta y solicita rol** → Selecciona "Productor"
-3. **Admin aprueba** → Cambia a cuenta Admin y aprueba
-4. **Crea un producto** → "Café Premium, 1000 unidades"
-5. **Transfiere a Fábrica** → Envía 500 unidades a la cuenta 3
+1. **Productor A** (Cuenta 2):
+   - Solicita rol "Productor" → Admin aprueba
+   - Crea "Café Premium, 1000 unidades"
+   - Crea "Azúcar Orgánica, 500 unidades"
 
-### 4. Como Fábrica (Cuenta 3)
+2. **Productor B** (Cuenta 3):
+   - Solicita rol "Productor" → Admin aprueba
+   - Crea "Leche Fresca, 2000 litros"
+   - Crea "Cacao Premium, 300 kg"
 
-1. **Solicita rol "Fábrica"** → Admin aprueba
-2. **Acepta la transferencia** → En panel de transferencias
-3. **Crea producto procesado** → "Café Tostado" usando el café recibido
-4. **Transfiere a Minorista** → Envía a cuenta 4
+3. **Productor C** (Cuenta 4):
+   - Solicita rol "Productor" → Admin aprueba
+   - Crea "Vainilla Natural, 100 unidades"
 
-### 5. Como Minorista (Cuenta 4)
+### 4. Como Múltiples Fábricas (Cuentas 5, 6)
 
-1. **Solicita rol "Minorista"** → Admin aprueba
-2. **Acepta transferencia** → Recibe el café tostado
-3. **Transfiere a Consumidor** → Envía a cuenta 5
+1. **Fábrica A** (Cuenta 5):
+   - Solicita rol "Fábrica" → Admin aprueba
+   - Recibe café y azúcar de Productores A
+   - Crea "Café Endulzado Premium" usando ambas materias primas
+   - **Trazabilidad**: El producto final muestra ambos orígenes
 
-### 6. Como Consumidor (Cuenta 5)
+2. **Fábrica B** (Cuenta 6):
+   - Solicita rol "Fábrica" → Admin aprueba
+   - Recibe leche, cacao y vainilla
+   - Crea "Chocolate con Leche Artesanal" usando las tres materias primas
 
-1. **Solicita rol "Consumidor"** → Admin aprueba
-2. **Acepta transferencia** → Recibe el producto final
-3. **Verifica trazabilidad** → Ve todo el historial desde el origen
+### 5. Como Múltiples Minoristas (Cuentas 7, 8)
+
+1. **Minorista A** (Cuenta 7):
+   - Solicita rol "Minorista" → Admin aprueba
+   - Recibe productos de ambas fábricas
+   - Puede transferir a múltiples consumidores
+
+2. **Minorista B** (Cuenta 8):
+   - Solicita rol "Minorista" → Admin aprueba
+   - Recibe productos de Fábrica A
+   - Especializado en productos de café
+
+### 6. Como Múltiples Consumidores (Cuentas 9, 10)
+
+1. **Consumidor A** (Cuenta 9):
+   - Solicita rol "Consumidor" → Admin aprueba
+   - Recibe "Café Endulzado Premium"
+   - **Ve trazabilidad completa**: Café (Productor A) + Azúcar (Productor A) → Fábrica A → Minorista A
+
+2. **Consumidor B** (Cuenta 10):
+   - Solicita rol "Consumidor" → Admin aprueba
+   - Recibe "Chocolate con Leche Artesanal"
+   - **Ve trazabilidad completa**: Leche (Productor B) + Cacao (Productor B) + Vainilla (Productor C) → Fábrica B → Minorista A
+
+### 7. Verificar Trazabilidad Bidireccional
+
+1. **Desde Consumidor** (Backward Traceability):
+   - Ve el producto final y rastrea hasta todas las materias primas originales
+   - Ve todos los actores involucrados con timestamps
+
+2. **Desde Productor** (Forward Traceability):
+   - Productor A puede ver que su café se usó en "Café Endulzado Premium"
+   - Puede ver que llegó hasta Consumidor A
+   - Ve toda la cadena hacia adelante
+
+### 8. Gestión de Admin
+
+1. **Revocar Usuario**: Admin revoca a un usuario problemático
+2. **Auto-revocación**: Admin se revoca a sí mismo
+3. **Nuevo Admin**: Otro usuario puede convertirse en admin
+4. **Continuidad**: El sistema sigue funcionando sin interrupciones
 
 ---
 
-**¡Has completado el flujo completo de la cadena de suministro!** 🎉
+**¡Has completado el flujo completo multi-usuario de la cadena de suministro!** 🎉
 
 ## 🤝 Contribuir
 
@@ -751,5 +721,4 @@ Sigue estos pasos para probar todas las funcionalidades:
 
 ---
 
->>>>>>> dev
-**Nota**: Esta aplicación está configurada para desarrollo local. Para desplegar en una red de prueba (testnet) o producción, consulta la documentación técnica en [README_SPECS.md](./README_SPECS.md).
+**Nota**: Esta aplicación está configurada para desarrollo local y testnet. El sistema soporta múltiples usuarios por rol, admin dinámico, y trazabilidad bidireccional completa, haciendo que sea más cercano a un escenario real de cadena de suministro.

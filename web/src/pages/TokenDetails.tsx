@@ -55,7 +55,7 @@ function TraceabilityTree({
   };
 
   const getRoleName = (role: number) => {
-    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer'];
+    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer', 'Admin'];
     return roles[role] || 'Unknown';
   };
 
@@ -475,7 +475,7 @@ export function TokenDetails() {
   };
 
   const getRoleName = (role: number) => {
-    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer'];
+    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer', 'Admin'];
     return roles[role] || 'Unknown';
   };
 

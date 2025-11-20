@@ -8,7 +8,6 @@ import {
   TOKEN_FACTORY_ABI,
   TRANSFER_MANAGER_ADDRESS,
   TRANSFER_MANAGER_ABI,
-  ADMIN_ADDRESS,
 } from '../contracts/config';
 
 // Mapeo de errores del contrato a mensajes en español
@@ -379,18 +378,24 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         }
       }
 
-      if (!adminAddress) {
-        setUser(null);
+      // Admin puede ser address(0) si no se ha asignado aún
+      if (!adminAddress || adminAddress === '0x0000000000000000000000000000000000000000') {
         setIsAdmin(false);
-        return;
+        // Continuar cargando usuario aunque no haya admin
+      } else {
+        // Usar la función isAdmin del contrato para verificación
+        try {
+          const isAdminResult = await roleManagerContract.isAdmin(address);
+          setIsAdmin(isAdminResult);
+        } catch (error) {
+          // Fallback a comparación manual si la función falla (por compatibilidad)
+          console.warn('Error calling isAdmin, using fallback:', error);
+          const addrLower = address.toLowerCase();
+          const chainAdminLower = adminAddress.toLowerCase();
+          const adminCheck = addrLower === chainAdminLower;
+          setIsAdmin(adminCheck);
+        }
       }
-
-      const addrLower = address.toLowerCase();
-      const chainAdminLower = adminAddress.toLowerCase();
-      const envAdminLower = ADMIN_ADDRESS?.toLowerCase?.() ?? '';
-      const adminCheck =
-        addrLower === chainAdminLower || (!!envAdminLower && addrLower === envAdminLower);
-      setIsAdmin(adminCheck);
 
       // Intentar obtener información del usuario con retry logic
       let userRetries = 2; // Menos reintentos para getUser ya que admin() ya pasó

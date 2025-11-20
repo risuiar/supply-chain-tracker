@@ -232,4 +232,31 @@ contract TransferManager {
     ) external view returns (uint256) {
         return _pendingTransferByToken[tokenId];
     }
+
+    /// @notice Obtiene todas las transferencias en las que un usuario participó (como remitente o destinatario)
+    /// @param userAddress Dirección del usuario
+    /// @return transferIds Array de IDs de transferencias donde el usuario participó
+    /// @dev Esta función busca en todas las transferencias, lo cual puede ser costoso en gas para muchos registros
+    ///      En producción, considera usar eventos o un índice off-chain para mejor rendimiento
+    function getUserTransfers(
+        address userAddress
+    ) external view returns (uint256[] memory transferIds) {
+        uint256[] memory tempIds = new uint256[](_transferIdTracker);
+        uint256 count = 0;
+
+        // Iterar sobre todas las transferencias para encontrar las que involucran al usuario
+        for (uint256 i = 1; i <= _transferIdTracker; ++i) {
+            Transfer memory transfer = _transfers[i];
+            if (transfer.from == userAddress || transfer.to == userAddress) {
+                tempIds[count] = i;
+                count++;
+            }
+        }
+
+        // Crear array del tamaño correcto
+        transferIds = new uint256[](count);
+        for (uint256 i = 0; i < count; ++i) {
+            transferIds[i] = tempIds[i];
+        }
+    }
 }

@@ -1,16 +1,25 @@
 import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { User as UserIcon, Package, ArrowRight, Calendar, CheckCircle } from 'lucide-react';
+import {
+  User as UserIcon,
+  Package,
+  ArrowRight,
+  Calendar,
+  CheckCircle,
+  ArrowRightLeft,
+} from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
-import type { TokenData } from '../types';
+import type { TokenData, TransferData } from '../types';
 
 export function Profile() {
-  const { account, user, tokenFactory } = useWeb3();
+  const { account, user, tokenFactory, transferManager } = useWeb3();
   const [tokens, setTokens] = useState<TokenData[]>([]);
   const [balances, setBalances] = useState<Record<string, bigint>>({});
+  const [transfers, setTransfers] = useState<TransferData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingTransfers, setLoadingTransfers] = useState(false);
 
   useEffect(() => {
     if (!tokenFactory || !account) return;
@@ -43,12 +52,61 @@ export function Profile() {
     loadData();
   }, [tokenFactory, account]);
 
+  // Cargar historial de transferencias usando getUserTransfers
+  useEffect(() => {
+    if (!transferManager || !account) return;
+
+    const loadUserTransfers = async () => {
+      setLoadingTransfers(true);
+      try {
+        // Usar la nueva función getUserTransfers
+        const transferIds = await transferManager.getUserTransfers(account);
+
+        // Obtener detalles de cada transferencia
+        const transferPromises = transferIds.map(async (id: bigint) => {
+          try {
+            const transfer = await transferManager.getTransfer(id);
+            return {
+              id: transfer.id,
+              tokenId: transfer.tokenId,
+              from: transfer.from,
+              to: transfer.to,
+              amount: transfer.amount,
+              fromRole: Number(transfer.fromRole),
+              toRole: Number(transfer.toRole),
+              status: Number(transfer.status),
+              requestedAt: transfer.requestedAt,
+              resolvedAt: transfer.resolvedAt,
+            } as TransferData;
+          } catch (error) {
+            console.error(`Error loading transfer ${id}:`, error);
+            return null;
+          }
+        });
+
+        const loadedTransfers = await Promise.all(transferPromises);
+        const validTransfers = loadedTransfers.filter((t): t is TransferData => t !== null);
+
+        // Ordenar por fecha (más recientes primero)
+        validTransfers.sort((a, b) => Number(b.requestedAt) - Number(a.requestedAt));
+
+        setTransfers(validTransfers);
+      } catch (error) {
+        console.error('Error loading user transfers:', error);
+      } finally {
+        setLoadingTransfers(false);
+      }
+    };
+
+    loadUserTransfers();
+  }, [transferManager, account]);
+
   if (!user || !user.approved) {
     return <Navigate to="/" />;
   }
 
   const getRoleName = (role: number) => {
-    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer'];
+    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer', 'Admin'];
     return roles[role] || 'Unknown';
   };
 
@@ -257,6 +315,94 @@ export function Profile() {
               </CardContent>
             </Card>
           )}
+
+          {/* Transfer History - Using getUserTransfers */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <ArrowRightLeft className="w-5 h-5 text-blue-600" />
+                <h2 className="text-xl font-semibold text-gray-900">Transfer History</h2>
+                {transfers.length > 0 && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                    {transfers.length} transfer{transfers.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-600 mt-1">
+                Complete history of all transfers where you participated (as sender or receiver)
+              </p>
+            </CardHeader>
+            <CardContent>
+              {loadingTransfers ? (
+                <div className="text-center py-6">
+                  <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="mt-2 text-sm text-gray-600">Loading transfers...</p>
+                </div>
+              ) : transfers.length === 0 ? (
+                <div className="text-center py-6">
+                  <ArrowRightLeft className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600 mb-1">No transfers yet</p>
+                  <p className="text-xs text-gray-500">
+                    Your transfer history will appear here once you send or receive tokens
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {transfers.slice(0, 10).map((transfer) => {
+                    const date = new Date(Number(transfer.requestedAt) * 1000);
+                    const isSender = transfer.from.toLowerCase() === account?.toLowerCase();
+                    const statusColors = {
+                      1: 'bg-yellow-100 text-yellow-700', // Pending
+                      2: 'bg-green-100 text-green-700', // Approved
+                      3: 'bg-red-100 text-red-700', // Rejected
+                    };
+                    const statusNames = ['None', 'Pending', 'Completed', 'Rejected'];
+
+                    return (
+                      <Link
+                        key={transfer.id.toString()}
+                        to={`/tokens/${transfer.tokenId.toString()}`}
+                        className="block"
+                      >
+                        <div className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">
+                                {isSender ? 'Sent' : 'Received'} {transfer.amount.toString()} units
+                              </p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {getRoleName(transfer.fromRole)} → {getRoleName(transfer.toRole)}
+                              </p>
+                            </div>
+                            <span
+                              className={`px-2 py-0.5 text-xs rounded-full ${
+                                statusColors[transfer.status as keyof typeof statusColors] ||
+                                'bg-gray-100 text-gray-700'
+                              }`}
+                            >
+                              {statusNames[transfer.status] || 'Unknown'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Token #{transfer.tokenId.toString()}</span>
+                            <span>{date.toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                  {transfers.length > 10 && (
+                    <p className="text-sm text-gray-500 text-center pt-2">
+                      And {transfers.length - 10} more transfers...{' '}
+                      <Link to="/transfers" className="text-blue-600 hover:text-blue-800">
+                        View all
+                      </Link>
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Role Capabilities */}
           <Card>

@@ -129,7 +129,7 @@ export function TransferToken() {
   }
 
   const getRoleName = (role: number): string => {
-    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer'];
+    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer', 'Admin'];
     return roles[role] || 'Unknown';
   };
 

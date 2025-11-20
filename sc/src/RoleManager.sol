@@ -10,7 +10,8 @@ contract RoleManager {
         Producer,
         Factory,
         Retailer,
-        Consumer
+        Consumer,
+        Admin
     }
 
     struct User {
@@ -48,8 +49,8 @@ contract RoleManager {
     // State
     // =====================
 
-    // Dirección del administrador del sistema (quien despliega el contrato)
-    address public immutable admin;
+    // Dirección del administrador del sistema (el primer usuario que solicite Admin)
+    address public admin;
 
     // Información de cada usuario, indexada por su address
     mapping(address => User) private _users;
@@ -59,8 +60,8 @@ contract RoleManager {
     // =====================
 
     constructor() {
-        // Quien despliega el contrato se convierte en admin
-        admin = msg.sender;
+        // Inicialmente no hay admin - el primer usuario que solicite Admin se convertirá en admin
+        admin = address(0);
     }
 
     // =====================
@@ -68,8 +69,14 @@ contract RoleManager {
     // =====================
 
     /// @dev Restringe la ejecución de una función solo al admin
+    /// @notice Verifica que el remitente sea admin Y que tenga el rol Admin aprobado
     modifier onlyAdmin() {
         if (msg.sender != admin) {
+            revert NotAdmin();
+        }
+        // Verificar que el admin todavía tenga el rol Admin aprobado
+        User memory adminUser = _users[msg.sender];
+        if (!adminUser.approved || adminUser.role != Role.Admin) {
             revert NotAdmin();
         }
         _;
@@ -97,6 +104,7 @@ contract RoleManager {
     ///  - No permite pedir Role.None
     ///  - No permite pedir un rol si el usuario ya tiene uno aprobado
     ///  - No permite pedir un nuevo rol si ya tiene una solicitud pendiente
+    ///  - Si se solicita Admin y no hay admin, se convierte automáticamente en admin
     function requestRole(Role desiredRole) external {
         if (desiredRole == Role.None) {
             revert InvalidRoleRequest();
@@ -114,6 +122,21 @@ contract RoleManager {
             revert RoleAlreadyRequested();
         }
 
+        // Si se solicita Admin y no hay admin, convertir automáticamente en admin
+        if (desiredRole == Role.Admin) {
+            if (admin != address(0)) {
+                revert InvalidRoleRequest(); // Ya existe un admin
+            }
+            // Convertir automáticamente en admin
+            admin = msg.sender;
+            user.role = Role.Admin;
+            user.approved = true;
+            user.requestedRole = Role.None;
+            emit RoleApproved(msg.sender, Role.Admin);
+            return;
+        }
+
+        // Para otros roles, seguir el flujo normal
         user.requestedRole = desiredRole;
         emit RoleRequested(msg.sender, desiredRole);
     }
@@ -163,6 +186,7 @@ contract RoleManager {
 
     /// @notice Revoca el rol de un usuario aprobado (solo admin)
     /// @param account Dirección del usuario a revocar
+    /// @dev Si el admin se revoca a sí mismo, también se elimina como admin
     function revokeRole(address account) external onlyAdmin {
         User storage user = _users[account];
         if (!user.approved || user.role == Role.None) {
@@ -172,6 +196,11 @@ contract RoleManager {
         user.role = Role.None;
         user.approved = false;
         user.requestedRole = Role.None;
+
+        // Si el admin se revoca a sí mismo, eliminar como admin
+        if (account == admin) {
+            admin = address(0);
+        }
 
         emit RoleRevoked(account, previousRole);
     }
@@ -211,5 +240,17 @@ contract RoleManager {
     /// @return True si la cuenta está aprobada
     function isApproved(address account) external view returns (bool) {
         return _users[account].approved;
+    }
+
+    /// @notice Verifica si una dirección es el administrador del sistema
+    /// @param account Dirección a verificar
+    /// @return True si la cuenta es el administrador Y tiene el rol Admin aprobado
+    function isAdmin(address account) external view returns (bool) {
+        if (account != admin) {
+            return false;
+        }
+        // Verificar que el admin todavía tenga el rol Admin aprobado
+        User memory adminUser = _users[account];
+        return adminUser.approved && adminUser.role == Role.Admin;
     }
 }

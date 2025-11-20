@@ -79,14 +79,24 @@ export function AdminRolePanel() {
 
         setPendingRequests(pending);
 
-        // Obtener usuarios aprobados
+        // Obtener usuarios aprobados (evitar duplicados)
         const approved: { address: string; role: number }[] = [];
+        const seenAddresses = new Set<string>();
+
         for (const event of roleApprovedEvents) {
           const address = event.args?.[0] as string;
+          const addressLower = address.toLowerCase();
+
+          // Evitar duplicados
+          if (seenAddresses.has(addressLower)) {
+            continue;
+          }
+
           try {
             const user = await roleManager.getUser(address);
             if (user.approved && Number(user.role) !== 0) {
               approved.push({ address, role: Number(user.role) });
+              seenAddresses.add(addressLower);
             }
           } catch (error) {
             console.error('Error checking approved user:', address, error);

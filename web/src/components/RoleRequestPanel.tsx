@@ -1,15 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { useRoleManager } from '../hooks/useRoleManager';
 import { Button } from './Button';
 import { Card, CardHeader, CardContent } from './Card';
 import { Select } from './Select';
-import { ROLE_NAMES, ROLE_DESCRIPTIONS, ROLE_OPTIONS } from '../constants/roles';
+import { ROLE_NAMES, ROLE_DESCRIPTIONS, ROLE_OPTIONS, Role } from '../constants/roles';
 
 export function RoleRequestPanel() {
-  const { user, isConnected, account } = useWeb3();
+  const { user, isConnected, account, roleManager } = useWeb3();
   const { requestRole, cancelRequest, isLoading } = useRoleManager();
   const [selectedRole, setSelectedRole] = useState<string>('1');
+  const [hasAdmin, setHasAdmin] = useState<boolean>(false);
+  const [loadingAdmin, setLoadingAdmin] = useState(true);
+
+  // Verificar si ya existe un admin
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!roleManager) {
+        setLoadingAdmin(false);
+        return;
+      }
+
+      try {
+        const adminAddress = await roleManager.admin();
+        setHasAdmin(
+          adminAddress !== '0x0000000000000000000000000000000000000000' && adminAddress !== null
+        );
+      } catch (error) {
+        console.error('Error checking admin:', error);
+        setHasAdmin(false);
+      } finally {
+        setLoadingAdmin(false);
+      }
+    };
+
+    checkAdmin();
+  }, [roleManager]);
 
   if (!isConnected || !account) {
     return (
@@ -110,8 +136,9 @@ export function RoleRequestPanel() {
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-700">
-              Selecciona el rol que deseas en la cadena de suministro. Tu solicitud será revisada
-              por el administrador.
+              {hasAdmin
+                ? 'Selecciona el rol que deseas en la cadena de suministro. Tu solicitud será revisada por el administrador.'
+                : '⚠️ No hay administrador en el sistema. Puedes convertirte en el primer administrador seleccionando "Administrador". Una vez que haya un administrador, esta opción desaparecerá.'}
             </p>
           </div>
 
@@ -121,8 +148,15 @@ export function RoleRequestPanel() {
               label="Selecciona un rol"
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              disabled={isLoading}
-              options={ROLE_OPTIONS}
+              disabled={isLoading || loadingAdmin}
+              options={ROLE_OPTIONS.filter((option) => {
+                // Filtrar Admin si ya existe un admin
+                const roleValue = parseInt(option.value);
+                if (roleValue === Role.Admin) {
+                  return !hasAdmin;
+                }
+                return true;
+              })}
             />
           </div>
 
