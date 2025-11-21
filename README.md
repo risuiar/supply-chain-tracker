@@ -36,27 +36,33 @@ Permite que diferentes actores de una cadena de suministro (productores, fábric
 
 ### 📦 Gestión de Productos con Trazabilidad Completa
 
-- **Creación de Productos**: Cada producto es un token con información detallada
+- **Creación de Productos**: Cada producto es un token ERC-1155 con información detallada
 - **Consumo Inteligente de Materias Primas**: 
   - **Cantidades Específicas**: Especifica exactamente cuántas unidades de cada materia prima usar
-  - **Descuento Automático**: Al crear un producto procesado, las materias primas se descuentan automáticamente
+  - **Descuento Automático**: Al crear un producto procesado, las materias primas se descuentan automáticamente del balance
   - **Validación de Balance**: El sistema verifica que tengas suficiente stock antes de procesar
-  - **Solo Materias Primas**: Solo se pueden usar tokens de tipo RawMaterial como ingredientes
+  - **Solo Materias Primas**: Solo se pueden usar tokens de tipo RawMaterial como ingredientes (no productos procesados)
+  - **Registro de Cantidades**: Cada producto procesado guarda las cantidades exactas consumidas de cada materia prima
 - **Trazabilidad Bidireccional**: 
-  - **Hacia atrás**: Desde cualquier producto hasta sus materias primas originales con cantidades exactas
-  - **Hacia adelante**: Desde materias primas hasta todos los productos derivados
-- **Metadatos Flexibles**: Guarda información personalizada de cada producto
-- **Relaciones de Parentesco**: Los productos procesados mantienen referencia completa a sus materias primas
-- **Historial Inmutable**: Cada movimiento queda registrado permanentemente
+  - **Hacia atrás**: Desde cualquier producto hasta sus materias primas originales con cantidades exactas consumidas
+  - **Hacia adelante**: Desde materias primas hasta todos los productos derivados y sus destinos finales
+- **Metadatos Flexibles**: Guarda información personalizada de cada producto (JSON en metadataURI)
+- **Relaciones de Parentesco**: Los productos procesados mantienen referencia completa a sus materias primas padre
+- **Historial Inmutable**: Cada movimiento queda registrado permanentemente en blockchain
 
 ### 🔄 Sistema de Transferencias Inteligente
 
-- **Solicitud de Transferencia**: Envía productos a otros actores
-- **Aprobación Requerida**: El receptor debe aceptar la transferencia
-- **Control de Roles Estricto**: Solo se pueden hacer transferencias válidas según tu rol
-- **Flujo Dirigido**: Producer → Factory → Retailer → Consumer
-- **Seguimiento Completo**: Ve todas tus transferencias pendientes y completadas
-- **Validaciones de Negocio**: Solo el creador puede transferir sus productos (Producer/Factory)
+- **Solicitud de Transferencia**: Envía productos a otros actores de la cadena
+- **Aprobación Requerida**: El receptor debe aceptar la transferencia antes de que se complete
+- **Control de Roles Estricto**: Solo se pueden hacer transferencias válidas según tu rol en la cadena
+- **Flujo Dirigido**: Producer → Factory → Retailer → Consumer (no se puede saltar niveles)
+- **Seguimiento Completo**: Ve todas tus transferencias pendientes, completadas y rechazadas
+- **Validaciones de Negocio**: 
+  - Productores: Solo pueden transferir materias primas que crearon
+  - Fábricas: Solo pueden transferir productos procesados que crearon
+  - Minoristas: Pueden transferir cualquier token que posean
+  - Consumidores: No pueden transferir (punto final de la cadena)
+- **Prevención de Duplicados**: Solo una transferencia pendiente por token a la vez
 
 ### 🛡️ Seguridad y Transparencia
 
@@ -136,8 +142,10 @@ graph TD
     subgraph "Validaciones Automáticas"
         V1[✓ Solo RawMaterial como ingredientes]
         V2[✓ Balance suficiente antes de procesar]
-        V3[✓ Cantidades > 0]
-        V4[✓ Descuento inmediato tras creación]
+        V3[✓ Cantidades > 0 para cada materia prima]
+        V4[✓ Descuento inmediato tras creación exitosa]
+        V5[✓ Arrays parentIds y amounts de igual longitud]
+        V6[✓ Solo Factory puede crear productos procesados]
     end
     
     B -->|Retailer| J[Puede transferir cualquier token recibido]
@@ -384,16 +392,18 @@ Abre en tu navegador: **http://localhost:5173**
 2. Completa la información básica:
    - Nombre del producto (ej: "Café Premium Tostado")
    - Cantidad total a producir (ej: 100)
-   - Metadatos opcionales
+   - Metadatos opcionales (JSON con características del producto)
 3. **Selecciona Materias Primas**:
-   - ✅ Solo aparecerán materias primas (RawMaterial) disponibles
+   - ✅ Solo aparecerán materias primas (RawMaterial) que poseas
    - ✅ Especifica cuántas unidades usar de cada una
-   - ✅ El sistema valida que tengas suficiente stock
+   - ✅ El sistema valida que tengas suficiente stock antes de procesar
+   - ✅ No puedes usar productos procesados como ingredientes (solo materias primas)
 4. Confirma la transacción en MetaMask
 5. **Resultado automático**:
-   - ✅ Se crea tu producto procesado
-   - ✅ Se descuentan automáticamente las materias primas usadas
-   - ✅ Se registra la "receta" con cantidades exactas
+   - ✅ Se crea tu producto procesado con el suministro especificado
+   - ✅ Se descuentan automáticamente las cantidades exactas de materias primas usadas
+   - ✅ Se registra la "receta" con parentIds y cantidades exactas consumidas
+   - ✅ El producto procesado queda vinculado permanentemente a sus materias primas origen
 
 ### Transferir Productos
 
@@ -406,33 +416,48 @@ Abre en tu navegador: **http://localhost:5173**
 
 ### Ver Trazabilidad Completa
 
-1. Ve a **"Productos"** → Selecciona cualquier producto
-2. **Trazabilidad Hacia Atrás**: Ve todas las materias primas utilizadas hasta el origen
-3. **Trazabilidad Hacia Adelante**: (Solo materias primas) Ve todos los productos derivados y su destino final
-4. **Historial Completo**: Ve todas las transferencias con timestamps y roles
+1. Ve a **"Productos"** → Selecciona cualquier producto → Click en "Detalles"
+2. **Trazabilidad Hacia Atrás (Backward)**: 
+   - Ve todas las materias primas utilizadas hasta el origen
+   - Muestra las cantidades exactas consumidas de cada materia prima
+   - Rastrea toda la cadena hasta los productores originales
+3. **Trazabilidad Hacia Adelante (Forward)**: 
+   - Solo disponible para materias primas
+   - Ve todos los productos derivados creados con esa materia prima
+   - Muestra las cantidades utilizadas en cada producto derivado
+   - Rastrea hasta los consumidores finales
+4. **Historial de Transferencias**: 
+   - Ve todas las transferencias completadas con timestamps exactos
+   - Muestra los roles de cada participante (Producer → Factory → Retailer → Consumer)
+   - Información inmutable y verificable en blockchain
 
 ## 💡 Ventajas de Usar Blockchain
 
 ### Para Productores y Fabricantes
 
-- ✅ **Certificación de Origen**: Prueba verificable del origen de tus productos
-- ✅ **Protección de Marca**: Registro inmutable de tus productos
-- ✅ **Trazabilidad Completa**: Sigue tus productos en toda la cadena
-- ✅ **Visibilidad Forward**: Ve qué productos se crean con tus materias primas
+- ✅ **Certificación de Origen**: Prueba verificable del origen de tus productos en blockchain
+- ✅ **Protección de Marca**: Registro inmutable de tus productos con timestamps
+- ✅ **Trazabilidad Completa**: Sigue tus productos en toda la cadena hasta el consumidor final
+- ✅ **Visibilidad Forward**: Ve qué productos se crean con tus materias primas y en qué cantidades exactas
+- ✅ **Control de Inventario**: Balance automático actualizado al crear productos procesados
+- ✅ **Recetas Inmutables**: Las cantidades utilizadas quedan registradas permanentemente
 
 ### Para Minoristas
 
-- ✅ **Verificación de Autenticidad**: Confirma el origen real de los productos
-- ✅ **Transparencia**: Muestra la trazabilidad completa a tus clientes
-- ✅ **Confianza**: Productos con historial verificable
-- ✅ **Flexibilidad**: Puede manejar productos de múltiples fábricas
+- ✅ **Verificación de Autenticidad**: Confirma el origen real de los productos y su cadena completa
+- ✅ **Transparencia**: Muestra la trazabilidad completa a tus clientes con cantidades exactas
+- ✅ **Confianza**: Productos con historial verificable e inmutable en blockchain
+- ✅ **Flexibilidad**: Puede manejar productos de múltiples fábricas y transferir a múltiples consumidores
+- ✅ **Información Detallada**: Acceso a metadatos, recetas y historial completo de cada producto
 
 ### Para Consumidores
 
-- ✅ **Información Completa**: Ve el recorrido completo de tu producto
-- ✅ **Garantía de Autenticidad**: Productos verificados en blockchain
-- ✅ **Transparencia Total**: Información inmutable y verificable
-- ✅ **Trazabilidad hasta el Origen**: Conoce exactamente de dónde viene tu producto
+- ✅ **Información Completa**: Ve el recorrido completo de tu producto desde las materias primas originales
+- ✅ **Garantía de Autenticidad**: Productos verificados en blockchain con historial inmutable
+- ✅ **Transparencia Total**: Información inmutable y verificable públicamente
+- ✅ **Trazabilidad hasta el Origen**: Conoce exactamente de dónde viene tu producto y qué materias primas contiene
+- ✅ **Cantidades Exactas**: Ve las cantidades precisas de cada ingrediente utilizado
+- ✅ **Cadena Completa**: Conoce todos los actores involucrados (productor, fábrica, minorista)
 
 ### Para Todos
 
@@ -638,21 +663,22 @@ Sigue estos pasos para probar todas las funcionalidades con múltiples usuarios:
 
 1. **Fábrica A** (Cuenta 5):
    - Solicita rol "Fábrica" → Admin aprueba
-   - Recibe café (500 unidades) y azúcar (200 unidades) de Productores A
-   - Crea "Café Endulzado Premium" especificando:
-     - Café: 100 unidades
-     - Azúcar: 50 unidades
-   - **Resultado**: Balance automático café=400, azúcar=150
-   - **Trazabilidad**: El producto final muestra ambos orígenes con cantidades exactas
+   - Recibe café (500 unidades) y azúcar (200 unidades) de Productor A
+   - Crea "Café Endulzado Premium, 150 unidades" especificando:
+     - Café Premium: 100 unidades (de las 500 disponibles)
+     - Azúcar Orgánica: 50 unidades (de las 200 disponibles)
+   - **Resultado**: Balances actualizados automáticamente (Café=400, Azúcar=150)
+   - **Trazabilidad**: El producto final muestra ambos orígenes con cantidades exactas consumidas
 
 2. **Fábrica B** (Cuenta 6):
    - Solicita rol "Fábrica" → Admin aprueba
-   - Recibe leche (1000 litros), cacao (150 kg) y vainilla (50 unidades)
-   - Crea "Chocolate con Leche Artesanal" especificando:
-     - Leche: 200 litros
-     - Cacao: 75 kg
-     - Vainilla: 25 unidades
-   - **Resultado**: Balances actualizados automáticamente
+   - Recibe leche (1000 litros), cacao (150 kg) y vainilla (50 unidades) de Productores B y C
+   - Crea "Chocolate con Leche Artesanal, 200 unidades" especificando:
+     - Leche: 200 litros (de las 1000 disponibles)
+     - Cacao: 75 kg (de los 150 disponibles)
+     - Vainilla: 25 unidades (de las 50 disponibles)
+   - **Resultado**: Balances actualizados automáticamente (Leche=800, Cacao=75, Vainilla=25)
+   - **Trazabilidad**: El chocolate queda vinculado permanentemente a las 3 materias primas con cantidades exactas
 
 ### 5. Como Múltiples Minoristas (Cuentas 7, 8)
 
