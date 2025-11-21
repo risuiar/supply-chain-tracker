@@ -34,7 +34,6 @@ export const TRANSFER_MANAGER_ADDRESS = getAddress('VITE_TRANSFER_MANAGER_ADDRES
 export const EXPLORER_BASE_URL = NETWORK === 'sepolia' ? 'https://sepolia.etherscan.io' : null;
 
 // Exportar red para depuración/visualización
-export const CURRENT_NETWORK = NETWORK;
 
 // ABI de RoleManager
 export const ROLE_MANAGER_ABI = [

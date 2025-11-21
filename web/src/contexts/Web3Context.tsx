@@ -27,14 +27,14 @@ function decodeContractError(error: unknown): string {
     return 'Error desconocido';
   }
 
-  const errorObj = error as any;
-  const message = errorObj.message || '';
+  const errorObj = error as Record<string, unknown>;
+  const message = (errorObj.message as string) || '';
 
   // Detectar primero si el usuario canceló (ACTION_REJECTED = 4001)
   // Esto tiene prioridad sobre rate limiting para mostrar el mensaje correcto
   if (
-    errorObj.code === 4001 ||
-    errorObj.error?.code === 4001 ||
+    (errorObj.code as number) === 4001 ||
+    ((errorObj.error as Record<string, unknown>)?.code as number) === 4001 ||
     message.includes('ACTION_REJECTED') ||
     message.includes('user rejected') ||
     message.includes('User denied')
@@ -44,11 +44,14 @@ function decodeContractError(error: unknown): string {
 
   // Si es un error de rate limiting del RPC
   if (
-    errorObj.code === -32603 ||
-    errorObj.code === -32005 ||
+    (errorObj.code as number) === -32603 ||
+    (errorObj.code as number) === -32005 ||
     message.includes('rate limited') ||
     message.includes('rate limit') ||
-    (errorObj.error && errorObj.error.message && errorObj.error.message.includes('rate limit'))
+    (errorObj.error &&
+      typeof errorObj.error === 'object' &&
+      errorObj.error !== null &&
+      ((errorObj.error as Record<string, unknown>).message as string)?.includes('rate limit'))
   ) {
     return 'Demasiadas solicitudes al nodo RPC. Por favor espera 60 segundos antes de intentar de nuevo.';
   }
@@ -69,7 +72,10 @@ function decodeContractError(error: unknown): string {
 
   // Si es un error de estimación de gas (CALL_EXCEPTION), puede ser varias cosas
   // Solo mostrar el mensaje genérico si realmente parece ser un error de validación del contrato
-  if (errorObj.action === 'estimateGas' || errorObj.code === 'CALL_EXCEPTION') {
+  if (
+    (errorObj.action as string) === 'estimateGas' ||
+    (errorObj.code as string) === 'CALL_EXCEPTION'
+  ) {
     // Si el error tiene "missing revert data", ya lo manejamos arriba
     // Para otros CALL_EXCEPTION, mostrar un mensaje más genérico
     if (!message.includes('missing revert data')) {
@@ -243,17 +249,17 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
     // Validar que la red de MetaMask coincida con la configuración
     const configuredNetwork = import.meta.env.VITE_NETWORK?.toLowerCase().trim();
-    const expectedChainId = configuredNetwork === 'sepolia' ? 11155111n : 31337n;
+    const _expectedChainId = configuredNetwork === 'sepolia' ? 11155111n : 31337n;
     const networkName = configuredNetwork === 'sepolia' ? 'Sepolia' : 'Anvil (Local)';
 
     console.log('🔍 Network validation:', {
       configuredNetwork,
-      expectedChainId: expectedChainId.toString(),
+      expectedChainId: _expectedChainId.toString(),
       actualChainId: network.chainId.toString(),
-      match: network.chainId === expectedChainId,
+      match: network.chainId === _expectedChainId,
     });
 
-    if (network.chainId !== expectedChainId) {
+    if (network.chainId !== _expectedChainId) {
       const currentNetworkName =
         network.chainId === 11155111n
           ? 'Sepolia'
@@ -261,7 +267,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             ? 'Anvil'
             : `Chain ID ${network.chainId}`;
       const currentChainId = network.chainId.toString();
-      const expectedChainIdStr = expectedChainId.toString();
+      const expectedChainIdStr = _expectedChainId.toString();
 
       toast.error(
         `⚠️ Red incorrecta: Estás en ${currentNetworkName} (Chain ID: ${currentChainId}) pero la app está configurada para ${networkName} (Chain ID: ${expectedChainIdStr}). ` +
@@ -751,7 +757,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       const handleChainChanged = (chainId: string | number) => {
         console.log('🔄 Chain changed detected:', chainId);
         const configuredNetwork = import.meta.env.VITE_NETWORK?.toLowerCase().trim();
-        const expectedChainId = configuredNetwork === 'sepolia' ? '0xaa36a7' : '0x7a69'; // Sepolia: 11155111, Anvil: 31337
+        // Expected chain IDs: Sepolia: 11155111, Anvil: 31337
 
         // Convertir chainId a número para comparar
         const currentChainId = typeof chainId === 'string' ? parseInt(chainId, 16) : chainId;

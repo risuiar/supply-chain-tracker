@@ -4,7 +4,7 @@ import { useRoleManager } from '../hooks/useRoleManager';
 import { Button } from './Button';
 import { Card, CardHeader, CardContent } from './Card';
 import { Select } from './Select';
-import { ROLE_NAMES, ROLE_DESCRIPTIONS, ROLE_OPTIONS, Role } from '../constants/roles';
+import { ROLE_NAMES, ROLE_DESCRIPTIONS, ROLE_OPTIONS } from '../constants/roles';
 
 export function RoleRequestPanel() {
   const { user, isConnected, account, roleManager } = useWeb3();
@@ -152,7 +152,8 @@ export function RoleRequestPanel() {
               options={ROLE_OPTIONS.filter((option) => {
                 // Filtrar Admin si ya existe un admin
                 const roleValue = parseInt(option.value);
-                if (roleValue === Role.Admin) {
+                if (roleValue === 5) {
+                  // Admin role
                   return !hasAdmin;
                 }
                 return true;

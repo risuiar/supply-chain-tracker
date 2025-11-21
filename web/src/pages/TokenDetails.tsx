@@ -200,7 +200,7 @@ function TraceabilityTree({
               return `Made from ${node.children.length} material${node.children.length !== 1 ? 's' : ''}:`;
             })()}
           </p>
-          {node.children.map((child, index) => (
+          {node.children.map((child) => (
             <TraceabilityTree
               key={child.token.id.toString()}
               node={child}
@@ -246,7 +246,7 @@ export function TokenDetails() {
           if (!tokenId) return null;
 
           try {
-            const tokenData = await tokenFactory.getToken(tokenId);
+            const tokenData = await tokenFactory!.getToken(tokenId);
 
             // Verificar si este token tiene el parentTokenId en sus parentIds
             if (tokenData.parentIds && tokenData.parentIds.length > 0) {
@@ -257,7 +257,7 @@ export function TokenDetails() {
                 return tokenData;
               }
             }
-          } catch (error) {
+          } catch {
             // Token no existe o error al obtenerlo, ignorar
             return null;
           }
@@ -287,12 +287,12 @@ export function TokenDetails() {
     visited.add(tokenIdStr);
 
     try {
-      const tokenData = await tokenFactory.getToken(tokenId);
+      const tokenData = await tokenFactory!.getToken(tokenId);
 
       // Obtener historial de transferencias
       let transfers: TransferData[] = [];
       try {
-        const history = await transferManager.getTokenTransfers(tokenId);
+        const history = await transferManager!.getTokenTransfers(tokenId);
         const historyArray = Array.from(history) as TransferData[];
         transfers = historyArray.filter((t: TransferData) => Number(t.status) === 2);
         // Ordenar por fecha
@@ -335,12 +335,12 @@ export function TokenDetails() {
     visited.add(tokenIdStr);
 
     try {
-      const tokenData = await tokenFactory.getToken(tokenId);
+      const tokenData = await tokenFactory!.getToken(tokenId);
 
       // Obtener historial de transferencias
       let transfers: TransferData[] = [];
       try {
-        const history = await transferManager.getTokenTransfers(tokenId);
+        const history = await transferManager!.getTokenTransfers(tokenId);
         const historyArray = Array.from(history) as TransferData[];
         transfers = historyArray.filter((t: TransferData) => Number(t.status) === 2);
         // Ordenar por fecha
@@ -379,7 +379,7 @@ export function TokenDetails() {
     const loadToken = async () => {
       try {
         const tokenId = BigInt(id);
-        const tokenData = await tokenFactory.getToken(tokenId);
+        const tokenData = await tokenFactory!.getToken(tokenId);
         setToken(tokenData);
 
         const userBalance = await tokenFactory.balanceOf(tokenId, account);
@@ -395,7 +395,7 @@ export function TokenDetails() {
 
         // Load transfer history for current token
         try {
-          const history = await transferManager.getTokenTransfers(tokenId);
+          const history = await transferManager!.getTokenTransfers(tokenId);
           const historyArray = Array.from(history) as TransferData[];
           const approvedTransfers = historyArray.filter(
             (t: TransferData) => Number(t.status) === 2
@@ -423,7 +423,14 @@ export function TokenDetails() {
     };
 
     loadToken();
-  }, [tokenFactory, transferManager, account, id]);
+  }, [
+    tokenFactory,
+    transferManager,
+    account,
+    id,
+    buildTraceabilityTree,
+    buildForwardTraceabilityTree,
+  ]);
 
   if (!user || !user.approved) {
     return <Navigate to="/" />;

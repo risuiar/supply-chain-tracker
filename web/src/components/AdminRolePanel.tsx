@@ -37,22 +37,26 @@ export function AdminRolePanel() {
 
         // Obtener eventos RoleRejected
         const roleRejectedFilter = roleManager.filters.RoleRejected();
-        const roleRejectedEvents = await roleManager.queryFilter(roleRejectedFilter, fromBlock);
+        await roleManager.queryFilter(roleRejectedFilter, fromBlock);
 
         // Crear un mapa de solicitudes pendientes
         const requestsMap = new Map<string, number>();
 
         // Añadir todas las solicitudes
         for (const event of roleRequestedEvents) {
-          const address = event.args?.[0] as string;
-          const role = Number(event.args?.[1]);
-          requestsMap.set(address.toLowerCase(), role);
+          if ('args' in event) {
+            const address = event.args[0] as string;
+            const role = Number(event.args[1]);
+            requestsMap.set(address.toLowerCase(), role);
+          }
         }
 
         // Remover las aprobadas
         for (const event of roleApprovedEvents) {
-          const address = event.args?.[0] as string;
-          requestsMap.delete(address.toLowerCase());
+          if ('args' in event) {
+            const address = event.args[0] as string;
+            requestsMap.delete(address.toLowerCase());
+          }
         }
 
         // NO remover las rechazadas del mapa - verificaremos su estado actual más abajo
@@ -60,7 +64,7 @@ export function AdminRolePanel() {
 
         // Verificar el estado actual de cada solicitud en el contrato
         const pending: PendingRequest[] = [];
-        for (const [address, role] of requestsMap.entries()) {
+        for (const [address] of requestsMap.entries()) {
           try {
             const user = await roleManager.getUser(address);
             const requestedRole = Number(user.requestedRole);
@@ -81,22 +85,24 @@ export function AdminRolePanel() {
         const seenAddresses = new Set<string>();
 
         for (const event of roleApprovedEvents) {
-          const address = event.args?.[0] as string;
-          const addressLower = address.toLowerCase();
+          if ('args' in event) {
+            const address = event.args[0] as string;
+            const addressLower = address.toLowerCase();
 
-          // Evitar duplicados
-          if (seenAddresses.has(addressLower)) {
-            continue;
-          }
-
-          try {
-            const user = await roleManager.getUser(address);
-            if (user.approved && Number(user.role) !== 0) {
-              approved.push({ address, role: Number(user.role) });
-              seenAddresses.add(addressLower);
+            // Evitar duplicados
+            if (seenAddresses.has(addressLower)) {
+              continue;
             }
-          } catch (error) {
-            console.error('Error checking approved user:', address, error);
+
+            try {
+              const user = await roleManager.getUser(address);
+              if (user.approved && Number(user.role) !== 0) {
+                approved.push({ address, role: Number(user.role) });
+                seenAddresses.add(addressLower);
+              }
+            } catch (error) {
+              console.error('Error checking approved user:', address, error);
+            }
           }
         }
 
@@ -222,21 +228,27 @@ export function AdminRolePanel() {
 
                         const requestsMap = new Map<string, number>();
                         for (const event of roleRequestedEvents) {
-                          const address = event.args?.[0] as string;
-                          const role = Number(event.args?.[1]);
-                          requestsMap.set(address.toLowerCase(), role);
+                          if ('args' in event) {
+                            const address = event.args[0] as string;
+                            const role = Number(event.args[1]);
+                            requestsMap.set(address.toLowerCase(), role);
+                          }
                         }
                         for (const event of roleApprovedEvents) {
-                          const address = event.args?.[0] as string;
-                          requestsMap.delete(address.toLowerCase());
+                          if ('args' in event) {
+                            const address = event.args[0] as string;
+                            requestsMap.delete(address.toLowerCase());
+                          }
                         }
                         for (const event of roleRejectedEvents) {
-                          const address = event.args?.[0] as string;
-                          requestsMap.delete(address.toLowerCase());
+                          if ('args' in event) {
+                            const address = event.args[0] as string;
+                            requestsMap.delete(address.toLowerCase());
+                          }
                         }
 
                         const pending: PendingRequest[] = [];
-                        for (const [address, role] of requestsMap.entries()) {
+                        for (const [address] of requestsMap.entries()) {
                           try {
                             const user = await roleManager.getUser(address);
                             const requestedRole = Number(user.requestedRole);

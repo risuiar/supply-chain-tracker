@@ -118,7 +118,7 @@ export function TransferToken() {
     };
 
     loadRecipients();
-  }, [roleManager, user, account]);
+  }, [roleManager, user, account, getReasonableFromBlock]);
 
   if (!user || !user.approved) {
     return <Navigate to="/" />;

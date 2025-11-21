@@ -106,7 +106,7 @@ export function Dashboard() {
     };
 
     loadStats();
-  }, [tokenFactory, transferManager, account, isAdmin]);
+  }, [tokenFactory, transferManager, account, isAdmin, getReasonableFromBlock]);
 
   // Los administradores ahora ven su dashboard con panel de administración incluido
 

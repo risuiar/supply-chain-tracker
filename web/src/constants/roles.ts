@@ -1,45 +1,36 @@
-// Enum Role values from the smart contract
+// Role values from the smart contract
 // 0 = None, 1 = Producer, 2 = Factory, 3 = Retailer, 4 = Consumer, 5 = Admin
-export enum Role {
-  None = 0,
-  Producer = 1,
-  Factory = 2,
-  Retailer = 3,
-  Consumer = 4,
-  Admin = 5,
-}
 
 export const ROLE_NAMES: Record<number, string> = {
-  [Role.None]: 'Sin rol',
-  [Role.Producer]: 'Productor',
-  [Role.Factory]: 'Fábrica',
-  [Role.Retailer]: 'Minorista',
-  [Role.Consumer]: 'Consumidor',
-  [Role.Admin]: 'Administrador',
+  0: 'Sin rol',
+  1: 'Productor',
+  2: 'Fábrica',
+  3: 'Minorista',
+  4: 'Consumidor',
+  5: 'Administrador',
 };
 
 export const ROLE_DESCRIPTIONS: Record<number, string> = {
-  [Role.Producer]: 'Responsable de crear materias primas y productos iniciales',
-  [Role.Factory]: 'Transforma materias primas en productos procesados',
-  [Role.Retailer]: 'Distribuye productos a consumidores finales',
-  [Role.Consumer]: 'Usuario final de la cadena de suministro',
-  [Role.Admin]:
-    'Administrador del sistema. Gestiona solicitudes de roles y usuarios. Solo disponible si no existe un administrador.',
+  1: 'Responsable de crear materias primas y productos iniciales',
+  2: 'Transforma materias primas en productos procesados',
+  3: 'Distribuye productos a consumidores finales',
+  4: 'Usuario final de la cadena de suministro',
+  5: 'Administrador del sistema. Gestiona solicitudes de roles y usuarios. Solo disponible si no existe un administrador.',
 };
 
 export const ROLE_COLORS: Record<number, string> = {
-  [Role.None]: 'bg-gray-100 text-gray-700',
-  [Role.Producer]: 'bg-green-100 text-green-700',
-  [Role.Factory]: 'bg-blue-100 text-blue-700',
-  [Role.Retailer]: 'bg-purple-100 text-purple-700',
-  [Role.Consumer]: 'bg-orange-100 text-orange-700',
-  [Role.Admin]: 'bg-red-100 text-red-700',
+  0: 'bg-gray-100 text-gray-700',
+  1: 'bg-green-100 text-green-700',
+  2: 'bg-blue-100 text-blue-700',
+  3: 'bg-purple-100 text-purple-700',
+  4: 'bg-orange-100 text-orange-700',
+  5: 'bg-red-100 text-red-700',
 };
 
 export const ROLE_OPTIONS = [
-  { value: String(Role.Producer), label: ROLE_NAMES[Role.Producer] },
-  { value: String(Role.Factory), label: ROLE_NAMES[Role.Factory] },
-  { value: String(Role.Retailer), label: ROLE_NAMES[Role.Retailer] },
-  { value: String(Role.Consumer), label: ROLE_NAMES[Role.Consumer] },
-  { value: String(Role.Admin), label: ROLE_NAMES[Role.Admin] },
+  { value: '1', label: ROLE_NAMES[1] },
+  { value: '2', label: ROLE_NAMES[2] },
+  { value: '3', label: ROLE_NAMES[3] },
+  { value: '4', label: ROLE_NAMES[4] },
+  { value: '5', label: ROLE_NAMES[5] },
 ];

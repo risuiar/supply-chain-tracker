@@ -200,10 +200,10 @@ function TokenCard({
   typeColor,
 }: {
   token: TokenData;
-  metadata: any;
+  metadata: Record<string, unknown>;
   balance: bigint;
   account: string | null;
-  user: any;
+  user: { role: number };
   typeColor: string;
 }) {
   return (

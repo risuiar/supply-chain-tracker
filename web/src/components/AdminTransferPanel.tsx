@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRightLeft, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowRightLeft, Clock } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Card, CardHeader, CardContent } from './Card';
 import type { TokenData, TransferData } from '../types';
