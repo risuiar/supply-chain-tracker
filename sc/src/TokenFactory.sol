@@ -30,6 +30,8 @@ contract TokenFactory {
     error MissingParentAssets();
     error InvalidRoleTransition();
     error Unauthorized();
+    error InsufficientBalance();
+    error InvalidAmountArray();
 
     event TokenCreated(
         uint256 indexed tokenId,
@@ -117,6 +119,68 @@ contract TokenFactory {
             if (_balances[parentIds[i]][msg.sender] == 0) {
                 revert InvalidRoleTransition();
             }
+
+            parentCopy[i] = parentIds[i];
+        }
+
+        tokenId = _mintToken(
+            productName,
+            metadataURI,
+            totalSupply,
+            AssetType.ProcessedGood,
+            parentCopy
+        );
+    }
+
+    /// @notice Crea un token de producto procesado con cantidades específicas de materias primas
+    /// @param productName Nombre del producto
+    /// @param metadataURI URI de metadatos del token
+    /// @param totalSupply Suministro total del token
+    /// @param parentIds Array de IDs de tokens padre (materias primas)
+    /// @param amounts Array de cantidades a consumir de cada token padre
+    /// @return tokenId ID del token creado
+    function createProcessedTokenWithAmounts(
+        string calldata productName,
+        string calldata metadataURI,
+        uint256 totalSupply,
+        uint256[] calldata parentIds,
+        uint256[] calldata amounts
+    )
+        external
+        onlyApproved(RoleManager.Role.Factory)
+        returns (uint256 tokenId)
+    {
+        if (parentIds.length == 0) {
+            revert MissingParentAssets();
+        }
+
+        if (parentIds.length != amounts.length) {
+            revert InvalidAmountArray();
+        }
+
+        uint256[] memory parentCopy = new uint256[](parentIds.length);
+
+        for (uint256 i; i < parentIds.length; ++i) {
+            Token storage parent = _tokens[parentIds[i]];
+            if (!parent.exists) {
+                revert AssetDoesNotExist();
+            }
+            // Solo RawMaterial puede ser usado como token padre
+            if (parent.assetType != AssetType.RawMaterial) {
+                revert InvalidRoleTransition();
+            }
+
+            if (amounts[i] == 0) {
+                revert InvalidAmountArray();
+            }
+
+            uint256 currentBalance = _balances[parentIds[i]][msg.sender];
+            if (currentBalance < amounts[i]) {
+                revert InsufficientBalance();
+            }
+
+            // Descontar la cantidad especificada del balance
+            _balances[parentIds[i]][msg.sender] = currentBalance - amounts[i];
 
             parentCopy[i] = parentIds[i];
         }

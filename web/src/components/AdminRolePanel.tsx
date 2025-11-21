@@ -55,11 +55,8 @@ export function AdminRolePanel() {
           requestsMap.delete(address.toLowerCase());
         }
 
-        // Remover las rechazadas
-        for (const event of roleRejectedEvents) {
-          const address = event.args?.[0] as string;
-          requestsMap.delete(address.toLowerCase());
-        }
+        // NO remover las rechazadas del mapa - verificaremos su estado actual más abajo
+        // Esto permite que usuarios rechazados puedan volver a solicitar roles
 
         // Verificar el estado actual de cada solicitud en el contrato
         const pending: PendingRequest[] = [];

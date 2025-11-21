@@ -66,6 +66,7 @@ export const TOKEN_FACTORY_ABI = [
   'function roleManager() view returns (address)',
   'function createRawToken(string productName, string metadataURI, uint256 totalSupply) returns (uint256)',
   'function createProcessedToken(string productName, string metadataURI, uint256 totalSupply, uint256[] parentIds) returns (uint256)',
+  'function createProcessedTokenWithAmounts(string productName, string metadataURI, uint256 totalSupply, uint256[] parentIds, uint256[] amounts) returns (uint256)',
   'function getToken(uint256 tokenId) view returns (tuple(uint256 id, string productName, uint8 assetType, string metadataURI, uint256 totalSupply, address creator, address currentHolder, uint8 currentRole, uint64 createdAt, uint256[] parentIds, bool exists))',
   'function getUserTokens(address account) view returns (uint256[])',
   'function getTokenHolder(uint256 tokenId) view returns (address)',
@@ -78,6 +79,8 @@ export const TOKEN_FACTORY_ABI = [
   'error MissingParentAssets()',
   'error InvalidRoleTransition()',
   'error Unauthorized()',
+  'error InsufficientBalance()',
+  'error InvalidAmountArray()',
 ];
 
 // ABI de TransferManager
