@@ -1,10 +1,10 @@
-import { LogOut, LayoutDashboard, Users, Package, Send, User } from 'lucide-react';
+import { LogOut, LayoutDashboard, Package, Send, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWeb3 } from '../contexts/Web3Context';
 import { ROLE_NAMES } from '../constants/roles';
 
 export function Header() {
-  const { account, isConnected, user, isAdmin, disconnectWallet } = useWeb3();
+  const { account, isConnected, user, disconnectWallet } = useWeb3();
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -58,16 +58,6 @@ export function Header() {
                     <span>Perfil</span>
                   </Link>
                 </>
-              )}
-
-              {isAdmin && (
-                <Link
-                  to="/admin"
-                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-                >
-                  <Users className="w-4 h-4" />
-                  <span>Administración</span>
-                </Link>
               )}
 
               <div className="flex items-center gap-4 pl-6 border-l border-gray-200">

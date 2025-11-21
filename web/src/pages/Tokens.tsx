@@ -65,14 +65,14 @@ export function Tokens() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">My Tokens</h1>
-            <p className="text-sm text-gray-600">Manage your supply chain tokens</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Mis Tokens</h1>
+            <p className="text-sm text-gray-600">Administra tus tokens de cadena de suministro</p>
           </div>
           {(user.role === 1 || user.role === 2) && (
             <Link to="/tokens/create">
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
-                Create Token
+                Crear Token
               </Button>
             </Link>
           )}
@@ -81,23 +81,23 @@ export function Tokens() {
         {loading ? (
           <div className="text-center py-8">
             <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            <p className="mt-3 text-sm text-gray-600">Loading tokens...</p>
+            <p className="mt-3 text-sm text-gray-600">Cargando tokens...</p>
           </div>
         ) : tokens.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
               <Package className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-              <h3 className="text-base font-medium text-gray-900 mb-2">No tokens yet</h3>
+              <h3 className="text-base font-medium text-gray-900 mb-2">Aún no tienes tokens</h3>
               <p className="text-sm text-gray-600 mb-4">
                 {user.role === 1 || user.role === 2
-                  ? 'Create your first token to get started'
-                  : 'You will receive tokens through transfers'}
+                  ? 'Crea tu primer token para comenzar'
+                  : 'Recibirás tokens a través de transferencias'}
               </p>
               {(user.role === 1 || user.role === 2) && (
                 <Link to="/tokens/create">
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
-                    Create Token
+                    Crear Token
                   </Button>
                 </Link>
               )}
@@ -225,13 +225,13 @@ function TokenCard({
           {/* Info Grid */}
           <div className="grid grid-cols-2 gap-2 py-2 border-y border-gray-200">
             <div>
-              <div className="text-xs text-gray-600">Total Supply</div>
+              <div className="text-xs text-gray-600">Suministro Total</div>
               <div className="text-sm font-semibold text-gray-900">
                 {token.totalSupply.toString()}
               </div>
             </div>
             <div>
-              <div className="text-xs text-gray-600">Created</div>
+              <div className="text-xs text-gray-600">Creado</div>
               <div className="text-sm font-semibold text-gray-900">
                 {new Date(Number(token.createdAt) * 1000).toLocaleDateString('en-GB')}
               </div>
@@ -240,14 +240,14 @@ function TokenCard({
 
           {/* Creator */}
           <div>
-            <div className="text-xs text-gray-600">Creator</div>
+            <div className="text-xs text-gray-600">Creador</div>
             <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
               <span className="text-xs font-mono text-gray-900">
                 {token.creator.slice(0, 6)}...{token.creator.slice(-4)}
               </span>
               {token.creator.toLowerCase() === account?.toLowerCase() && (
                 <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
-                  You
+                  Tú
                 </span>
               )}
             </div>
@@ -256,7 +256,7 @@ function TokenCard({
           {/* Features */}
           {Object.keys(metadata).length > 0 && (
             <div>
-              <div className="text-xs text-gray-600">Features</div>
+              <div className="text-xs text-gray-600">Características</div>
               <div className="text-xs text-gray-900 italic line-clamp-1 mt-0.5">
                 {Object.entries(metadata)
                   .map(([, value]) => String(value))
@@ -283,47 +283,47 @@ function TokenCard({
             <Link to={`/tokens/${token.id.toString()}`} className="flex-1">
               <Button variant="secondary" className="w-full text-xs py-1.5">
                 <Package className="w-3.5 h-3.5" />
-                Details
+                Detalles
               </Button>
             </Link>
             {(() => {
-              // Determine if transfer button should be shown
+              // Determinar si el botón de transferencia debe mostrarse
               const isCreator = token.creator.toLowerCase() === account?.toLowerCase();
               const hasBalance = balance > 0n;
               const isConsumer = user.role === 4;
 
-              // Consumer cannot transfer
+              // El consumidor no puede transferir
               if (isConsumer) return null;
 
-              // Producer: Only transfer RawMaterial tokens they created
+              // Productor: Solo transferir tokens RawMaterial que haya creado
               if (user.role === 1) {
                 if (hasBalance && isCreator && Number(token.assetType) === 0) {
                   return (
                     <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
                       <Button className="w-full text-xs py-1.5">
                         <ArrowRight className="w-3.5 h-3.5" />
-                        Transfer
+                        Transferir
                       </Button>
                     </Link>
                   );
                 }
               }
 
-              // Factory: Only transfer ProcessedGood tokens they created
+              // Fábrica: Solo transferir tokens ProcessedGood que haya creado
               if (user.role === 2) {
                 if (hasBalance && isCreator && Number(token.assetType) === 1) {
                   return (
                     <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">
                       <Button className="w-full text-xs py-1.5">
                         <ArrowRight className="w-3.5 h-3.5" />
-                        Transfer
+                        Transferir
                       </Button>
                     </Link>
                   );
                 }
               }
 
-              // Retailer: Can transfer any token they have
+              // Minorista: Puede transferir cualquier token que tenga
               if (user.role === 3 && hasBalance) {
                 return (
                   <Link to={`/tokens/${token.id.toString()}/transfer`} className="flex-1">

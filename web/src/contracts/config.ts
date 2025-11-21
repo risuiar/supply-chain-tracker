@@ -1,14 +1,14 @@
-// Network configuration
+// Configuración de red
 const NETWORK = import.meta.env.VITE_NETWORK?.toLowerCase();
 
-// Validate network configuration
+// Validar configuración de red
 if (!NETWORK || (NETWORK !== 'anvil' && NETWORK !== 'sepolia')) {
   console.error('⚠️ VITE_NETWORK no está configurado o es inválido. Debe ser "anvil" o "sepolia".');
   console.error('Configura VITE_NETWORK en tu archivo .env');
 }
 
-// Contract addresses from environment variables
-// Selected based on VITE_NETWORK (anvil or sepolia)
+// Direcciones de contratos desde variables de entorno
+// Seleccionadas basándose en VITE_NETWORK (anvil o sepolia)
 const getAddress = (envVar: string): string => {
   if (!NETWORK) {
     throw new Error(
@@ -30,13 +30,13 @@ export const TOKEN_FACTORY_ADDRESS = getAddress('VITE_TOKEN_FACTORY_ADDRESS');
 export const TRANSFER_MANAGER_ADDRESS = getAddress('VITE_TRANSFER_MANAGER_ADDRESS');
 // ADMIN_ADDRESS ya no es necesario - el admin se asigna dinámicamente al primer usuario que solicite Admin
 
-// Explorer base URL (only available on public networks)
+// URL base del explorador (solo disponible en redes públicas)
 export const EXPLORER_BASE_URL = NETWORK === 'sepolia' ? 'https://sepolia.etherscan.io' : null;
 
-// Export network for debugging/display
+// Exportar red para depuración/visualización
 export const CURRENT_NETWORK = NETWORK;
 
-// RoleManager ABI
+// ABI de RoleManager
 export const ROLE_MANAGER_ABI = [
   'function admin() view returns (address)',
   'function requestRole(uint8 desiredRole)',
@@ -61,7 +61,7 @@ export const ROLE_MANAGER_ABI = [
   'error RoleAlreadyRequested()',
 ];
 
-// TokenFactory ABI
+// ABI de TokenFactory
 export const TOKEN_FACTORY_ABI = [
   'function roleManager() view returns (address)',
   'function createRawToken(string productName, string metadataURI, uint256 totalSupply) returns (uint256)',
@@ -80,7 +80,7 @@ export const TOKEN_FACTORY_ABI = [
   'error Unauthorized()',
 ];
 
-// TransferManager ABI
+// ABI de TransferManager
 export const TRANSFER_MANAGER_ABI = [
   'function roleManager() view returns (address)',
   'function tokenFactory() view returns (address)',

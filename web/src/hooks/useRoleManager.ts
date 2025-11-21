@@ -47,6 +47,14 @@ export function useRoleManager() {
     try {
       await requestRole(desiredRole);
       await refreshUser();
+
+      // Si es admin (rol 5), hacer una actualización adicional después de un delay
+      if (desiredRole === 5) {
+        setTimeout(async () => {
+          await refreshUser();
+        }, 1000);
+      }
+
       return true;
     } catch (error) {
       const errorMessage = handleError(error);

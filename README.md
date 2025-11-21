@@ -37,8 +37,13 @@ Permite que diferentes actores de una cadena de suministro (productores, fábric
 ### 📦 Gestión de Productos con Trazabilidad Completa
 
 - **Creación de Productos**: Cada producto es un token con información detallada
+- **Consumo Inteligente de Materias Primas**: 
+  - **Cantidades Específicas**: Especifica exactamente cuántas unidades de cada materia prima usar
+  - **Descuento Automático**: Al crear un producto procesado, las materias primas se descuentan automáticamente
+  - **Validación de Balance**: El sistema verifica que tengas suficiente stock antes de procesar
+  - **Solo Materias Primas**: Solo se pueden usar tokens de tipo RawMaterial como ingredientes
 - **Trazabilidad Bidireccional**: 
-  - **Hacia atrás**: Desde cualquier producto hasta sus materias primas originales
+  - **Hacia atrás**: Desde cualquier producto hasta sus materias primas originales con cantidades exactas
   - **Hacia adelante**: Desde materias primas hasta todos los productos derivados
 - **Metadatos Flexibles**: Guarda información personalizada de cada producto
 - **Relaciones de Parentesco**: Los productos procesados mantienen referencia completa a sus materias primas
@@ -99,32 +104,41 @@ graph TD
     
 ```
 
-### 2. **Creación de Token con Múltiples Productores**
+### 2. **Creación de Token con Consumo Automático de Materias Primas**
 
 ```mermaid
 graph TD
     A[Múltiples Usuarios Aprobados] --> B{Rol del Usuario}
     
-    B -->|Producer 1| C1[Crea Materia Prima A]
-    B -->|Producer 2| C2[Crea Materia Prima B]
-    B -->|Producer N| C3[Crea Materia Prima N]
+    B -->|Producer 1| C1[Crea Materia Prima A: 1000 unidades]
+    B -->|Producer 2| C2[Crea Materia Prima B: 500 unidades]
+    B -->|Producer N| C3[Crea Materia Prima N: 300 unidades]
     
-    C1 --> D[Token RawMaterial A]
-    C2 --> E[Token RawMaterial B]
-    C3 --> F[Token RawMaterial N]
+    C1 --> D[Token RawMaterial A: Balance 1000]
+    C2 --> E[Token RawMaterial B: Balance 500]
+    C3 --> F[Token RawMaterial N: Balance 300]
     
-    B -->|Factory 1| G1[Selecciona Materias Primas]
-    B -->|Factory 2| G2[Selecciona Materias Primas]
+    B -->|Factory 1| G1[Selecciona Materias Primas + Cantidades]
+    B -->|Factory 2| G2[Selecciona Materias Primas + Cantidades]
     
-    G1 --> H1[Crea Producto Procesado X]
-    G2 --> H2[Crea Producto Procesado Y]
+    G1 --> G1A[Especifica: A=50 unidades, B=25 unidades]
+    G2 --> G2A[Especifica: N=100 unidades]
     
-    D --> G1
-    E --> G1
-    F --> G2
+    G1A --> H1[Crea Producto Procesado X]
+    G2A --> H2[Crea Producto Procesado Y]
     
-    H1 --> I1[Token ProcessedGood X con parentIds]
-    H2 --> I2[Token ProcessedGood Y con parentIds]
+    H1 --> H1A[Descuento Automático: A=950, B=475]
+    H2 --> H2A[Descuento Automático: N=200]
+    
+    H1A --> I1[Token ProcessedGood X con parentIds y cantidades]
+    H2A --> I2[Token ProcessedGood Y con parentIds y cantidades]
+    
+    subgraph "Validaciones Automáticas"
+        V1[✓ Solo RawMaterial como ingredientes]
+        V2[✓ Balance suficiente antes de procesar]
+        V3[✓ Cantidades > 0]
+        V4[✓ Descuento inmediato tras creación]
+    end
     
     B -->|Retailer| J[Puede transferir cualquier token recibido]
     
@@ -162,38 +176,41 @@ graph TD
     
 ```
 
-### 4. **Trazabilidad Completa (Bidireccional)**
+### 4. **Trazabilidad Completa con Cantidades Específicas**
 
 ```mermaid
 graph TD
     subgraph "Trazabilidad Hacia Atrás (Backward)"
-        P1[Producto Final] --> M1[Materia Prima 1]
-        P1 --> M2[Materia Prima 2]
-        P1 --> M3[Materia Prima 3]
+        P1[Producto Final: Café Premium] --> M1[Café: 50 unidades consumidas]
+        P1 --> M2[Azúcar: 25 unidades consumidas]
+        P1 --> M3[Leche: 10 litros consumidos]
         
-        M1 --> O1[Origen: Producer A]
-        M2 --> O2[Origen: Producer B]
-        M3 --> O3[Origen: Producer C]
+        M1 --> O1[Origen: Producer A - Café Orgánico]
+        M2 --> O2[Origen: Producer B - Azúcar de Caña]
+        M3 --> O3[Origen: Producer C - Leche Fresca]
     end
     
     subgraph "Trazabilidad Hacia Adelante (Forward)"
-        O1 --> D1[Derivado 1: Café Tostado]
-        O1 --> D2[Derivado 2: Café Molido]
+        O1 --> D1[Derivado 1: Café Tostado - 200 unidades usadas]
+        O1 --> D2[Derivado 2: Café Molido - 150 unidades usadas]
         
-        D1 --> F1[Final 1: Café Premium]
-        D1 --> F2[Final 2: Café Gourmet]
-        D2 --> F3[Final 3: Café Instantáneo]
+        D1 --> F1[Final 1: Café Premium - 50 unidades]
+        D1 --> F2[Final 2: Café Gourmet - 75 unidades]
+        D2 --> F3[Final 3: Café Instantáneo - 100 unidades]
         
-        F1 --> C1[Consumer 1]
-        F2 --> C2[Consumer 2]
-        F3 --> C3[Consumer 3]
+        F1 --> C1[Consumer 1: 20 unidades]
+        F2 --> C2[Consumer 2: 30 unidades]
+        F3 --> C3[Consumer 3: 50 unidades]
     end
     
-    subgraph "Información Disponible"
+    subgraph "Información Detallada Disponible"
         I1[Historial Completo de Transferencias]
         I2[Roles de Cada Participante]
         I3[Timestamps Inmutables]
         I4[Metadatos de Cada Etapa]
+        I5[Cantidades Exactas Consumidas]
+        I6[Balances Antes y Después]
+        I7[Recetas de Producción]
     end
     
 ```
@@ -280,59 +297,32 @@ deploy-windows.bat
 
 *(La primera vez en Mac/Linux ejecuta: `chmod +x deploy-mac.sh`)*
 
-O manualmente:
-
-```bash
-cd sc
-forge script script/DeploySupplyChainSystem.s.sol:DeploySupplyChain \
-  --rpc-url http://localhost:8545 \
-  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
-  --broadcast
-```
-
-**📝 Copia las 3 direcciones que aparecen:**
+**📋 El script mostrará las variables listas para copiar:**
 
 ```
-RoleManager:      0x5FbDB2315678afecb367f032d93F642f64180aa3
-TokenFactory:     0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-TransferManager:  0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+========================================
+  Variables para web\.env
+========================================
+
+VITE_ROLE_MANAGER_ADDRESS_ANVIL=0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+VITE_TOKEN_FACTORY_ADDRESS_ANVIL=0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+VITE_TRANSFER_MANAGER_ADDRESS_ANVIL=0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
 ```
 
-#### Paso 2.1: Configurar Variables de Entorno
+#### Paso 2.1: Actualizar Variables de Entorno
 
-Crea o actualiza el archivo `web/.env` con la configuración de ambas redes:
+1. **Copia las 3 líneas** de "Variables para web\.env"
+2. **Pega en `web/.env`** reemplazando las direcciones existentes
+
+**💡 Tip:** Si no tienes el archivo `.env`, cópialo desde el template: `cp web/env.local.template web/.env`
+
+#### Paso 2.2: Cambiar entre Redes (Opcional)
+
+Para usar Sepolia testnet en lugar de Anvil local, edita `web/.env`:
 
 ```env
-# Red activa: anvil o sepolia
-VITE_NETWORK=anvil
-
-# Direcciones para Anvil (red local)
-VITE_ROLE_MANAGER_ADDRESS_ANVIL=0x5FbDB2315678afecb367f032d93F642f64180aa3
-VITE_TOKEN_FACTORY_ADDRESS_ANVIL=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-VITE_TRANSFER_MANAGER_ADDRESS_ANVIL=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
-
-# Direcciones para Sepolia (testnet)
-# Actualiza estas después de desplegar en Sepolia
-VITE_ROLE_MANAGER_ADDRESS_SEPOLIA=0x0000000000000000000000000000000000000000
-VITE_TOKEN_FACTORY_ADDRESS_SEPOLIA=0x0000000000000000000000000000000000000000
-VITE_TRANSFER_MANAGER_ADDRESS_SEPOLIA=0x0000000000000000000000000000000000000000
+VITE_NETWORK=sepolia  # Cambiar de 'anvil' a 'sepolia'
 ```
-
-**💡 Tip:** Puedes copiar desde el template: `cp web/env.local.template web/.env`
-
-#### Paso 2.2: Cambiar entre Redes (Anvil Local o Sepolia)
-
-Para cambiar entre Anvil (local) y Sepolia (testnet), simplemente edita `web/.env` y cambia el flag:
-
-```env
-VITE_NETWORK=anvil    # Para desarrollo local
-VITE_NETWORK=sepolia  # Para testnet
-```
-
-**💡 Ventaja:** 
-- Un solo archivo `.env` con todas las configuraciones
-- Solo cambias `VITE_NETWORK=anvil` o `VITE_NETWORK=sepolia`
-- Al arrancar `npm run dev`, el servidor lee el `.env` y usa las direcciones correctas automáticamente
 
 #### Paso 3: Iniciar Frontend
 
@@ -380,13 +370,30 @@ Abre en tu navegador: **http://localhost:5173**
 
 ### Crear tu Primer Producto (Como Productor o Fábrica)
 
+#### Como Productor (Materias Primas):
 1. Ve a **"Productos"** → Click en "Crear Producto"
 2. Completa la información:
-   - Nombre del producto (ej: "Café Premium")
+   - Nombre del producto (ej: "Café Orgánico")
    - Cantidad total (ej: 1000)
-   - Metadatos opcionales (ej: origen, características)
+   - Metadatos opcionales (ej: origen, certificaciones)
 3. Confirma la transacción en MetaMask
-4. ¡Listo! Tu producto aparecerá en "Mis Productos"
+4. ¡Listo! Tu materia prima aparecerá en "Mis Productos"
+
+#### Como Fábrica (Productos Procesados):
+1. Ve a **"Productos"** → Click en "Crear Producto"
+2. Completa la información básica:
+   - Nombre del producto (ej: "Café Premium Tostado")
+   - Cantidad total a producir (ej: 100)
+   - Metadatos opcionales
+3. **Selecciona Materias Primas**:
+   - ✅ Solo aparecerán materias primas (RawMaterial) disponibles
+   - ✅ Especifica cuántas unidades usar de cada una
+   - ✅ El sistema valida que tengas suficiente stock
+4. Confirma la transacción en MetaMask
+5. **Resultado automático**:
+   - ✅ Se crea tu producto procesado
+   - ✅ Se descuentan automáticamente las materias primas usadas
+   - ✅ Se registra la "receta" con cantidades exactas
 
 ### Transferir Productos
 
@@ -631,14 +638,21 @@ Sigue estos pasos para probar todas las funcionalidades con múltiples usuarios:
 
 1. **Fábrica A** (Cuenta 5):
    - Solicita rol "Fábrica" → Admin aprueba
-   - Recibe café y azúcar de Productores A
-   - Crea "Café Endulzado Premium" usando ambas materias primas
-   - **Trazabilidad**: El producto final muestra ambos orígenes
+   - Recibe café (500 unidades) y azúcar (200 unidades) de Productores A
+   - Crea "Café Endulzado Premium" especificando:
+     - Café: 100 unidades
+     - Azúcar: 50 unidades
+   - **Resultado**: Balance automático café=400, azúcar=150
+   - **Trazabilidad**: El producto final muestra ambos orígenes con cantidades exactas
 
 2. **Fábrica B** (Cuenta 6):
    - Solicita rol "Fábrica" → Admin aprueba
-   - Recibe leche, cacao y vainilla
-   - Crea "Chocolate con Leche Artesanal" usando las tres materias primas
+   - Recibe leche (1000 litros), cacao (150 kg) y vainilla (50 unidades)
+   - Crea "Chocolate con Leche Artesanal" especificando:
+     - Leche: 200 litros
+     - Cacao: 75 kg
+     - Vainilla: 25 unidades
+   - **Resultado**: Balances actualizados automáticamente
 
 ### 5. Como Múltiples Minoristas (Cuentas 7, 8)
 
@@ -657,12 +671,19 @@ Sigue estos pasos para probar todas las funcionalidades con múltiples usuarios:
 1. **Consumidor A** (Cuenta 9):
    - Solicita rol "Consumidor" → Admin aprueba
    - Recibe "Café Endulzado Premium"
-   - **Ve trazabilidad completa**: Café (Productor A) + Azúcar (Productor A) → Fábrica A → Minorista A
+   - **Ve trazabilidad completa con cantidades**: 
+     - Café: 100 unidades (Productor A) 
+     - Azúcar: 50 unidades (Productor A) 
+     - → Fábrica A → Minorista A
 
 2. **Consumidor B** (Cuenta 10):
    - Solicita rol "Consumidor" → Admin aprueba
    - Recibe "Chocolate con Leche Artesanal"
-   - **Ve trazabilidad completa**: Leche (Productor B) + Cacao (Productor B) + Vainilla (Productor C) → Fábrica B → Minorista A
+   - **Ve trazabilidad completa con cantidades**: 
+     - Leche: 200 litros (Productor B)
+     - Cacao: 75 kg (Productor B) 
+     - Vainilla: 25 unidades (Productor C) 
+     - → Fábrica B → Minorista A
 
 ### 7. Verificar Trazabilidad Bidireccional
 

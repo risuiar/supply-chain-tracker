@@ -15,6 +15,11 @@ type TokenData = {
   balance: bigint;
 };
 
+type SelectedMaterial = {
+  id: string;
+  amount: number;
+};
+
 export function CreateToken() {
   const { user, tokenFactory, account } = useWeb3();
   const navigate = useNavigate();
@@ -23,9 +28,9 @@ export function CreateToken() {
   const [metadataURI, setMetadataURI] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [availableRawMaterials, setAvailableRawMaterials] = useState<TokenData[]>([]);
-  const [selectedParents, setSelectedParents] = useState<string[]>([]);
+  const [selectedMaterials, setSelectedMaterials] = useState<SelectedMaterial[]>([]);
 
-  // Load available raw materials for Factory
+  // Cargar materias primas disponibles para la Fábrica
   useEffect(() => {
     const loadRawMaterials = async () => {
       if (!tokenFactory || !account || !user || user.role !== 2) return;
@@ -33,10 +38,10 @@ export function CreateToken() {
       try {
         const materials: TokenData[] = [];
 
-        // We need to check all existing tokens to find which ones we have balance for
-        // The contract doesn't have a way to query by balance, so we'll check tokens from events
-        // or iterate through a reasonable range. For now, let's check tokens 1-100
-        // In production, you'd want to query TransferRequested/TokenTransferred events
+        // Necesitamos verificar todos los tokens existentes para encontrar cuáles tenemos balance
+        // El contrato no tiene una forma de consultar por balance, así que verificaremos tokens de eventos
+        // o iteraremos a través de un rango razonable. Por ahora, verificamos tokens 1-100
+        // En producción, querrías consultar eventos TransferRequested/TokenTransferred
 
         for (let i = 1; i <= 100; i++) {
           try {
@@ -45,20 +50,23 @@ export function CreateToken() {
 
             const balance = await tokenFactory.balanceOf(i, account);
 
-            // Only show RawMaterial tokens (assetType = 0) with balance > 0
-            // Convert both to numbers for safe comparison
+            // Solo mostrar tokens RawMaterial (assetType = 0) con balance > 0
+            // Convertir ambos a números para comparación segura
             const balanceNum = typeof balance === 'bigint' ? balance : BigInt(balance);
-            if (Number(token.assetType) === 0 && balanceNum > 0n) {
+            const assetTypeNum = Number(token.assetType);
+
+            // IMPORTANTE: Solo RawMaterial (tipo 0) puede ser usado como tokens padre
+            if (assetTypeNum === 0 && balanceNum > 0n) {
               materials.push({
                 id: BigInt(i),
                 productName: token.productName,
-                assetType: Number(token.assetType),
+                assetType: assetTypeNum,
                 balance: balanceNum,
               });
             }
           } catch {
-            // Token doesn't exist, continue
-            break; // Stop when we hit non-existent tokens
+            // El token no existe, continuar
+            break; // Parar cuando encontremos tokens no existentes
           }
         }
 
@@ -75,7 +83,7 @@ export function CreateToken() {
     return <Navigate to="/" />;
   }
 
-  // Only Producer (1) and Factory (2) can create tokens
+  // Solo Productor (1) y Fábrica (2) pueden crear tokens
   if (user.role !== 1 && user.role !== 2) {
     return <Navigate to="/tokens" />;
   }
@@ -94,28 +102,51 @@ export function CreateToken() {
       return;
     }
 
-    // Factory must select at least one parent token
-    if (user.role === 2 && selectedParents.length === 0) {
+    // La Fábrica debe seleccionar al menos un token padre
+    if (user.role === 2 && selectedMaterials.length === 0) {
       toast.error('Por favor selecciona al menos una materia prima para procesar');
       return;
     }
 
+    // Validar cantidades para materiales seleccionados
+    if (user.role === 2) {
+      for (const material of selectedMaterials) {
+        if (material.amount <= 0) {
+          toast.error('Todas las cantidades deben ser mayores a 0');
+          return;
+        }
+        const availableMaterial = availableRawMaterials.find(
+          (m) => m.id.toString() === material.id
+        );
+        if (availableMaterial && material.amount > Number(availableMaterial.balance)) {
+          toast.error(
+            `No tienes suficiente balance de ${availableMaterial.productName}. Disponible: ${availableMaterial.balance}, Requerido: ${material.amount}`
+          );
+          return;
+        }
+      }
+    }
+
     setIsCreating(true);
     const toastId = toast.loading('Enviando transacción...');
+
     try {
       let tx;
 
       if (user.role === 1) {
-        // Producer creates raw material token
+        // El Productor crea token de materia prima
         tx = await tokenFactory.createRawToken(productName, metadataURI || '', supply);
       } else {
-        // Factory creates processed token from selected parents
-        const parentIds = selectedParents.map((id) => BigInt(id));
-        tx = await tokenFactory.createProcessedToken(
+        // La Fábrica crea token procesado de padres seleccionados con cantidades
+        const parentIds = selectedMaterials.map((material) => BigInt(material.id));
+        const amounts = selectedMaterials.map((material) => BigInt(material.amount));
+
+        tx = await tokenFactory.createProcessedTokenWithAmounts(
           productName,
           metadataURI || '',
           supply,
-          parentIds
+          parentIds,
+          amounts
         );
       }
 
@@ -146,7 +177,7 @@ export function CreateToken() {
         ) {
           errorMessage = 'Transacción cancelada por el usuario';
         } else if (
-          // Detectar rate limiting
+          // Detectar limitación de velocidad
           errorObj.code === -32603 ||
           errorObj.code === -32005 ||
           message.includes('rate limited') ||
@@ -164,7 +195,13 @@ export function CreateToken() {
         } else if (message.includes('MissingParentAssets')) {
           errorMessage = 'Faltan materias primas requeridas para crear este producto procesado.';
         } else if (message.includes('InvalidRoleTransition')) {
-          errorMessage = 'No tienes permiso para crear este tipo de token con tu rol actual.';
+          errorMessage =
+            'Error de transición de rol. Verifica que estés usando solo materias primas (Raw Materials) y no productos procesados.';
+        } else if (message.includes('InsufficientBalance')) {
+          errorMessage = 'No tienes suficiente balance de una o más materias primas seleccionadas.';
+        } else if (message.includes('InvalidAmountArray')) {
+          errorMessage =
+            'Las cantidades especificadas no son válidas. Verifica que todas sean mayores a 0.';
         } else if (message.includes('Unauthorized')) {
           errorMessage = 'No tienes permiso para crear tokens.';
         } else if (message) {
@@ -194,9 +231,9 @@ export function CreateToken() {
                 <Package className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Create Token</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Crear Token</h1>
                 <p className="text-sm text-gray-600">
-                  Create a new token for your role as {user.role === 1 ? 'Producer' : 'Factory'}
+                  Crear un nuevo token para tu rol como {user.role === 1 ? 'Productor' : 'Fábrica'}
                 </p>
               </div>
             </div>
@@ -204,17 +241,17 @@ export function CreateToken() {
           <CardContent>
             <form onSubmit={handleCreate} className="space-y-6">
               <Input
-                label="Token Name *"
-                placeholder="Enter token name (e.g., Premium Coffee Beans)"
+                label="Nombre del Token *"
+                placeholder="Ingresa el nombre del token (ej: Granos de Café Premium)"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
                 required
               />
 
               <Input
-                label="Total Supply *"
+                label="Cantidad Total *"
                 type="number"
-                placeholder="Enter total supply (e.g., 1000)"
+                placeholder="Ingresa la cantidad total (ej: 1000)"
                 value={totalSupply}
                 onChange={(e) => setTotalSupply(e.target.value)}
                 min="1"
@@ -223,67 +260,113 @@ export function CreateToken() {
 
               <div>
                 <Textarea
-                  label="Features (JSON)"
-                  placeholder={`Enter features as JSON, e.g.:
+                  label="Características (JSON)"
+                  placeholder={`Ingresa las características como JSON, ej:
 {
-  "origin": "Colombia",
-  "quality": "Premium",
-  "certification": "Organic",
-  "harvest_date": "2024-03-15"
+  "origen": "Colombia",
+  "calidad": "Premium",
+  "certificacion": "Organico",
+  "fecha_cosecha": "2024-03-15"
 }`}
                   value={metadataURI}
                   onChange={(e) => setMetadataURI(e.target.value)}
                   rows={8}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Optional: Add product characteristics in JSON format
+                  Opcional: Agregar características del producto en formato JSON
                 </p>
               </div>
 
               {user.role === 2 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Raw Materials to Process *
+                    Materias Primas a Procesar *
                   </label>
                   {availableRawMaterials.length === 0 ? (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-                      No raw materials available. You need to receive raw materials from a Producer
-                      first.
+                      No hay materias primas disponibles. Necesitas recibir materias primas de un
+                      Productor primero.
                     </div>
                   ) : (
-                    <div className="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3">
-                      {availableRawMaterials.map((material) => (
-                        <label
-                          key={material.id.toString()}
-                          className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedParents.includes(material.id.toString())}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedParents([...selectedParents, material.id.toString()]);
-                              } else {
-                                setSelectedParents(
-                                  selectedParents.filter((id) => id !== material.id.toString())
-                                );
-                              }
-                            }}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900">{material.productName}</div>
-                            <div className="text-sm text-gray-500">
-                              Token #{material.id.toString()} • Balance:{' '}
-                              {material.balance.toString()} units
+                    <div className="space-y-3 max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-4">
+                      {availableRawMaterials.map((material) => {
+                        const selectedMaterial = selectedMaterials.find(
+                          (sm) => sm.id === material.id.toString()
+                        );
+                        const isSelected = !!selectedMaterial;
+
+                        return (
+                          <div
+                            key={material.id.toString()}
+                            className={`p-4 border rounded-lg transition-colors ${
+                              isSelected
+                                ? 'border-blue-300 bg-blue-50'
+                                : 'border-gray-200 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedMaterials([
+                                      ...selectedMaterials,
+                                      { id: material.id.toString(), amount: 1 },
+                                    ]);
+                                  } else {
+                                    setSelectedMaterials(
+                                      selectedMaterials.filter(
+                                        (sm) => sm.id !== material.id.toString()
+                                      )
+                                    );
+                                  }
+                                }}
+                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 mt-1"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900">
+                                  {material.productName}
+                                </div>
+                                <div className="text-sm text-gray-500 mb-2">
+                                  Token #{material.id.toString()} • Disponible:{' '}
+                                  {material.balance.toString()} unidades
+                                </div>
+                                {isSelected && (
+                                  <div className="flex items-center gap-2">
+                                    <label className="text-sm font-medium text-gray-700">
+                                      Cantidad a usar:
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      max={material.balance.toString()}
+                                      value={selectedMaterial?.amount || 1}
+                                      onChange={(e) => {
+                                        const newAmount = parseInt(e.target.value) || 1;
+                                        setSelectedMaterials(
+                                          selectedMaterials.map((sm) =>
+                                            sm.id === material.id.toString()
+                                              ? { ...sm, amount: newAmount }
+                                              : sm
+                                          )
+                                        );
+                                      }}
+                                      className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                    <span className="text-sm text-gray-500">unidades</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </label>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
-                  <p className="text-sm text-gray-500 mt-1">
-                    Select the raw materials you want to use to create this processed token
+                  <p className="text-sm text-gray-500 mt-2">
+                    Selecciona las materias primas y especifica cuántas unidades quieres consumir de
+                    cada una para crear este producto procesado
                   </p>
                 </div>
               )}
@@ -293,12 +376,12 @@ export function CreateToken() {
                   <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div>
                     <h3 className="font-medium text-blue-900 mb-1">
-                      Creating as {user.role === 1 ? 'Producer' : 'Factory'}
+                      Creando como {user.role === 1 ? 'Productor' : 'Fábrica'}
                     </h3>
                     <p className="text-sm text-blue-800">
                       {user.role === 1
-                        ? 'You can create raw material tokens and transfer them to factories.'
-                        : 'You can transform raw materials into processed goods and transfer to retailers.'}
+                        ? 'Puedes crear tokens de materia prima y transferirlos a fábricas.'
+                        : 'Puedes transformar materias primas en productos procesados y transferirlos a minoristas.'}
                     </p>
                   </div>
                 </div>
@@ -311,11 +394,11 @@ export function CreateToken() {
                   onClick={() => navigate('/dashboard')}
                   className="flex-1"
                 >
-                  Cancel
+                  Cancelar
                 </Button>
                 <Button type="submit" disabled={isCreating} className="flex-1">
                   <Package className="w-4 h-4 mr-2" />
-                  {isCreating ? 'Creating...' : 'Create Token'}
+                  {isCreating ? 'Creando...' : 'Crear Token'}
                 </Button>
               </div>
             </form>

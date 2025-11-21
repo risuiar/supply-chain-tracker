@@ -4,16 +4,17 @@ import { useWeb3 } from '../contexts/Web3Context';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { RoleRequestPanel } from '../components/RoleRequestPanel';
+import { Dashboard } from './Dashboard';
 
 export function Landing() {
   const { isConnected, isAdmin, user, connectWallet } = useWeb3();
 
-  // If admin, go directly to admin panel
+  // Si es admin, mostrar dashboard directamente (sin redirect)
   if (isConnected && isAdmin) {
-    return <Navigate to="/admin" />;
+    return <Dashboard />;
   }
 
-  // Approved user: approved == true and role != 0
+  // Usuario aprobado: approved == true y role != 0
   if (isConnected && user && user.approved && user.role !== 0) {
     return <Navigate to="/dashboard" />;
   }

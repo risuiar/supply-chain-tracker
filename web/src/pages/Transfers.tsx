@@ -182,12 +182,12 @@ export function Transfers() {
                   }`}
                 >
                   {transfer.status === 2
-                    ? 'Approved'
+                    ? 'Aprobado'
                     : transfer.status === 1
-                      ? 'Pending'
+                      ? 'Pendiente'
                       : transfer.status === 3
-                        ? 'Rejected'
-                        : 'Unknown'}
+                        ? 'Rechazado'
+                        : 'Desconocido'}
                 </span>
                 <span className="text-sm text-gray-500">#{transfer.id.toString()}</span>
               </div>
@@ -198,18 +198,18 @@ export function Transfers() {
 
               <div className="space-y-1 text-sm text-gray-600">
                 <p>
-                  <strong>From:</strong> {formatAddress(transfer.from)}
-                  {transfer.from.toLowerCase() === account?.toLowerCase() && ' (You)'}
+                  <strong>De:</strong> {formatAddress(transfer.from)}
+                  {transfer.from.toLowerCase() === account?.toLowerCase() && ' (Tú)'}
                 </p>
                 <p>
-                  <strong>To:</strong> {formatAddress(transfer.to)}
-                  {transfer.to.toLowerCase() === account?.toLowerCase() && ' (You)'}
+                  <strong>Para:</strong> {formatAddress(transfer.to)}
+                  {transfer.to.toLowerCase() === account?.toLowerCase() && ' (Tú)'}
                 </p>
                 <p>
-                  <strong>Amount:</strong> {transfer.amount.toString()} units
+                  <strong>Cantidad:</strong> {transfer.amount.toString()} unidades
                 </p>
                 <p>
-                  <strong>Date:</strong> {date.toLocaleString()}
+                  <strong>Fecha:</strong> {date.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -223,7 +223,7 @@ export function Transfers() {
                   className="text-sm"
                 >
                   <CheckCircle className="w-4 h-4 mr-1" />
-                  Accept
+                  Aceptar
                 </Button>
                 <Button
                   variant="danger"
@@ -232,7 +232,7 @@ export function Transfers() {
                   className="text-sm"
                 >
                   <XCircle className="w-4 h-4 mr-1" />
-                  Reject
+                  Rechazar
                 </Button>
               </div>
             )}
@@ -246,14 +246,16 @@ export function Transfers() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Transfers</h1>
-          <p className="text-gray-600">Manage incoming and outgoing token transfers</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Transferencias</h1>
+          <p className="text-gray-600">
+            Administra las transferencias de tokens entrantes y salientes
+          </p>
         </div>
 
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            <p className="mt-4 text-gray-600">Loading transfers...</p>
+            <p className="mt-4 text-gray-600">Cargando transferencias...</p>
           </div>
         ) : (
           <div className="space-y-8">
@@ -261,7 +263,7 @@ export function Transfers() {
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-yellow-600" />
-                  Pending Incoming ({pendingIncoming.length})
+                  Entrantes Pendientes ({pendingIncoming.length})
                 </h2>
                 <div className="space-y-4">
                   {pendingIncoming.map((transfer) => (
@@ -275,7 +277,7 @@ export function Transfers() {
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <Send className="w-5 h-5 text-blue-600" />
-                  Pending Outgoing ({pendingOutgoing.length})
+                  Salientes Pendientes ({pendingOutgoing.length})
                 </h2>
                 <div className="space-y-4">
                   {pendingOutgoing.map((transfer) => (
@@ -289,7 +291,7 @@ export function Transfers() {
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  Transfer History ({completed.length})
+                  Historial de Transferencias ({completed.length})
                 </h2>
                 <div className="space-y-4">
                   {completed.map((transfer) => (
@@ -303,9 +305,11 @@ export function Transfers() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <Send className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No transfers yet</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Aún no hay transferencias
+                  </h3>
                   <p className="text-gray-600">
-                    Your incoming and outgoing transfers will appear here
+                    Tus transferencias entrantes y salientes aparecerán aquí
                   </p>
                 </CardContent>
               </Card>

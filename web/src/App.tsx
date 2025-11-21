@@ -10,7 +10,6 @@ import { CreateToken } from './pages/CreateToken';
 import { TokenDetails } from './pages/TokenDetails';
 import { TransferToken } from './pages/TransferToken';
 import { Transfers } from './pages/Transfers';
-import { Admin } from './pages/Admin';
 import { Profile } from './pages/Profile';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -23,14 +22,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function AdminOnlyRoute({ children }: { children: React.ReactNode }) {
-  const { isAdmin } = useWeb3();
-  if (!isAdmin) return <Navigate to="/" />;
-  return <>{children}</>;
-}
-
 function AppRoutes() {
-  const { isConnected, isAdmin } = useWeb3();
+  const { isConnected } = useWeb3();
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
@@ -41,15 +34,9 @@ function AppRoutes() {
           <Route
             path="/dashboard"
             element={
-              isAdmin ? (
-                <AdminOnlyRoute>
-                  <Admin />
-                </AdminOnlyRoute>
-              ) : (
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              )
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
             }
           />
           <Route
@@ -90,14 +77,6 @@ function AppRoutes() {
               <ProtectedRoute>
                 <Transfers />
               </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <AdminOnlyRoute>
-                <Admin />
-              </AdminOnlyRoute>
             }
           />
           <Route

@@ -785,9 +785,16 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       refreshUser();
     };
 
-    const handleRoleApproved = (userAddress: string) => {
+    const handleRoleApproved = (userAddress: string, role: number) => {
       if (userAddress.toLowerCase() === account.toLowerCase()) {
         refreshUser();
+
+        // Si se aprobó como admin (rol 5), hacer una actualización adicional
+        if (role === 5) {
+          setTimeout(() => {
+            refreshUser();
+          }, 1500);
+        }
       }
     };
 

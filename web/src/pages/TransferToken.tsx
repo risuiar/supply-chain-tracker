@@ -129,21 +129,21 @@ export function TransferToken() {
   }
 
   const getRoleName = (role: number): string => {
-    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer', 'Admin'];
-    return roles[role] || 'Unknown';
+    const roles = ['Ninguno', 'Productor', 'Fábrica', 'Minorista', 'Consumidor', 'Admin'];
+    return roles[role] || 'Desconocido';
   };
 
   const getTargetRoleName = (): string => {
     const targetRole = getTargetRole(user.role);
-    const pluralNames = ['', 'Producers', 'Factories', 'Retailers', 'Consumers'];
-    return pluralNames[targetRole] || 'Unknown';
+    const pluralNames = ['', 'Productores', 'Fábricas', 'Minoristas', 'Consumidores'];
+    return pluralNames[targetRole] || 'Desconocido';
   };
 
   const getTransferDescription = (): string => {
     const descriptions: Record<number, string> = {
-      1: 'Send raw materials to factories for processing',
-      2: 'Send processed goods to retailers for distribution',
-      3: 'Send products to consumers for final use',
+      1: 'Enviar materias primas a fábricas para procesamiento',
+      2: 'Enviar productos procesados a minoristas para distribución',
+      3: 'Enviar productos a consumidores para uso final',
     };
     return descriptions[user.role] || '';
   };
@@ -253,7 +253,7 @@ export function TransferToken() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <p className="mt-4 text-gray-600">Loading token...</p>
+          <p className="mt-4 text-gray-600">Cargando token...</p>
         </div>
       </div>
     );
@@ -269,7 +269,7 @@ export function TransferToken() {
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Tokens
+          Volver a Tokens
         </button>
 
         <div className="space-y-4">
@@ -296,15 +296,17 @@ export function TransferToken() {
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <h3 className="text-base font-bold text-gray-900 mb-1">Transfer Rules</h3>
+                  <h3 className="text-base font-bold text-gray-900 mb-1">
+                    Reglas de Transferencia
+                  </h3>
                   <p className="text-sm text-gray-700">
                     <User className="w-3 h-3 inline mr-1" />
-                    <strong>Your Role:</strong> {getRoleName(user.role)}
+                    <strong>Tu Rol:</strong> {getRoleName(user.role)}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
-                    You can transfer to:{' '}
+                    Puedes transferir a:{' '}
                     <strong>
-                      {targetRoleName} ({recipients.length} available)
+                      {targetRoleName} ({recipients.length} disponibles)
                     </strong>
                   </p>
                   <p className="text-xs text-gray-500 mt-1">{getTransferDescription()}</p>
@@ -320,10 +322,10 @@ export function TransferToken() {
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="text-sm font-bold text-yellow-900">Pending Transfer</h3>
+                    <h3 className="text-sm font-bold text-yellow-900">Transferencia Pendiente</h3>
                     <p className="text-xs text-yellow-800 mt-1">
-                      This token already has a pending transfer. You must wait for it to be accepted
-                      or rejected before creating a new transfer request.
+                      Este token ya tiene una transferencia pendiente. Debes esperar a que sea
+                      aceptada o rechazada antes de crear una nueva solicitud de transferencia.
                     </p>
                   </div>
                 </div>
@@ -337,9 +339,11 @@ export function TransferToken() {
               <div className="flex items-center gap-2 mb-4">
                 <Send className="w-5 h-5 text-green-600" />
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">Send Transfer Request</h3>
+                  <h3 className="text-base font-bold text-gray-900">
+                    Enviar Solicitud de Transferencia
+                  </h3>
                   <p className="text-xs text-gray-600">
-                    The recipient will need to accept the transfer
+                    El destinatario necesitará aceptar la transferencia
                   </p>
                 </div>
               </div>
@@ -347,7 +351,7 @@ export function TransferToken() {
               <form onSubmit={handleTransfer} className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Recipient ({getRoleName(getTargetRole(user.role))}) *
+                    Destinatario ({getRoleName(getTargetRole(user.role))}) *
                   </label>
                   <select
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -357,7 +361,9 @@ export function TransferToken() {
                     disabled={loadingRecipients}
                   >
                     <option value="">
-                      {loadingRecipients ? 'Loading recipients...' : 'Select a recipient...'}
+                      {loadingRecipients
+                        ? 'Cargando destinatarios...'
+                        : 'Selecciona un destinatario...'}
                     </option>
                     {recipients.map((recipient) => (
                       <option key={recipient.address} value={recipient.address}>
@@ -369,10 +375,10 @@ export function TransferToken() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Amount *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Cantidad *</label>
                   <Input
                     type="number"
-                    placeholder="Enter amount to transfer"
+                    placeholder="Ingresa la cantidad a transferir"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     min="1"
@@ -380,17 +386,17 @@ export function TransferToken() {
                     required
                     className="text-sm"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Maximum: {balance.toString()} tokens</p>
+                  <p className="text-xs text-gray-500 mt-1">Máximo: {balance.toString()} tokens</p>
                 </div>
 
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
                     <div className="text-xs text-yellow-800">
-                      <p className="font-medium">Important</p>
+                      <p className="font-medium">Importante</p>
                       <p className="mt-1">
-                        This will create a transfer request. The recipient must accept the transfer
-                        before the tokens are actually moved.
+                        Esto creará una solicitud de transferencia. El destinatario debe aceptar la
+                        transferencia antes de que los tokens sean realmente movidos.
                       </p>
                     </div>
                   </div>
@@ -403,7 +409,7 @@ export function TransferToken() {
                     onClick={() => navigate('/tokens')}
                     className="flex-1"
                   >
-                    Cancel
+                    Cancelar
                   </Button>
                   <Button
                     type="submit"
@@ -418,10 +424,10 @@ export function TransferToken() {
                   >
                     <Send className="w-4 h-4" />
                     {isTransferring
-                      ? 'Sending...'
+                      ? 'Enviando...'
                       : hasPendingTransfer
-                        ? 'Transfer Pending'
-                        : 'Send Request'}
+                        ? 'Transferencia Pendiente'
+                        : 'Enviar Solicitud'}
                   </Button>
                 </div>
               </form>

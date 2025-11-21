@@ -60,7 +60,7 @@ function TraceabilityTree({
   };
 
   const getAssetTypeName = (assetType: number) => {
-    return assetType === 0 ? 'Raw Material' : 'Processed Good';
+    return assetType === 0 ? 'Materia Prima' : 'Producto Procesado';
   };
 
   const isRawMaterial = Number(node.token.assetType) === 0;
@@ -116,7 +116,7 @@ function TraceabilityTree({
                   <p className="text-xs text-gray-500 mb-2">Token #{node.token.id.toString()}</p>
                   <div className="space-y-1 text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-600">Created by:</span>
+                      <span className="text-gray-600">Creado por:</span>
                       <span className="font-mono text-gray-900">
                         {node.token.creator.slice(0, 6)}...{node.token.creator.slice(-4)}
                       </span>
@@ -137,9 +137,9 @@ function TraceabilityTree({
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-600">Supply:</span>
+                      <span className="text-gray-600">Suministro:</span>
                       <span className="font-semibold text-gray-900">
-                        {node.token.totalSupply.toString()} units
+                        {node.token.totalSupply.toString()} unidades
                       </span>
                     </div>
                   </div>
@@ -150,7 +150,7 @@ function TraceabilityTree({
               {node.transfers.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-gray-200">
                   <p className="text-xs font-medium text-gray-700 mb-2">
-                    Transfers ({node.transfers.length}):
+                    Transferencias ({node.transfers.length}):
                   </p>
                   <div className="space-y-2">
                     {node.transfers.map((transfer) => {
@@ -434,7 +434,7 @@ export function TokenDetails() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <p className="mt-4 text-gray-600">Loading token...</p>
+          <p className="mt-4 text-gray-600">Cargando token...</p>
         </div>
       </div>
     );
@@ -448,8 +448,8 @@ export function TokenDetails() {
             <CardContent className="py-12 text-center">
               <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Token not found</h3>
-              <p className="text-gray-600 mb-6">The token you are looking for does not exist</p>
-              <Button onClick={() => navigate('/tokens')}>Back to Tokens</Button>
+              <p className="text-gray-600 mb-6">El token que buscas no existe</p>
+              <Button onClick={() => navigate('/tokens')}>Volver a Tokens</Button>
             </CardContent>
           </Card>
         </div>
@@ -471,7 +471,7 @@ export function TokenDetails() {
   const date = new Date(Number(token.createdAt) * 1000);
 
   const getAssetTypeName = (assetType: number) => {
-    return assetType === 0 ? 'Raw Material' : 'Processed Good';
+    return assetType === 0 ? 'Materia Prima' : 'Producto Procesado';
   };
 
   const getRoleName = (role: number) => {
@@ -487,7 +487,7 @@ export function TokenDetails() {
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Tokens
+          Volver a Tokens
         </button>
 
         <div className="grid gap-4">
@@ -514,11 +514,11 @@ export function TokenDetails() {
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="text-center">
-                    <p className="text-xs text-gray-600 mb-0.5">Your Balance</p>
+                    <p className="text-xs text-gray-600 mb-0.5">Tu Balance</p>
                     <p className="text-xl font-bold text-gray-900">{balance.toString()}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-gray-600 mb-0.5">Total Supply</p>
+                    <p className="text-xs text-gray-600 mb-0.5">Suministro Total</p>
                     <p className="text-xl font-bold text-gray-900">
                       {token.totalSupply.toString()}
                     </p>
@@ -532,14 +532,14 @@ export function TokenDetails() {
                         className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
-                        View on Etherscan
+                        Ver en Etherscan
                       </a>
                     )}
                     {balance > 0n && user.role !== 4 && (
                       <Link to={`/tokens/${id}/transfer`}>
                         <Button className="whitespace-nowrap">
                           <ArrowRight className="w-4 h-4 mr-2" />
-                          Transfer
+                          Transferir
                         </Button>
                       </Link>
                     )}
@@ -558,7 +558,7 @@ export function TokenDetails() {
                 <div className="flex items-start gap-3">
                   <User className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm text-gray-600">Creator</p>
+                    <p className="text-sm text-gray-600">Creador</p>
                     <p className="font-mono text-sm text-gray-900 break-all">{token.creator}</p>
                     {token.creator.toLowerCase() === account?.toLowerCase() && (
                       <span className="inline-block px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full mt-1">
@@ -584,7 +584,7 @@ export function TokenDetails() {
                 <div className="flex items-start gap-3">
                   <Calendar className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="text-sm text-gray-600">Created</p>
+                    <p className="text-sm text-gray-600">Creado</p>
                     <p className="text-sm text-gray-900">{date.toLocaleString()}</p>
                   </div>
                 </div>
@@ -635,7 +635,7 @@ export function TokenDetails() {
                 <div className="flex items-center gap-2">
                   <Package className="w-5 h-5 text-green-600" />
                   <h2 className="text-base font-semibold text-gray-900">
-                    Complete Supply Chain Traceability (Origin)
+                    Trazabilidad Completa de la Cadena de Suministro (Origen)
                   </h2>
                 </div>
                 <p className="text-xs text-gray-600 mt-1">
@@ -655,7 +655,7 @@ export function TokenDetails() {
                 <div className="flex items-center gap-2">
                   <Sprout className="w-5 h-5 text-green-600" />
                   <h2 className="text-base font-semibold text-gray-900">
-                    Products Created from This Material
+                    Productos Creados a partir de esta Materia Prima
                   </h2>
                 </div>
                 <p className="text-xs text-gray-600 mt-1">
@@ -692,7 +692,9 @@ export function TokenDetails() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <ArrowRightLeft className="w-5 h-5 text-blue-600" />
-                <h2 className="text-base font-semibold text-gray-900">Transfer History</h2>
+                <h2 className="text-base font-semibold text-gray-900">
+                  Historial de Transferencias
+                </h2>
                 {transferHistory.length > 0 && (
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
                     {transferHistory.length} transfer{transferHistory.length !== 1 ? 's' : ''}
@@ -820,7 +822,7 @@ export function TokenDetails() {
                   className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  TransferManager contract
+                  Contrato TransferManager
                 </a>
               </CardContent>
             </Card>
