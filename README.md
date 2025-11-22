@@ -25,7 +25,7 @@ Permite que diferentes actores de una cadena de suministro (productores, fábric
 
 - **Solicitud de Roles**: Cualquier usuario puede solicitar un rol en el sistema
 - **Múltiples Usuarios por Rol**: Soporte para múltiples productores, fábricas, minoristas y consumidores
-- **Admin Dinámico**: El primer usuario en solicitar Admin se convierte en administrador
+- **Admin Dinámico**: El primer usuario en solicitar el rol "Administrador" se convierte en administrador (el rol desaparece para otros)
 - **Gestión Independiente**: Los usuarios pueden cancelar sus propias solicitudes pendientes
 - **Validaciones Inteligentes**: 
   - No puedes solicitar otro rol si ya tienes uno aprobado
@@ -353,7 +353,8 @@ Abre en tu navegador: **http://localhost:5173**
 
 2. **Usar Cualquier Cuenta**:
    - Puedes usar cualquier cuenta de MetaMask
-   - El **primer usuario** que solicite el rol "Administrador" se convertirá automáticamente en Admin
+   - El **primer usuario** debe solicitar explícitamente el rol "Administrador" para convertirse en administrador del sistema
+   - Una vez asignado, este rol desaparece de la lista para los demás usuarios
    - No necesitas importar ninguna cuenta específica
 
 ## 🎮 Cómo Usar la Aplicación
@@ -482,7 +483,7 @@ Para pruebas locales, Anvil proporciona cuentas pre-financiadas. Usa estas para 
 | **Cuenta 4** | `0x90F7...b906` | `0x7c85...a6` |
 | **Cuenta 5** | `0x15d3...6A65` | `0x47e1...a` |
 
-> **💡 Nota sobre Admin**: Cualquier cuenta puede convertirse en Admin. El **primer usuario** que solicite el rol "Administrador" se convertirá automáticamente en administrador del sistema. No hay una cuenta predeterminada para Admin.
+> **💡 Nota sobre Admin**: Cualquier cuenta puede convertirse en Admin. El **primer usuario** debe registrarse y seleccionar el rol "Administrador" para convertirse en administrador del sistema. Una vez que un usuario obtiene este rol, la opción desaparece para los demás. No hay una cuenta predeterminada para Admin.
 
 ### Cómo Importar Cuentas en MetaMask
 
@@ -558,6 +559,7 @@ Tienes dos opciones para cambiar de cuenta:
 Para desarrolladores que quieran entender el código en detalle:
 
 - **[README_SPECS.md](./README_SPECS.md)**: Instrucciones y requerimientos del curso para la creación de este proyecto.
+- **[IA.md](./IA.md)**: Documentación sobre el uso de herramientas de IA, experiencia y desafíos durante el desarrollo.
 
 ## 🎯 Flujo de Prueba Completo Multi-Usuario
 
