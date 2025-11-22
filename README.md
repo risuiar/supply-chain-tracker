@@ -539,10 +539,12 @@ Tienes dos opciones para cambiar de cuenta:
 
 **Solución:** Reset MetaMask (Configuración → Avanzado → Clear activity tab data)
 
-## 🛠️ Tecnologías Utilizadas
+## 🛠️ Tecnologías Utilizadas (Stack)
 
-- **Blockchain**: Solidity 0.8.20 con Foundry
+- **Blockchain (Backend)**: Solidity 0.8.20 con Foundry (incluye tests de contratos)
 - **Frontend**: React 18 + TypeScript + Vite
+  - **Testing**: Vitest
+  - **Calidad de Código**: Configurado con ESLint y Prettier (pre-commit hooks)
 - **Estilos**: Tailwind CSS
 - **Web3**: ethers.js v6
 - **Notificaciones**: react-hot-toast
