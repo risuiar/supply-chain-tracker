@@ -312,10 +312,12 @@ deploy-windows.bat
   Variables para web\.env
 ========================================
 
-VITE_ROLE_MANAGER_ADDRESS_ANVIL=0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
-VITE_TOKEN_FACTORY_ADDRESS_ANVIL=0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
-VITE_TRANSFER_MANAGER_ADDRESS_ANVIL=0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
+VITE_ROLE_MANAGER_ADDRESS_ANVIL=0xCf7E...0Fc9
+VITE_TOKEN_FACTORY_ADDRESS_ANVIL=0xDc64...f6C9
+VITE_TRANSFER_MANAGER_ADDRESS_ANVIL=0x5FC8...5707
 ```
+
+> **⚠️ Importante**: Las direcciones mostradas arriba son ejemplos. Cada vez que despliegues los contratos, obtendrás **direcciones diferentes**. Siempre copia las direcciones reales que te muestre el script de deployment.
 
 #### Paso 2.1: Actualizar Variables de Entorno
 
@@ -349,9 +351,10 @@ Abre en tu navegador: **http://localhost:5173**
    - Chain ID: `31337`
    - Moneda: `ETH`
 
-2. **Importar Cuenta para ser Admin**:
-   - Private Key: `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80`
-   - Dirección: `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
+2. **Usar Cualquier Cuenta**:
+   - Puedes usar cualquier cuenta de MetaMask
+   - El **primer usuario** que solicite el rol "Administrador" se convertirá automáticamente en Admin
+   - No necesitas importar ninguna cuenta específica
 
 ## 🎮 Cómo Usar la Aplicación
 
@@ -471,13 +474,15 @@ Abre en tu navegador: **http://localhost:5173**
 
 Para pruebas locales, Anvil proporciona cuentas pre-financiadas. Usa estas para probar diferentes roles:
 
-| Rol Sugerido | Dirección | Private Key |
+| Uso Sugerido | Dirección | Private Key |
 |--------------|-----------|-------------|
-| **Admin** | `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` | `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80` |
-| **Productor** | `0x70997970C51812dc3A010C7d01b50e0d17dc79C8` | `0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d` |
-| **Fábrica** | `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC` | `0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a` |
-| **Minorista** | `0x90F79bf6EB2c4f870365E785982E1f101E93b906` | `0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6` |
-| **Consumidor** | `0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65` | `0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a` |
+| **Cuenta 1** | `0xf39F...2266` | `0xac09...f80` |
+| **Cuenta 2** | `0x7099...79C8` | `0x59c6...90d` |
+| **Cuenta 3** | `0x3C44...93BC` | `0x5de4...65a` |
+| **Cuenta 4** | `0x90F7...b906` | `0x7c85...a6` |
+| **Cuenta 5** | `0x15d3...6A65` | `0x47e1...a` |
+
+> **💡 Nota sobre Admin**: Cualquier cuenta puede convertirse en Admin. El **primer usuario** que solicite el rol "Administrador" se convertirá automáticamente en administrador del sistema. No hay una cuenta predeterminada para Admin.
 
 ### Cómo Importar Cuentas en MetaMask
 
@@ -544,81 +549,7 @@ Tienes dos opciones para cambiar de cuenta:
 
 ## 🌐 Deployment en Testnets (Sepolia, etc.)
 
-> 💻 **Live Testnet Frontend:** La versión conectada a Sepolia está desplegada en un VPS propio y disponible en https://supply-chain-tracker-risuiar.travix.app. Usa la red Sepolia en MetaMask para interactuar con los contratos verificados.
-
-Para desplegar en una red de prueba real en lugar de local:
-
-### 1. Configurar Variables de Entorno
-
-Crea un archivo `sc/.env` con tu configuración:
-
-```env
-SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/TU_ALCHEMY_KEY
-PRIVATE_KEY=tu_private_key_sin_0x
-ETHERSCAN_API_KEY=tu_api_key_opcional
-```
-
-**⚠️ Importante:**
-- `PRIVATE_KEY` debe ser sin el prefijo `0x`
-- Asegúrate de tener SepoliaETH en tu cuenta (usa un faucet: https://sepoliafaucet.com)
-- `ETHERSCAN_API_KEY` es opcional, pero recomendado para verificar contratos
-
-### 2. Desplegar en Sepolia
-
-**En Windows:**
-```bash
-deploy-sepolia-windows.bat
-```
-
-**En Mac/Linux:**
-```bash
-chmod +x deploy-sepolia-mac.sh
-./deploy-sepolia-mac.sh
-```
-
-Los scripts automáticamente:
-- ✅ Verifican que existe `sc/.env`
-- ✅ Cargan las variables de entorno
-- ✅ Validan que las variables estén configuradas
-- ✅ Despliegan los contratos en Sepolia
-- ✅ Verifican los contratos en Etherscan (si tienes API key)
-
-**📝 Copia las 3 direcciones que aparecen:**
-```
-RoleManager:      0x...
-TokenFactory:     0x...
-TransferManager:  0x...
-```
-
-### 3. Actualizar Frontend
-
-Actualiza `web/.env` con las **nuevas direcciones de Sepolia**:
-
-```env
-# Cambia la red a sepolia
-VITE_NETWORK=sepolia
-
-# Actualiza las direcciones SEPOLIA (mantén las ANVIL también)
-VITE_ROLE_MANAGER_ADDRESS_SEPOLIA=0x... # Dirección de Sepolia
-VITE_TOKEN_FACTORY_ADDRESS_SEPOLIA=0x... # Dirección de Sepolia
-VITE_TRANSFER_MANAGER_ADDRESS_SEPOLIA=0x... # Dirección de Sepolia
-```
-
-### 4. Configurar MetaMask
-
-1. **Agregar Red Sepolia**:
-   - Nombre: `Sepolia`
-   - RPC URL: `https://eth-sepolia.g.alchemy.com/v2/TU_ALCHEMY_KEY` (o usa una pública)
-   - Chain ID: `11155111`
-   - Moneda: `ETH`
-
-2. **Importar tu cuenta** (la que usaste para desplegar):
-   - Esta será tu cuenta de administrador
-   - Asegúrate de tener SepoliaETH (usa un faucet si necesitas)
-
-3. **Conectar a la aplicación**:
-   - Cambia a la red Sepolia en MetaMask
-   - Conecta tu wallet en la aplicación
+> **⚠️ Nota**: Para ver el intento de despliegue en Sepolia (no funcional), consulte [README_testnet.md](./README_testnet.md).
 
 ## 📚 Documentación Técnica
 
@@ -730,8 +661,6 @@ Sigue estos pasos para probar todas las funcionalidades con múltiples usuarios:
 4. **Continuidad**: El sistema sigue funcionando sin interrupciones
 
 ---
-
-**¡Has completado el flujo completo multi-usuario de la cadena de suministro!** 🎉
 
 ## 🤝 Contribuir
 
