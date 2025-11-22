@@ -555,7 +555,7 @@ Tienes dos opciones para cambiar de cuenta:
 
 Para desarrolladores que quieran entender el código en detalle:
 
-- **[README_SPECS.md](./README_SPECS.md)**: Especificaciones técnicas completas de los contratos, arquitectura y decisiones de diseño
+- **[README_SPECS.md](./README_SPECS.md)**: Instrucciones y requerimientos del curso para la creación de este proyecto.
 
 ## 🎯 Flujo de Prueba Completo Multi-Usuario
 
