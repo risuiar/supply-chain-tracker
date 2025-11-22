@@ -23,15 +23,15 @@ Este documento analiza el uso de IA (Claude Sonnet 3.5) en el desarrollo complet
 
 ## ⏱️ Distribución de Tiempo
 
-### 📊 **Tiempo Total: ~56 horas**
+### 📊 **Tiempo Total: ~80 horas**
 
 | Fase | Tiempo | Porcentaje | Eficiencia IA |
 |------|--------|------------|---------------|
-| **Smart Contracts** | ~15 horas | 26.8% | 🟢 Alta (90%) |
-| **Frontend** | ~20 horas | 35.7% | 🟢 Alta (85%) |
-| **Testing & Debugging** | ~3 horas | 5.4% | 🟡 Media (70%) |
-| **Documentación** | ~2 horas | 3.6% | 🟢 Muy Alta (95%) |
-| **⚠️ Deployment Cloud (FALLIDO)** | ~16 horas | 28.6% | 🔴 Muy Baja (5%) |
+| **Smart Contracts** | ~20 horas | 25.0% | 🟢 Alta (90%) |
+| **Frontend** | ~25 horas | 31.2% | 🟢 Alta (85%) |
+| **Testing & Debugging** | ~17 horas | 21.2% | 🟢 Alta (85%) |
+| **Documentación** | ~2 horas | 2.5% | 🟢 Muy Alta (95%) |
+| **⚠️ Deployment Cloud (FALLIDO)** | ~16 horas | 20.0% | 🔴 Muy Baja (5%) |
 
 ### 🚨 **Análisis del Tiempo Perdido**
 
@@ -39,7 +39,7 @@ Este documento analiza el uso de IA (Claude Sonnet 3.5) en el desarrollo complet
 - **Día 1 (8 horas)**: Configuración inicial de servidor, nginx, SSL
 - **Día 2 (8 horas)**: Debugging de conectividad RPC, variables de entorno, problemas de red
 - **Resultado**: 0% de progreso útil
-- **Impacto**: 28.6% del tiempo total del proyecto perdido
+- **Impacto**: 20.0% del tiempo total del proyecto perdido
 - **Decisión Final**: Abandonar deployment cloud y enfocarme en desarrollo local robusto
 
 ## 📈 Eficiencia por Fase
@@ -52,6 +52,8 @@ Este documento analiza el uso de IA (Claude Sonnet 3.5) en el desarrollo complet
 - ✅ Estructura de contratos
 - ✅ Testing con Foundry
 - ✅ Debugging de errores de Solidity
+- ✅ Optimización de Gas
+- ✅ Tests exhaustivos con Foundry
 
 #### **Frontend (85% eficiencia)**
 - ✅ Componentes React
@@ -59,6 +61,8 @@ Este documento analiza el uso de IA (Claude Sonnet 3.5) en el desarrollo complet
 - ✅ Integración Web3
 - ✅ Manejo de errores
 - ✅ Interfaces de usuario
+- ✅ Tests de integración con Vitest
+- ✅ Optimización de rendimiento y re-renders
 
 #### **Documentación (95% eficiencia)**
 - ✅ README completo
@@ -69,8 +73,10 @@ Este documento analiza el uso de IA (Claude Sonnet 3.5) en el desarrollo complet
 
 ### ⚠️ **Áreas con Limitaciones**
 
-#### **Debugging Local (70% eficiencia)**
-- 🟡 Errores de configuración
+#### **Debugging Local (85% eficiencia)**
+- ✅ Resolución rápida de errores comunes
+- ✅ Generación de tests para reproducir bugs
+- 🟡 Errores de configuración muy específicos
 - 🟡 Problemas de integración
 - 🟡 Configuraciones específicas de entorno
 
@@ -102,21 +108,6 @@ Intenté durante **2 días completos** desplegar la aplicación conectada a Sepo
 - **Sugerencias genéricas** que no aplicaban al caso específico
 - **Falta de contexto** sobre el entorno específico del servidor
 - **Imposibilidad de iterar** rápidamente en configuraciones de servidor
-- **No entiende errores específicos** de conectividad de red
-
-### **Resultado**
-- **Tiempo perdido**: 16 horas de trabajo intensivo
-- **Progreso**: 0% - Ninguna configuración funcionó
-- **Decisión**: Desistir completamente del deployment cloud
-- **Alternativa**: Enfocarme en perfeccionar la experiencia local con Anvil
-
-## 🔍 Errores Más Comunes
-
-### **Smart Contracts**
-1. **Structs con mappings**: Problemas de storage vs memory
-2. **Validaciones de roles**: Lógica compleja de permisos
-3. **Tipos en eventos**: Conversiones entre tipos
-4. **Testing**: Diferencias entre `prank` y `startPrank`
 5. **Gas optimization**: Optimizaciones específicas
 
 ### **Frontend**
@@ -149,6 +140,7 @@ Intenté durante **2 días completos** desplegar la aplicación conectada a Sepo
 4. **Validación**: Siempre probar y validar las sugerencias de la IA
 5. **Documentación**: Mantener registro de decisiones y cambios
 6. **⚠️ Reconocer limitaciones**: Saber cuándo la IA no puede ayudar
+7. **🔄 Control de Versiones**: Aprendí a avanzar por pasos. Cada vez que lograba algo, hacía un commit. De esta forma, si la IA sobrescribía algo que no estaba bien, siempre podía hacer un rollback con un `git reset --hard` para volver a un estado funcional.
 
 ### 🚀 **Impacto en Productividad**
 
@@ -223,7 +215,7 @@ Intenté durante **2 días completos** desplegar la aplicación conectada a Sepo
 
 ### 📊 **Balance Final**
 
-**Tiempo Útil con IA**: 40 horas (71.4%)
-**Tiempo Perdido por Limitaciones**: 16 horas (28.6%)
+**Tiempo Útil con IA**: 64 horas (80%)
+**Tiempo Perdido por Limitaciones**: 16 horas (20%)
 
 **Conclusión**: La IA es extremadamente valiosa para desarrollo de código, pero puede ser contraproducente para configuraciones de infraestructura. Es crucial reconocer sus limitaciones y tener planes alternativos.
