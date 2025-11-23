@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Web3Provider, useWeb3 } from './contexts/Web3Context';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -97,33 +98,35 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <Web3Provider>
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              duration: 3000,
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#fff',
-              },
-            },
-            error: {
+      <ErrorBoundary>
+        <Web3Provider>
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
               duration: 4000,
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
+              style: {
+                background: '#363636',
+                color: '#fff',
               },
-            },
-          }}
-        />
-        <AppRoutes />
-      </Web3Provider>
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                duration: 4000,
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+          <AppRoutes />
+        </Web3Provider>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

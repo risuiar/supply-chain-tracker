@@ -55,8 +55,8 @@ function TraceabilityTree({
   };
 
   const getRoleName = (role: number) => {
-    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer', 'Admin'];
-    return roles[role] || 'Unknown';
+    const roles = ['Ninguno', 'Productor', 'Fábrica', 'Minorista', 'Consumidor', 'Admin'];
+    return roles[role] || 'Desconocido';
   };
 
   const getAssetTypeName = (assetType: number) => {
@@ -122,12 +122,12 @@ function TraceabilityTree({
                       </span>
                       {node.token.creator.toLowerCase() === account?.toLowerCase() && (
                         <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">
-                          You
+                          Tú
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-600">Current holder:</span>
+                      <span className="text-gray-600">Poseedor actual:</span>
                       <span className="font-mono text-gray-900">
                         {node.token.currentHolder.slice(0, 6)}...
                         {node.token.currentHolder.slice(-4)}
@@ -168,7 +168,7 @@ function TraceabilityTree({
                             <span className="text-gray-500">{date.toLocaleDateString()}</span>
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
-                            Amount: {transfer.amount.toString()} units
+                            Cantidad: {transfer.amount.toString()} unidades
                           </div>
                         </div>
                       );
@@ -194,10 +194,10 @@ function TraceabilityTree({
 
               // Si es materia prima y tiene hijos procesados, es trazabilidad hacia adelante
               if (currentIsRaw && hasProcessedChildren) {
-                return `Used to create ${node.children.length} product${node.children.length !== 1 ? 's' : ''}:`;
+                return `Usado para crear ${node.children.length} producto${node.children.length !== 1 ? 's' : ''}:`;
               }
               // Si es producto procesado y tiene hijos materias primas, es trazabilidad hacia atrás
-              return `Made from ${node.children.length} material${node.children.length !== 1 ? 's' : ''}:`;
+              return `Hecho de ${node.children.length} material${node.children.length !== 1 ? 'es' : ''}:`;
             })()}
           </p>
           {node.children.map((child) => (
@@ -224,6 +224,7 @@ export function TokenDetails() {
   const [transferHistory, setTransferHistory] = useState<TransferData[]>([]);
   const [fullTraceability, setFullTraceability] = useState<TraceabilityNode | null>(null);
   const [forwardTraceability, setForwardTraceability] = useState<TraceabilityNode | null>(null);
+  const [completeSupplyChain, setCompleteSupplyChain] = useState<TransferData[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Función optimizada para encontrar tokens hijos usando eventos
@@ -323,6 +324,22 @@ export function TokenDetails() {
     }
   };
 
+  // Función recursiva para recopilar todas las transferencias de la cadena completa
+  const collectCompleteSupplyChain = async (
+    node: TraceabilityNode,
+    allTransfers: TransferData[] = []
+  ): Promise<TransferData[]> => {
+    // Agregar transferencias del nodo actual
+    allTransfers.push(...node.transfers);
+
+    // Recursivamente procesar hijos (materias primas)
+    for (const child of node.children) {
+      await collectCompleteSupplyChain(child, allTransfers);
+    }
+
+    return allTransfers;
+  };
+
   // Función recursiva para obtener trazabilidad hacia adelante (hijos)
   const buildForwardTraceabilityTree = async (
     tokenId: bigint,
@@ -410,6 +427,20 @@ export function TokenDetails() {
         const traceabilityTree = await buildTraceabilityTree(tokenId);
         setFullTraceability(traceabilityTree);
 
+        // Construir cadena completa de suministro desde productor hasta consumidor
+        if (traceabilityTree) {
+          const completeChain = await collectCompleteSupplyChain(traceabilityTree);
+          // Agregar también las transferencias del token actual
+          completeChain.push(...transferHistory);
+          // Ordenar por fecha (más antiguas primero)
+          completeChain.sort((a, b) => Number(a.requestedAt) - Number(b.requestedAt));
+          // Eliminar duplicados basados en transfer ID
+          const uniqueTransfers = Array.from(
+            new Map(completeChain.map((t) => [t.id.toString(), t])).values()
+          );
+          setCompleteSupplyChain(uniqueTransfers);
+        }
+
         // Build forward traceability tree (hacia adelante - hijos) solo para materias primas
         if (Number(tokenData.assetType) === 0) {
           const forwardTree = await buildForwardTraceabilityTree(tokenId);
@@ -454,7 +485,7 @@ export function TokenDetails() {
           <Card>
             <CardContent className="py-12 text-center">
               <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Token not found</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Token no encontrado</h3>
               <p className="text-gray-600 mb-6">El token que buscas no existe</p>
               <Button onClick={() => navigate('/tokens')}>Volver a Tokens</Button>
             </CardContent>
@@ -482,8 +513,8 @@ export function TokenDetails() {
   };
 
   const getRoleName = (role: number) => {
-    const roles = ['None', 'Producer', 'Factory', 'Retailer', 'Consumer', 'Admin'];
-    return roles[role] || 'Unknown';
+    const roles = ['Ninguno', 'Productor', 'Fábrica', 'Minorista', 'Consumidor', 'Admin'];
+    return roles[role] || 'Desconocido';
   };
 
   return (
@@ -558,7 +589,7 @@ export function TokenDetails() {
 
           <Card>
             <CardHeader>
-              <h2 className="text-base font-semibold text-gray-900">Token Information</h2>
+              <h2 className="text-base font-semibold text-gray-900">Información del Token</h2>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -569,7 +600,7 @@ export function TokenDetails() {
                     <p className="font-mono text-sm text-gray-900 break-all">{token.creator}</p>
                     {token.creator.toLowerCase() === account?.toLowerCase() && (
                       <span className="inline-block px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full mt-1">
-                        You created this token
+                        Tú creaste este token
                       </span>
                     )}
                   </div>
@@ -578,12 +609,12 @@ export function TokenDetails() {
                 <div className="flex items-start gap-3">
                   <User className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="text-sm text-gray-600">Current Holder</p>
+                    <p className="text-sm text-gray-600">Poseedor Actual</p>
                     <p className="font-mono text-sm text-gray-900 break-all">
                       {token.currentHolder}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Role: {getRoleName(Number(token.currentRole))}
+                      Rol: {getRoleName(Number(token.currentRole))}
                     </p>
                   </div>
                 </div>
@@ -598,16 +629,22 @@ export function TokenDetails() {
 
                 {parentTokens.length > 0 && (
                   <div className="pt-4 border-t border-gray-200">
-                    <p className="text-sm text-gray-600 mb-2">Made From (Parent Materials)</p>
-                    <div className="space-y-2">
-                      {parentTokens.map((parent) => (
-                        <Link key={parent.id.toString()} to={`/tokens/${parent.id.toString()}`}>
-                          <div className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                            <p className="font-medium text-gray-900">{parent.productName}</p>
-                            <p className="text-xs text-gray-500">Token #{parent.id.toString()}</p>
-                          </div>
-                        </Link>
-                      ))}
+                    <p className="text-sm text-gray-600 mb-2">
+                      Hecho de {parentTokens.length} material{parentTokens.length !== 1 ? 'es' : ''}
+                    </p>
+                    <div className="max-h-64 overflow-y-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {parentTokens.map((parent) => (
+                          <Link key={parent.id.toString()} to={`/tokens/${parent.id.toString()}`}>
+                            <div className="p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {parent.productName}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-0.5">#{parent.id.toString()}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -618,7 +655,7 @@ export function TokenDetails() {
           {Object.keys(metadata).length > 0 && (
             <Card>
               <CardHeader>
-                <h2 className="text-base font-semibold text-gray-900">Features & Attributes</h2>
+                <h2 className="text-base font-semibold text-gray-900">Características y Atributos</h2>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-3">
@@ -635,6 +672,74 @@ export function TokenDetails() {
             </Card>
           )}
 
+          {/* Complete Supply Chain - Cadena Lineal Completa */}
+          {completeSupplyChain.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <ArrowRightLeft className="w-5 h-5 text-green-600" />
+                  <h2 className="text-base font-semibold text-gray-900">
+                    Cadena Completa de Suministro
+                  </h2>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">
+                  Cadena completa desde el productor original hasta el consumidor final
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {completeSupplyChain.map((transfer, index) => {
+                    const date = new Date(Number(transfer.requestedAt) * 1000);
+                    const getRoleNameLocal = (role: number) => {
+                      const roles = ['Ninguno', 'Productor', 'Fábrica', 'Minorista', 'Consumidor', 'Admin'];
+                      return roles[role] || 'Desconocido';
+                    };
+
+                    return (
+                      <div key={transfer.id.toString()} className="relative">
+                        {/* Información de transferencia */}
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded">
+                                {index + 1}
+                              </span>
+                              <span className="font-semibold text-gray-900">
+                                {getRoleNameLocal(Number(transfer.fromRole))}
+                              </span>
+                              <ArrowRight className="w-4 h-4 text-gray-400" />
+                              <span className="font-semibold text-gray-900">
+                                {getRoleNameLocal(Number(transfer.toRole))}
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {date.toLocaleDateString('es-ES', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            Cantidad: <span className="font-semibold">{transfer.amount.toString()}</span> unidades
+                          </div>
+                        </div>
+                        {/* Flecha hacia abajo para la siguiente transferencia */}
+                        {index < completeSupplyChain.length - 1 && (
+                          <div className="flex justify-center mt-2 mb-1">
+                            <ArrowRight className="w-5 h-5 text-gray-400 rotate-90" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Full Traceability Chain (Backward - Parents) */}
           {fullTraceability && (
             <Card>
@@ -646,7 +751,7 @@ export function TokenDetails() {
                   </h2>
                 </div>
                 <p className="text-xs text-gray-600 mt-1">
-                  Full traceability from producer to consumer, including all parent materials
+                  Trazabilidad completa desde el productor hasta el consumidor, incluyendo todas las materias primas
                 </p>
               </CardHeader>
               <CardContent>
@@ -668,14 +773,14 @@ export function TokenDetails() {
                 <p className="text-xs text-gray-600 mt-1">
                   {user.role === 1 ? (
                     <>
-                      Forward traceability: see all products created with your raw material and
-                      their current status.
+                      Trazabilidad hacia adelante: ve todos los productos creados con tu materia prima y
+                      su estado actual.
                       <span className="block mt-1 text-gray-500 italic">
-                        Note: Full transfer details are visible to maintain blockchain transparency.
+                        Nota: Los detalles completos de transferencias son visibles para mantener la transparencia de blockchain.
                       </span>
                     </>
                   ) : (
-                    'Forward traceability: see all products created with this raw material and their journey to consumers'
+                    'Trazabilidad hacia adelante: ve todos los productos creados con esta materia prima y su recorrido hasta los consumidores'
                   )}
                 </p>
               </CardHeader>
@@ -683,9 +788,9 @@ export function TokenDetails() {
                 {forwardTraceability.children.length === 0 ? (
                   <div className="text-center py-6">
                     <Factory className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-1">No products created yet</p>
+                    <p className="text-sm text-gray-600 mb-1">Aún no se han creado productos</p>
                     <p className="text-xs text-gray-500">
-                      This raw material has not been used to create any processed products yet.
+                      Esta materia prima no ha sido utilizada para crear ningún producto procesado todavía.
                     </p>
                   </div>
                 ) : (
@@ -702,115 +807,131 @@ export function TokenDetails() {
                 <h2 className="text-base font-semibold text-gray-900">
                   Historial de Transferencias
                 </h2>
-                {transferHistory.length > 0 && (
+                {(completeSupplyChain.length > 0 || transferHistory.length > 0) && (
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                    {transferHistory.length} transfer{transferHistory.length !== 1 ? 's' : ''}
+                    {completeSupplyChain.length > 0
+                      ? completeSupplyChain.length
+                      : transferHistory.length}{' '}
+                    transfer{(completeSupplyChain.length > 0
+                      ? completeSupplyChain.length
+                      : transferHistory.length) !== 1
+                      ? 's'
+                      : ''}
                   </span>
                 )}
               </div>
               <p className="text-xs text-gray-600 mt-1">
-                Complete traceability of this token through the supply chain
+                Trazabilidad completa desde el productor hasta el consumidor a través de toda la cadena de suministro
               </p>
             </CardHeader>
             <CardContent>
-              {transferHistory.length === 0 ? (
-                <div className="text-center py-6">
-                  <ArrowRightLeft className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-1">No transfers yet</p>
-                  <p className="text-xs text-gray-500">
-                    This token has not been transferred yet. Once approved transfers occur, they
-                    will appear here.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {transferHistory.map((transfer, index) => {
-                    const date = new Date(Number(transfer.requestedAt) * 1000);
-                    const isFirstTransfer = index === 0;
-                    const isLastTransfer = index === transferHistory.length - 1;
+              {(() => {
+                // Usar completeSupplyChain si está disponible (incluye productor), sino usar transferHistory
+                const displayTransfers =
+                  completeSupplyChain.length > 0 ? completeSupplyChain : transferHistory;
 
-                    return (
-                      <div key={transfer.id.toString()} className="relative">
-                        {!isLastTransfer && (
-                          <div className="absolute left-5 top-12 bottom-0 w-0.5 bg-gray-200" />
-                        )}
-                        <div className="flex gap-4">
-                          <div className="flex flex-col items-center">
-                            <div
-                              className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                                isFirstTransfer
-                                  ? 'bg-green-100 text-green-600'
-                                  : isLastTransfer
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'bg-gray-100 text-gray-600'
-                              }`}
-                            >
-                              <ArrowRightLeft className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="flex-1 pb-6">
-                            <div className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
-                              <div className="flex items-start justify-between mb-2">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {getRoleName(Number(transfer.fromRole))} →{' '}
-                                    {getRoleName(Number(transfer.toRole))}
-                                  </p>
-                                  <p className="text-xs text-gray-500 mt-0.5">
-                                    {date.toLocaleString()}
-                                  </p>
-                                </div>
-                                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
-                                  Completed
-                                </span>
+                if (displayTransfers.length === 0) {
+                  return (
+                    <div className="text-center py-6">
+                      <ArrowRightLeft className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600 mb-1">No hay transferencias aún</p>
+                      <p className="text-xs text-gray-500">
+                        Este token no ha sido transferido todavía. Una vez que ocurran transferencias aprobadas, aparecerán aquí.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {displayTransfers.map((transfer, index) => {
+                      const date = new Date(Number(transfer.requestedAt) * 1000);
+                      const isFirstTransfer = index === 0;
+                      const isLastTransfer = index === displayTransfers.length - 1;
+
+                      return (
+                        <div key={transfer.id.toString()} className="relative">
+                          {!isLastTransfer && (
+                            <div className="absolute left-5 top-12 bottom-0 w-0.5 bg-gray-200" />
+                          )}
+                          <div className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                              <div
+                                className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                                  isFirstTransfer
+                                    ? 'bg-green-100 text-green-600'
+                                    : isLastTransfer
+                                      ? 'bg-blue-100 text-blue-600'
+                                      : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                <ArrowRightLeft className="w-5 h-5" />
                               </div>
-                              <div className="space-y-1.5">
-                                <div className="flex items-start gap-2">
-                                  <span className="text-xs text-gray-500 min-w-[60px]">From:</span>
-                                  <span className="text-xs font-mono text-gray-900 break-all">
-                                    {transfer.from}
+                            </div>
+                            <div className="flex-1 pb-6">
+                              <div className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {getRoleName(Number(transfer.fromRole))} →{' '}
+                                      {getRoleName(Number(transfer.toRole))}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                      {date.toLocaleString()}
+                                    </p>
+                                  </div>
+                                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                                    Completada
                                   </span>
-                                  {transfer.from.toLowerCase() === account?.toLowerCase() && (
-                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
-                                      You
-                                    </span>
-                                  )}
                                 </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-xs text-gray-500 min-w-[60px]">To:</span>
-                                  <span className="text-xs font-mono text-gray-900 break-all">
-                                    {transfer.to}
-                                  </span>
-                                  {transfer.to.toLowerCase() === account?.toLowerCase() && (
-                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
-                                      You
+                                <div className="space-y-1.5">
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-xs text-gray-500 min-w-[60px]">De:</span>
+                                    <span className="text-xs font-mono text-gray-900 break-all">
+                                      {transfer.from}
                                     </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-500 min-w-[60px]">
-                                    Amount:
-                                  </span>
-                                  <span className="text-xs font-semibold text-gray-900">
-                                    {transfer.amount.toString()} units
-                                  </span>
+                                    {transfer.from.toLowerCase() === account?.toLowerCase() && (
+                                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                        Tú
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-xs text-gray-500 min-w-[60px]">Para:</span>
+                                    <span className="text-xs font-mono text-gray-900 break-all">
+                                      {transfer.to}
+                                    </span>
+                                    {transfer.to.toLowerCase() === account?.toLowerCase() && (
+                                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                        Tú
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500 min-w-[60px]">
+                                      Cantidad:
+                                    </span>
+                                    <span className="text-xs font-semibold text-gray-900">
+                                      {transfer.amount.toString()} unidades
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 
           {EXPLORER_BASE_URL && (
             <Card>
               <CardHeader>
-                <h2 className="text-base font-semibold text-gray-900">Blockchain Explorer</h2>
+                <h2 className="text-base font-semibold text-gray-900">Explorador de Blockchain</h2>
               </CardHeader>
               <CardContent className="space-y-2">
                 <a
@@ -820,7 +941,7 @@ export function TokenDetails() {
                   className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  TokenFactory contract
+                  Contrato TokenFactory
                 </a>
                 <a
                   href={`${EXPLORER_BASE_URL}/address/${TRANSFER_MANAGER_ADDRESS}`}

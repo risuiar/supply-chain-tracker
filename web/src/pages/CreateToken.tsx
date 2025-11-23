@@ -127,6 +127,26 @@ export function CreateToken() {
       }
     }
 
+    // Validar y limpiar metadata (acepta JSON o string simple)
+    let cleanedMetadataURI = metadataURI.trim();
+    if (cleanedMetadataURI) {
+      try {
+        // Intentar parsear como JSON
+        const parsed = JSON.parse(cleanedMetadataURI);
+        
+        // Si es un objeto, re-serializar para limpiar formato (quita comas finales, etc.)
+        if (typeof parsed === 'object' && parsed !== null) {
+          cleanedMetadataURI = JSON.stringify(parsed);
+        } else {
+          // Si es un valor primitivo parseado, convertirlo a string simple
+          cleanedMetadataURI = String(parsed);
+        }
+      } catch {
+        // Si falla el parse, asumimos que es un string simple y lo dejamos como está
+        // No es necesario hacer nada, solo usamos el valor tal cual
+      }
+    }
+
     setIsCreating(true);
     const toastId = toast.loading('Enviando transacción...');
 
@@ -135,7 +155,7 @@ export function CreateToken() {
 
       if (user.role === 1) {
         // El Productor crea token de materia prima
-        tx = await tokenFactory.createRawToken(productName, metadataURI || '', supply);
+        tx = await tokenFactory.createRawToken(productName, cleanedMetadataURI || '', supply);
       } else {
         // La Fábrica crea token procesado de padres seleccionados con cantidades
         const parentIds = selectedMaterials.map((material) => BigInt(material.id));
@@ -143,7 +163,7 @@ export function CreateToken() {
 
         tx = await tokenFactory.createProcessedTokenWithAmounts(
           productName,
-          metadataURI || '',
+          cleanedMetadataURI || '',
           supply,
           parentIds,
           amounts
@@ -260,21 +280,35 @@ export function CreateToken() {
 
               <div>
                 <Textarea
-                  label="Características (JSON)"
-                  placeholder={`Ingresa las características como JSON, ej:
+                  label="Características (Opcional)"
+                  placeholder={`Puedes ingresar un texto simple o un JSON:
+
+Ejemplo 1 - Texto simple:
+Producto orgánico certificado de alta calidad
+
+Ejemplo 2 - JSON:
 {
-  "origen": "Colombia",
+  "origen": "Amazonas",
   "calidad": "Premium",
-  "certificacion": "Organico",
+  "certificacion": "Orgánico",
   "fecha_cosecha": "2024-03-15"
-}`}
+}
+
+Nota: El JSON se validará automáticamente y se limpiará antes de guardar.`}
                   value={metadataURI}
                   onChange={(e) => setMetadataURI(e.target.value)}
-                  rows={8}
+                  rows={10}
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  Opcional: Agregar características del producto en formato JSON
-                </p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-semibold">Opcional:</span> Agregar características del producto
+                  </p>
+                  <div className="text-xs text-gray-500 space-y-0.5">
+                    <p>• Puedes ingresar un <span className="font-medium">texto simple</span> (ej: "Café de origen único")</p>
+                    <p>• O un <span className="font-medium">objeto JSON</span> con múltiples propiedades (ej: {"{"}"origen": "Colombia", "calidad": "Premium"{"}"})</p>
+                    <p>• El sistema validará y limpiará automáticamente el formato JSON</p>
+                  </div>
+                </div>
               </div>
 
               {user.role === 2 && (

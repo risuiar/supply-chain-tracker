@@ -470,8 +470,12 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error loading user info:', error);
+      // Reset user state on error to prevent inconsistent state
       setUser(null);
-      setIsAdmin(false);
+      // Only reset admin if we couldn't even check it
+      if (!isAdmin) {
+        setIsAdmin(false);
+      }
     }
   };
 

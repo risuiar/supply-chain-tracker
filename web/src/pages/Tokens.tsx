@@ -256,11 +256,23 @@ function TokenCard({
           {/* Features */}
           {Object.keys(metadata).length > 0 && (
             <div>
-              <div className="text-xs text-gray-600">Características</div>
-              <div className="text-xs text-gray-900 italic line-clamp-1 mt-0.5">
+              <div className="text-xs text-gray-600 mb-1">Características</div>
+              <div className="space-y-1 max-h-20 overflow-y-auto">
                 {Object.entries(metadata)
-                  .map(([, value]) => String(value))
-                  .join(', ')}
+                  .slice(0, 3)
+                  .map(([key, value]) => (
+                    <div key={key} className="flex gap-2 text-xs">
+                      <span className="font-semibold text-gray-700 capitalize whitespace-nowrap">
+                        {key.replace(/_/g, ' ')}:
+                      </span>
+                      <span className="text-gray-900 truncate">{String(value)}</span>
+                    </div>
+                  ))}
+                {Object.keys(metadata).length > 3 && (
+                  <div className="text-xs text-gray-500 italic pt-0.5">
+                    +{Object.keys(metadata).length - 3} más
+                  </div>
+                )}
               </div>
             </div>
           )}
