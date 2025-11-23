@@ -1,0 +1,76 @@
+# Foundry / Forge
+sc/out/
+sc/cache/
+sc/broadcast/
+out/
+cache/
+broadcast/
+
+# Keep deployment records but ignore dry-run
+!sc/broadcast/*/run-latest.json
+
+# Foundry config (generated from scfoundry.toml)
+sc/foundry.toml
+
+# Foundry dependencies
+lib/
+sc/lib/
+
+# Node modules
+node_modules/
+web/node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+web/.env
+web/.env.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+build/
+web/dist/
+web/build/
+
+# Vite
+.vite/
+web/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage/
+.nyc_output/
+coverage.lcov
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# OS
+Thumbs.db
+.DS_Store
+
