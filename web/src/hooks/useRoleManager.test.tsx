@@ -212,7 +212,7 @@ describe('useRoleManager', () => {
   });
 
   it('should set isLoading to true during request', async () => {
-    mockRequestRole.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
+    mockRequestRole.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
     mockRefreshUser.mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useRoleManager());
@@ -227,7 +227,7 @@ describe('useRoleManager', () => {
     expect(result.current.isLoading).toBe(true);
 
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 150));
     });
 
     // isLoading should be false after completion

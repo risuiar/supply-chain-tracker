@@ -43,13 +43,10 @@ build/
 web/dist/
 web/build/
 
-<<<<<<< HEAD
-=======
 # Vite
 .vite/
 web/.vite/
 
->>>>>>> dev
 # IDE
 .vscode/
 .idea/
@@ -61,24 +58,18 @@ web/.vite/
 # Testing
 coverage/
 .nyc_output/
-<<<<<<< HEAD
-=======
 coverage.lcov
 *.lcov
->>>>>>> dev
 
 # Temporary files
 *.tmp
 *.temp
 .cache/
 
-<<<<<<< HEAD
-=======
 # TypeScript
 *.tsbuildinfo
 tsconfig.tsbuildinfo
 
->>>>>>> dev
 # OS
 Thumbs.db
 .DS_Store

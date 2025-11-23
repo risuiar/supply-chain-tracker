@@ -61,4 +61,3 @@ describe('CardContent', () => {
     expect(content?.className).toContain('custom-content');
   });
 });
-

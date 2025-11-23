@@ -41,10 +41,10 @@ describe('Button', () => {
   it('should call onClick handler when clicked', () => {
     const handleClick = vi.fn();
     render(<Button onClick={handleClick}>Click</Button>);
-    
+
     const button = screen.getByText('Click');
     button.click();
-    
+
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 
@@ -54,4 +54,3 @@ describe('Button', () => {
     expect(button?.className).toContain('custom-class');
   });
 });
-
